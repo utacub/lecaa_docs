@@ -80,20 +80,20 @@ src-tauri/           app d'escriptori i pont natiu de veu (src/tts)
 
 ## Locucions en castellà (sons de les lletres)
 
-En castellà hi ha dues veus per als sons de les lletres, generades amb ElevenLabs (model eleven_v4): **Sara** (Sara Martin, dona) i **Javier** (Javier Rojas, home), a `src/assets/sons/es/sara/` i `src/assets/sons/es/javier/`. La llista de fonemes i el text de cada so és a `locucions/es.json`.
+En castellà, de moment, hi ha una sola veu per als sons de les lletres: **Mateo** («Mateo – Warm educator», veu masculina d'ElevenLabs, `RD7LAtIKlFefBwftz7lj`, model eleven_v4), a `src/assets/sons/es/mateo/`. La llista de fonemes és a `locucions/es.json`.
 
-Mètode: de cada text es generen diverses preses i es tria la millor; `scripts/locucions-normalitza.py` en conserva només el primer tram de so, el retalla, el normalitza a -1 dBFS i el desa en MP3 mono. Les vocals surten d'una sola presa «A… E… I… O… U…» partida en trams, i la *ks* (x) és la *k* seguida de la *s*. La *ch*, la *ll* i la *r* simple no tenen clip perquè cap tecla no les produeix.
+Mètode: es va donar a ElevenLabs un fitxer de text (`locucions/fonemes-castella.txt`) amb el fonema més freqüent de cada lletra en AFI, un per línia i seguit d'un punt (`/a/.`, `/b/.`…), i se'n va obtenir una sola presa. Aquesta presa es parteix pels silencis i cada tram es passa per `scripts/locucions-normalitza.py`, que en conserva el primer tram de so, el normalitza a -1 dBFS i el desa en MP3 mono. La *ch*, la *ll* i la *r* simple no tenen clip perquè cap tecla no les produeix.
 
 ```
-python3 scripts/locucions-normalitza.py presa.mp3 src/assets/sons/es/sara/s.mp3 --max 0.6
-ELEVENLABS_API_KEY=... node scripts/locucions-elevenlabs.mjs es nom=VOICE_ID   # amb clau d'API
+ffmpeg -ss 2.00 -to 2.28 -i presa.mp3 tros.wav
+python3 scripts/locucions-normalitza.py tros.wav src/assets/sons/es/mateo/a.mp3 --max 1.0
 ```
 
 Cada carpeta de `src/assets/sons/es/` surt com una veu a triar a la compilació següent. Cal escoltar cada clip, perquè una veu sintètica no sempre fa bé una consonant aïllada.
 
 ## Pendent de validar
 
-- Els sons en castellà de Sara i Javier, sobretot g, y, l, rr, j, z, ks i les vocals.
+- Els sons en castellà de Mateo: cal confirmar a oïda que cada clip és el fonema que toca, sobretot b, d, k, t i s (poden portar una vocal enganxada).
 - Les taules de castellà: noms de les lletres (RAE i ASALE, 2010) i grafia → so (`src/letters.ts`, `src/phonemes-es.json`).
 - La taula de noms de les lletres i la taula grafia → so (`src/letters.ts`).
 - Les locucions de sons aïllats, que provenen de LECAA i no s'han revisat fonèticament.

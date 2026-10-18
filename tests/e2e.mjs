@@ -322,7 +322,7 @@ ok(neuralTitles.some(t => t.includes('Davefx')) && neuralTitles.some(t => t.incl
 const recVoices = await page.locator('input[name=recvoice]').count() + await page.locator('input[name=letter][value=sound]').count();
 await page.check('input[name=letter][value=sound]');
 const recLabels = await page.locator('label:has(input[name=recvoice])').allTextContents();
-ok(recLabels.some(t => t.includes('Sara')) && recLabels.some(t => t.includes('Javier')), 'sons de les lletres amb les veus de Sara i Javier: ' + JSON.stringify(recLabels) + recVoices);
+ok(recLabels.length === 1 && recLabels[0].includes('Mateo'), 'sons de les lletres amb la veu de Mateo: ' + JSON.stringify(recLabels) + recVoices);
 await page.screenshot({ path: 'test-results/es-settings.png' });
 await page.click('[aria-label="Cerrar"]');
 await clear();

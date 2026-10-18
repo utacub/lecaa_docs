@@ -169,7 +169,7 @@ export function openSettings(onClose: () => void) {
     }));
 
   // ----- letter sub-options -----
-  const voiceName = (id: string) => ({ anna: 'Veu de l’Anna', jordi: 'Veu d’en Jordi', sara: 'Voz de Sara', javier: 'Voz de Javier' } as Record<string, string>)[id]
+  const voiceName = (id: string) => ({ anna: 'Veu de l’Anna', jordi: 'Veu d’en Jordi', mateo: 'Voz de Mateo' } as Record<string, string>)[id]
     ?? T('Veu', 'Voz') + ' ' + id.charAt(0).toUpperCase() + id.slice(1).replace(/[-_]/g, ' ');
   const letterBox = h('div', { class: 'subgroup' });
   const renderLetter = () => {
@@ -178,7 +178,7 @@ export function openSettings(onClose: () => void) {
     letterBox.replaceChildren(
       ...(mode === 'name' ? [check(T('Diu “majúscula” davant d’una lletra majúscula', 'Dice “mayúscula” delante de una letra mayúscula'), null, x => x.feedback.upperCaseWord, (x, v) => { x.feedback.upperCaseWord = v; })] : []),
       ...(mode === 'sound' ? [
-        h('div', { class: 'hint' }, T('Els sons són locucions enregistrades (les mateixes de LECAA).', 'Los sonidos son locuciones generadas con ElevenLabs (voces de Sara Martin y Javier Rojas).')),
+        h('div', { class: 'hint' }, T('Els sons són locucions enregistrades (les mateixes de LECAA).', 'Los sonidos son locuciones generadas con ElevenLabs (voz de Mateo).')),
         ...recordedVoices.map(id => radio('recvoice', id, voiceName(id), null, current, () => upd(x => { x.recordedVoice = id; }))),
       ] : []),
     );

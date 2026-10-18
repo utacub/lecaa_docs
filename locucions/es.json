@@ -1,166 +1,189 @@
 {
- "_about": "Sonidos de las letras en castellano de España (opción «Sonido de la letra»). Un clip por fonema, con el mismo nombre de archivo para cada voz: src/assets/sons/es/<voz>/<file>.mp3 (voces de ElevenLabs Sara Martin «sara», KHCvMklQZZo0O30ERnVn, y Javier Rojas «javier», eHAEFkimnYz57pupUMcq; modelo eleven_v4). 'text' es lo que se envía a ElevenLabs. Método final: se generan varias tomas de cada texto y se elige la mejor a oído; scripts/locucions-normalitza.py conserva solo el primer tramo de sonido (el modelo a menudo añade una palabra de ejemplo tras una pausa), lo recorta (0,55 s las vocales, 0,6 s las continuas), lo normaliza a -1 dBFS y lo guarda en MP3 mono. Las vocales salen de una sola toma «A… E… I… O… U…» partida en tramos (--segment 1 a 5); la ks es k + s (--then). La ch, la ll y la r simple no se usan, porque ninguna tecla las produce (src/letters.ts, PHONEME_ES). Revisa cada clip a oído: una voz sintética no siempre produce bien una consonante aislada.",
+ "_about": "Sonidos de las letras en castellano de España (opción «Sonido de la letra»). Un clip por fonema: src/assets/sons/es/<voz>/<file>.mp3. De momento hay una sola voz, masculina: Mateo («Mateo – Warm educator», ElevenLabs, RD7LAtIKlFefBwftz7lj, modelo eleven_v4). Método: se envió a ElevenLabs el archivo de texto locucions/fonemes-castella.txt, con el fonema más frecuente de cada letra en AFI, uno por línea y seguido de un punto (/a/. /b/. …), y se obtuvo una sola toma. La toma se partió por los silencios ('start'-'end', en segundos) y cada tramo se pasó por scripts/locucions-normalitza.py (primer tramo de sonido, -1 dBFS, MP3 mono). La ch, la ll y la r simple no se usan, porque ninguna tecla las produce (src/letters.ts, PHONEME_ES). Revisa cada clip a oído.",
  "phonemes": [
   {
    "file": "a",
    "ipa": "a",
    "letters": "a á à",
    "example": "árbol",
-   "text": "A… E… I… O… U…"
+   "start": 2.0,
+   "end": 2.28
   },
   {
    "file": "e",
    "ipa": "e",
    "letters": "e é è",
    "example": "elefante",
-   "text": "A… E… I… O… U…"
+   "start": 5.61,
+   "end": 5.92
   },
   {
    "file": "i",
    "ipa": "i",
    "letters": "i í ï",
    "example": "isla",
-   "text": "A… E… I… O… U…"
+   "start": 8.06,
+   "end": 8.32
   },
   {
    "file": "o",
    "ipa": "o",
    "letters": "o ó ò",
    "example": "oso",
-   "text": "A… E… I… O… U…"
+   "start": 13.63,
+   "end": 13.85
   },
   {
    "file": "u",
    "ipa": "u",
    "letters": "u ú ü",
    "example": "uva",
-   "text": "A… E… I… O… U…"
+   "start": 18.22,
+   "end": 18.49
   },
   {
    "file": "p",
    "ipa": "p",
    "letters": "p",
    "example": "pato",
-   "text": "[solo el sonido breve de la consonante, sin ninguna vocal y sin decir el nombre de la letra] p"
+   "start": 14.45,
+   "end": 14.69
   },
   {
    "file": "b",
    "ipa": "b",
    "letters": "b v",
    "example": "bota",
-   "text": "[solo el sonido breve de la consonante, sin ninguna vocal y sin decir el nombre de la letra] b"
+   "start": 2.71,
+   "end": 3.04
   },
   {
    "file": "t",
    "ipa": "t",
    "letters": "t",
    "example": "toro",
-   "text": "[solo el sonido breve de la consonante, sin ninguna vocal y sin decir el nombre de la letra] t"
+   "start": 17.46,
+   "end": 17.71
   },
   {
    "file": "d",
    "ipa": "d",
    "letters": "d",
    "example": "dedo",
-   "text": "[solo el sonido breve de la consonante, sin ninguna vocal y sin decir el nombre de la letra] d"
+   "start": 4.61,
+   "end": 4.98
   },
   {
    "file": "k",
    "ipa": "k",
    "letters": "c k q",
    "example": "casa",
-   "text": "[solo el sonido breve de la consonante, sin ninguna vocal y sin decir el nombre de la letra] k"
+   "start": 3.7,
+   "end": 3.92
   },
   {
    "file": "g",
    "ipa": "ɡ",
    "letters": "g",
    "example": "gato",
-   "text": "[solo el sonido breve de la consonante, sin ninguna vocal y sin decir el nombre de la letra] g (como en gato)"
+   "start": 7.47,
+   "end": 7.59
   },
   {
    "file": "f",
    "ipa": "f",
    "letters": "f",
    "example": "foca",
-   "text": "[solo el sonido de la consonante, sostenido, sin ninguna vocal y sin decir el nombre de la letra] Ffffff…"
+   "start": 6.61,
+   "end": 6.76
   },
   {
    "file": "z",
    "ipa": "θ",
    "letters": "z",
    "example": "zapato",
-   "text": "[solo el sonido de la consonante, sostenido, sin ninguna vocal y sin decir el nombre de la letra] Zzzzzz… (como la z de zapato)"
+   "start": 22.01,
+   "end": 22.22
   },
   {
    "file": "s",
    "ipa": "s",
    "letters": "s ç",
    "example": "sol",
-   "text": "[solo el sonido de la consonante, sostenido, sin ninguna vocal y sin decir el nombre de la letra] Ssssss…"
+   "start": 16.43,
+   "end": 16.58
   },
   {
    "file": "j",
    "ipa": "x",
    "letters": "j",
    "example": "jirafa",
-   "text": "[solo el sonido de la consonante, sostenido, sin ninguna vocal y sin decir el nombre de la letra] Jjjjjj… (como la j de jirafa)"
+   "start": 8.82,
+   "end": 9.08
   },
   {
    "file": "y",
    "ipa": "ʝ",
    "letters": "y",
    "example": "yate",
-   "text": "[solo el sonido de la consonante, sostenido, sin ninguna vocal y sin decir el nombre de la letra] Yyyy… (como la y de yate)"
+   "start": 20.97,
+   "end": 21.22
   },
   {
    "file": "m",
    "ipa": "m",
    "letters": "m",
    "example": "mano",
-   "text": "[solo el sonido de la consonante, sostenido, sin ninguna vocal y sin decir el nombre de la letra] Mmmmmm…"
+   "start": 10.7,
+   "end": 11.11
   },
   {
    "file": "n",
    "ipa": "n",
    "letters": "n",
    "example": "nube",
-   "text": "[solo el sonido de la consonante, sostenido, sin ninguna vocal y sin decir el nombre de la letra] Nnnnnn…"
+   "start": 11.59,
+   "end": 11.95
   },
   {
    "file": "ny",
    "ipa": "ɲ",
    "letters": "ñ",
    "example": "ñu",
-   "text": "[solo el sonido de la consonante, sostenido, sin ninguna vocal y sin decir el nombre de la letra] Ññññ… (como la ñ de ñu)"
+   "start": 12.48,
+   "end": 12.99
   },
   {
    "file": "l",
    "ipa": "l",
    "letters": "l",
    "example": "luna",
-   "text": "[solo el sonido de la consonante, sostenido, sin ninguna vocal y sin decir el nombre de la letra] Llll… (como la l de luna)"
+   "start": 9.8,
+   "end": 10.19
   },
   {
    "file": "rr",
    "ipa": "r",
    "letters": "r",
    "example": "ratón",
-   "text": "[solo el sonido de la consonante, sostenido, sin ninguna vocal y sin decir el nombre de la letra] Rrrrrr… (como la r de ratón)"
+   "start": 15.38,
+   "end": 15.8
   },
   {
    "file": "w",
    "ipa": "w",
    "letters": "w",
    "example": "web",
-   "text": "[sonido breve de la w de web] u"
+   "start": 19.19,
+   "end": 19.49
   },
   {
    "file": "ks",
    "ipa": "ks",
    "letters": "x",
    "example": "taxi",
-   "text": "(k + s: se une el clip k con el clip s)"
+   "start": 20.0,
+   "end": 20.35
   }
  ]
 }
