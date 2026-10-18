@@ -57,7 +57,7 @@ export const DEFAULTS: Settings = {
   },
   motor: { debounceMs: 0 },
   voice: { id: null, rate: 1, pitch: 1, volume: 1, showAll: false },
-  recordedVoice: LANG === 'es' ? '' : 'anna',
+  recordedVoice: LANG === 'es' ? 'sara' : 'anna',
   highlight: true,
   keyboard: { visible: false, layout: 'simple', autoCapital: true, keySize: 3.4 },
   docFontSize: 22,

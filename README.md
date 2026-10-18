@@ -80,16 +80,20 @@ src-tauri/           app d'escriptori i pont natiu de veu (src/tts)
 
 ## Locucions en castellà (sons de les lletres)
 
-L'opció *Sonido de la letra* no apareix en castellà fins que hi hagi locucions. La llista de fonemes, amb el nom de fitxer i el text per generar cada so, és a `locucions/es.json`. Quan s'hagin triat les veus d'ElevenLabs:
+En castellà hi ha dues veus per als sons de les lletres, generades amb ElevenLabs (model eleven_v4): **Sara** (Sara Martin, dona) i **Javier** (Javier Rojas, home), a `src/assets/sons/es/sara/` i `src/assets/sons/es/javier/`. La llista de fonemes i el text de cada so és a `locucions/es.json`.
+
+Mètode: de cada text es generen diverses preses i es tria la millor; `scripts/locucions-normalitza.py` en conserva només el primer tram de so, el retalla, el normalitza a -1 dBFS i el desa en MP3 mono. Les vocals surten d'una sola presa «A… E… I… O… U…» partida en trams, i la *ks* (x) és la *k* seguida de la *s*. La *ch*, la *ll* i la *r* simple no tenen clip perquè cap tecla no les produeix.
 
 ```
-ELEVENLABS_API_KEY=... node scripts/locucions-elevenlabs.mjs es nom=VOICE_ID [nom2=VOICE_ID2]
+python3 scripts/locucions-normalitza.py presa.mp3 src/assets/sons/es/sara/s.mp3 --max 0.6
+ELEVENLABS_API_KEY=... node scripts/locucions-elevenlabs.mjs es nom=VOICE_ID   # amb clau d'API
 ```
 
-Desa els clips a `src/assets/sons/es/<nom>/` i, a la compilació següent, cada carpeta surt com una veu a triar. Cal escoltar cada clip, perquè una veu sintètica no sempre fa bé una consonant aïllada.
+Cada carpeta de `src/assets/sons/es/` surt com una veu a triar a la compilació següent. Cal escoltar cada clip, perquè una veu sintètica no sempre fa bé una consonant aïllada.
 
 ## Pendent de validar
 
+- Els sons en castellà de Sara i Javier, sobretot g, y, l, rr, j, z, ks i les vocals.
 - Les taules de castellà: noms de les lletres (RAE i ASALE, 2010) i grafia → so (`src/letters.ts`, `src/phonemes-es.json`).
 - La taula de noms de les lletres i la taula grafia → so (`src/letters.ts`).
 - Les locucions de sons aïllats, que provenen de LECAA i no s'han revisat fonèticament.

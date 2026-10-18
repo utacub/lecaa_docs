@@ -2,7 +2,7 @@
 //   ELEVENLABS_API_KEY=... node scripts/locucions-elevenlabs.mjs es nom=VOICE_ID [nom2=VOICE_ID2 ...]
 // Writes src/assets/sons/es/<nom>/<file>.mp3 for every entry of locucions/es.json (existing files
 // are kept unless --force). The next build offers each folder as a voice under "Sonido de la letra".
-// Options: --model=eleven_multilingual_v2 (default), --force, --only=a,e,i
+// Options: --model=eleven_v4 (default), --force, --only=a,e,i
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -22,7 +22,7 @@ if (!lang || !voices.length || !key) {
 
 const { phonemes } = JSON.parse(readFileSync(join(root, 'locucions', `${lang}.json`), 'utf8'));
 const only = opt('only')?.split(',');
-const model = opt('model') ?? 'eleven_multilingual_v2';
+const model = opt('model') ?? 'eleven_v4';
 
 for (const [name, voiceId] of voices) {
   if (!/^[a-z0-9_-]+$/.test(name)) throw new Error(`Nom de veu no vàlid: ${name} (lletres minúscules, números, - o _)`);

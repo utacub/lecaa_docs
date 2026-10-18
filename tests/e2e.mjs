@@ -270,9 +270,15 @@ const esVoices = await page.locator('#voice-select option').allTextContents();
 ok(esVoices.length === 1 && esVoices[0].includes('es-ES'), 'només les veus de castellà d’Espanya: ' + JSON.stringify(esVoices));
 const neuralTitles = await page.locator('.neural-title').allTextContents();
 ok(neuralTitles.some(t => t.includes('Davefx')) && neuralTitles.some(t => t.includes('Sharvard')) && !neuralTitles.some(t => t.includes('Ona')), 'veus per descarregar en castellà: ' + JSON.stringify(neuralTitles));
-ok(!(await page.locator('input[name=letter][value=sound]').count()), 'el so de la lletra no s’ofereix fins que hi hagi locucions');
+const recVoices = await page.locator('input[name=recvoice]').count() + await page.locator('input[name=letter][value=sound]').count();
+await page.check('input[name=letter][value=sound]');
+const recLabels = await page.locator('label:has(input[name=recvoice])').allTextContents();
+ok(recLabels.some(t => t.includes('Sara')) && recLabels.some(t => t.includes('Javier')), 'sons de les lletres amb les veus de Sara i Javier: ' + JSON.stringify(recLabels) + recVoices);
 await page.screenshot({ path: 'test-results/es-settings.png' });
 await page.click('[aria-label="Cerrar"]');
+await clear();
+for (const k of ['m', 'a']) { await page.locator(`.osk .key[data-k="${k}"]`).click(); await wait(300); }
+ok((await page.evaluate(() => window.__clips.length)) === 2, 'el so de la lletra sona en castellà: ' + JSON.stringify(await page.evaluate(() => window.__clips)));
 await page.click('.lang-btn[data-lang="ca"]');
 await page.waitForFunction(() => document.documentElement.lang === 'ca' && document.querySelector('.ProseMirror'));
 await wait(400);
