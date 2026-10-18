@@ -244,7 +244,9 @@ await page.screenshot({ path: 'test-results/main.png' });
 await page.evaluate(() => window.lecaa.editor.chain().command(({ tr }) => { tr.setMeta('lecaa-system', true); return true; }).setContent('<p>Texto que se conserva</p>').run());
 await set(`s => { s.feedback.word = false; }`); // Catalan configuration, must not leak into Spanish
 const caPassword = await page.evaluate(() => window.lecaa.settings.value.lockPassword);
-await page.click('.lang-btn[data-lang="es"]');
+await page.click('.lang-btn');
+ok(await page.isVisible('.lang-menu') && (await page.textContent('.lang-btn')).includes('CA'), 'el desplegable d’idioma s’obre i mostra CA');
+await page.click('.lang-item[data-lang="es"]');
 await page.waitForFunction(() => document.documentElement.lang === 'es' && document.querySelector('.ProseMirror'));
 await wait(400);
 ok(await page.locator('[aria-label="Leer todo"]').isVisible() && await page.locator('[aria-label="Configuración"]').isVisible(), 'la interfície canvia al castellà');
@@ -279,7 +281,11 @@ await page.click('[aria-label="Cerrar"]');
 await clear();
 for (const k of ['m', 'a']) { await page.locator(`.osk .key[data-k="${k}"]`).click(); await wait(300); }
 ok((await page.evaluate(() => window.__clips.length)) === 2, 'el so de la lletra sona en castellà: ' + JSON.stringify(await page.evaluate(() => window.__clips)));
-await page.click('.lang-btn[data-lang="ca"]');
+await page.click('.lang-btn');
+await page.keyboard.press('Escape');
+ok(await page.isHidden('.lang-menu'), 'Esc tanca el desplegable');
+await page.keyboard.press('ArrowDown');
+await page.keyboard.press('Enter');
 await page.waitForFunction(() => document.documentElement.lang === 'ca' && document.querySelector('.ProseMirror'));
 await wait(400);
 ok(await page.locator('[aria-label="Llegeix tot"]').isVisible() && (await page.evaluate(() => window.lecaa.settings.value.feedback.word)) === false, 'en tornar al català recupera la seva configuració');

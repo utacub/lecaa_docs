@@ -1,7 +1,7 @@
 import './styles.css';
 import type { Editor } from '@tiptap/core';
 import {
-  Bold, Columns3, Maximize, FileDown, FilePlus, FolderOpen, Image as ImageIcon, Italic, Keyboard, List, ListOrdered, Pause, Play,
+  Bold, Check, ChevronDown, Columns3, Maximize, FileDown, FilePlus, FolderOpen, Globe, Image as ImageIcon, Italic, Keyboard, List, ListOrdered, Pause, Play,
   Printer, Redo2, Rows3, Settings as SettingsIcon, Square, SquareMinus, Table as TableIcon, TextAlignCenter, TextAlignEnd,
   TextAlignStart, TextCursorInput, Trash2, Underline, Undo2, Volume2,
 } from 'lucide';
@@ -205,12 +205,43 @@ async function boot() {
   const voicebar = h('div', { class: 'toolbar voicebar', role: 'toolbar', 'aria-label': T('Veu', 'Voz') },
     playAll, playSel, playCur, pauseBtn, stopBtn, h('span', { class: 'spacer' }), warning, summary, kbBtn, fullBtn, setBtn);
 
-  // Language switch: the interface, the configuration and the voices all change with it.
-  const langSwitch = h('div', { class: 'lang-switch kiosk-hide', role: 'group', 'aria-label': T('Idioma', 'Idioma') },
-    ...LANGS.map(l => h('button', {
-      class: 'lang-btn', type: 'button', lang: l.id, 'data-lang': l.id, 'aria-pressed': String(l.id === LANG),
-      onclick: () => void switchLang(l.id, async () => { reader.stop(); speech.stop(); await saveNow(); }),
-    }, l.label)));
+  // Language menu: the interface, the configuration and the voices all change with it.
+  // Closed it shows the current language's code; open, every language in its own name.
+  const cur = LANGS.find(l => l.id === LANG)!;
+  const langBtn = h('button', {
+    class: 'lang-btn', type: 'button', 'aria-haspopup': 'menu', 'aria-expanded': 'false', 'aria-controls': 'lang-menu',
+    'aria-label': `${T('Idioma', 'Idioma')}: ${cur.label}`, title: `${T('Idioma', 'Idioma')}: ${cur.label}`,
+  }, icon(Globe), h('span', { class: 'lang-code' }, LANG.toUpperCase()), icon(ChevronDown));
+  const items = LANGS.map(l => h('button', {
+    class: 'lang-item', type: 'button', role: 'menuitemradio', lang: l.id, 'data-lang': l.id,
+    'aria-checked': String(l.id === LANG), tabindex: '-1',
+    onclick: () => { closeLang(); void switchLang(l.id, async () => { reader.stop(); speech.stop(); await saveNow(); }); },
+  }, h('span', { class: 'lang-item-code', 'aria-hidden': 'true' }, l.id.toUpperCase()), l.label, icon(Check)));
+  const langMenu = h('div', { class: 'lang-menu', id: 'lang-menu', role: 'menu', 'aria-label': T('Idioma', 'Idioma'), hidden: true }, ...items);
+  const langSwitch = h('div', { class: 'lang-switch kiosk-hide' }, langBtn, langMenu);
+  const openLang = (focus = items.findIndex(i => i.dataset.lang === LANG)) => {
+    langMenu.hidden = false; langBtn.setAttribute('aria-expanded', 'true'); items[focus].focus();
+  };
+  const closeLang = (refocus = false) => {
+    if (langMenu.hidden) return;
+    langMenu.hidden = true; langBtn.setAttribute('aria-expanded', 'false');
+    if (refocus) langBtn.focus();
+  };
+  langBtn.addEventListener('click', () => (langMenu.hidden ? openLang() : closeLang()));
+  langBtn.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); openLang(e.key === 'ArrowDown' ? 0 : items.length - 1); }
+  });
+  langMenu.addEventListener('keydown', e => {
+    const i = items.indexOf(document.activeElement as HTMLButtonElement);
+    const go = (n: number) => { e.preventDefault(); items[(n + items.length) % items.length].focus(); };
+    if (e.key === 'ArrowDown') go(i + 1);
+    else if (e.key === 'ArrowUp') go(i - 1);
+    else if (e.key === 'Home') go(0);
+    else if (e.key === 'End') go(items.length - 1);
+    else if (e.key === 'Escape') { e.preventDefault(); closeLang(true); }
+    else if (e.key === 'Tab') closeLang();
+  });
+  document.addEventListener('pointerdown', e => { if (!langSwitch.contains(e.target as Node)) closeLang(); });
   const topbar = h('header', { class: 'topbar' }, h('span', { class: 'brand' }), title, saveState, langSwitch);
   (topbar.firstChild as HTMLElement).innerHTML = LOGO + '<span>LECAA Docs</span>';
 
