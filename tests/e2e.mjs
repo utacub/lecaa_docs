@@ -239,6 +239,46 @@ await page.click('.lock-card button[type=submit]');
 await wait(300);
 ok(!(await page.evaluate(() => document.body.classList.contains('is-kiosk'))) && await page.locator('.toolbar:not(.voicebar)').isVisible(), 'la contrasenya correcta en surt');
 await page.screenshot({ path: 'test-results/main.png' });
+
+// 17. Spanish: the language button changes the interface, the configuration, the letters and the voices
+await page.evaluate(() => window.lecaa.editor.chain().command(({ tr }) => { tr.setMeta('lecaa-system', true); return true; }).setContent('<p>Texto que se conserva</p>').run());
+await set(`s => { s.feedback.word = false; }`); // Catalan configuration, must not leak into Spanish
+const caPassword = await page.evaluate(() => window.lecaa.settings.value.lockPassword);
+await page.click('.lang-btn[data-lang="es"]');
+await page.waitForFunction(() => document.documentElement.lang === 'es' && document.querySelector('.ProseMirror'));
+await wait(400);
+ok(await page.locator('[aria-label="Leer todo"]').isVisible() && await page.locator('[aria-label="Configuración"]').isVisible(), 'la interfície canvia al castellà');
+ok((await text()).includes('Texto que se conserva'), 'el document es conserva en canviar d’idioma');
+const esCfg = await page.evaluate(() => { const v = window.lecaa.settings.value; return { word: v.feedback.word, message: v.guard.message, pw: v.lockPassword }; });
+ok(esCfg.word === true && esCfg.message === 'Piensa bien cada letra que escribes', 'configuració pròpia del castellà: ' + JSON.stringify(esCfg));
+ok(esCfg.pw === caPassword && !!caPassword, 'la contrasenya de pantalla completa és la mateixa en els dos idiomes');
+ok((await page.evaluate(() => window.lecaa.speech.currentVoice()?.lang)) === 'es-ES', 'fa servir una veu de castellà d’Espanya');
+await ed.click();
+await set(`s => { s.feedback = { sentence: true, word: true, wordOnPunct: true, letter: 'name', upperCaseWord: false }; s.keyboard.visible = true; s.keyboard.layout = 'simple'; s.keyboard.autoCapital = false; }`);
+await clear();
+for (const k of ['ñ', 'u', 'v']) { await page.locator(`.osk .key[data-k="${k}"]`).click(); await wait(250); }
+ok(JSON.stringify(await spoken()) === JSON.stringify(['eñe', 'u', 'uve']), 'noms de les lletres en castellà: ' + JSON.stringify(await spoken()));
+const oskKeys = await page.locator('.osk .key').allTextContents();
+ok(oskKeys.includes('¿') && oskKeys.includes('á') && oskKeys.includes('borrar') && !oskKeys.includes('ç') && !oskKeys.includes('·'), 'teclat simplificat castellà: ' + JSON.stringify(oskKeys));
+await clear();
+await page.keyboard.type('Hola amigo ', { delay: 120 });
+await wait(400);
+ok((await spoken()).includes('amigo'), 'paraula en castellà: ' + JSON.stringify(await spoken()));
+await page.click('[aria-label="Configuración"]');
+await wait(500);
+const esVoices = await page.locator('#voice-select option').allTextContents();
+ok(esVoices.length === 1 && esVoices[0].includes('es-ES'), 'només les veus de castellà d’Espanya: ' + JSON.stringify(esVoices));
+const neuralTitles = await page.locator('.neural-title').allTextContents();
+ok(neuralTitles.some(t => t.includes('Davefx')) && neuralTitles.some(t => t.includes('Sharvard')) && !neuralTitles.some(t => t.includes('Ona')), 'veus per descarregar en castellà: ' + JSON.stringify(neuralTitles));
+ok(!(await page.locator('input[name=letter][value=sound]').count()), 'el so de la lletra no s’ofereix fins que hi hagi locucions');
+await page.screenshot({ path: 'test-results/es-settings.png' });
+await page.click('[aria-label="Cerrar"]');
+await page.click('.lang-btn[data-lang="ca"]');
+await page.waitForFunction(() => document.documentElement.lang === 'ca' && document.querySelector('.ProseMirror'));
+await wait(400);
+ok(await page.locator('[aria-label="Llegeix tot"]').isVisible() && (await page.evaluate(() => window.lecaa.settings.value.feedback.word)) === false, 'en tornar al català recupera la seva configuració');
+ok((await page.evaluate(() => window.lecaa.speech.currentVoice()?.lang)) === 'ca-ES', 'i la veu catalana');
+await page.screenshot({ path: 'test-results/ca-again.png' });
 ok(errors.length === 0, 'sense errors a la consola: ' + JSON.stringify(errors));
 await browser.close();
 console.log(failures ? `${failures} FAILED` : 'ALL OK');

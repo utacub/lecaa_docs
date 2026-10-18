@@ -1,12 +1,15 @@
-// Fake Catalan voice for headless tests: records what would be spoken.
+// Fake Catalan and Spanish voices for headless tests: records what would be spoken.
 (() => {
   window.__spoken = [];
   window.__clips = [];
   const voice = { name: 'Prova Català', lang: 'ca-ES', voiceURI: 'prova-ca', localService: true, default: true };
+  const voices = [voice,
+    { name: 'Prova Castellano', lang: 'es-ES', voiceURI: 'prova-es', localService: true, default: false },
+    { name: 'Prueba México', lang: 'es-MX', voiceURI: 'prova-mx', localService: true, default: false }];
   const listeners = {};
   let current = null, timer = 0;
   const synth = {
-    getVoices: () => [voice],
+    getVoices: () => voices,
     speak(u) {
       window.__spoken.push(u.text);
       current = u;

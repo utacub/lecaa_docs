@@ -2,6 +2,7 @@
 // Two are joined school handwriting ("lletra lligada"): Playwrite ES (the Spanish school model)
 // and Playwrite FR Moderne, both by TypeTogether for learning to write.
 
+import { T } from './i18n';
 import atkinson400 from '@fontsource/atkinson-hyperlegible/files/atkinson-hyperlegible-latin-400-normal.woff2?url';
 import atkinson700 from '@fontsource/atkinson-hyperlegible/files/atkinson-hyperlegible-latin-700-normal.woff2?url';
 import lexend400 from '@fontsource/lexend/files/lexend-latin-400-normal.woff2?url';
@@ -25,8 +26,8 @@ export const FONTS: DocFont[] = [
   { id: 'atkinson', label: 'Atkinson Hyperlegible', family: 'Atkinson Hyperlegible', css: "'Atkinson Hyperlegible', Verdana, sans-serif", files: [['400', atkinson400], ['700', atkinson700]] },
   { id: 'lexend', label: 'Lexend', family: 'Lexend', css: "'Lexend', Verdana, sans-serif", files: [['400', lexend400], ['700', lexend700]] },
   { id: 'opendyslexic', label: 'OpenDyslexic', family: 'OpenDyslexic', css: "'OpenDyslexic', Verdana, sans-serif", files: [['400', dys400], ['700', dys700]] },
-  { id: 'lligada-es', label: 'Lligada escolar (Playwrite ES)', family: 'Playwrite ES', css: "'Playwrite ES', cursive", joined: true, files: [['400', pwEs]] },
-  { id: 'lligada-fr', label: 'Lligada moderna (Playwrite FR Moderne)', family: 'Playwrite FR Moderne', css: "'Playwrite FR Moderne', cursive", joined: true, files: [['400', pwFr]] },
+  { id: 'lligada-es', label: T('Lligada escolar (Playwrite ES)', 'Ligada escolar (Playwrite ES)'), family: 'Playwrite ES', css: "'Playwrite ES', cursive", joined: true, files: [['400', pwEs]] },
+  { id: 'lligada-fr', label: T('Lligada moderna (Playwrite FR Moderne)', 'Ligada moderna (Playwrite FR Moderne)'), family: 'Playwrite FR Moderne', css: "'Playwrite FR Moderne', cursive", joined: true, files: [['400', pwFr]] },
 ];
 
 export const fontById = (id: string) => FONTS.find(f => f.id === id) ?? FONTS[0];

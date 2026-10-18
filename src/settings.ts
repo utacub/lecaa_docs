@@ -1,9 +1,12 @@
-// User settings, persisted per device. Everything that changes how the app speaks or
-// accepts keystrokes lives here so the settings drawer and the engines share one source.
+// User settings, persisted per device and per language (each language keeps its own
+// configuration). Everything that changes how the app speaks or accepts keystrokes lives here so
+// the settings drawer and the engines share one source.
+
+import { LANG, T } from './i18n';
 
 export type LetterMode = 'off' | 'name' | 'sound';
 export type KeyboardLayout = 'full' | 'simple';
-export type RecordedVoice = 'anna' | 'jordi';
+export type RecordedVoice = string; // folder of recorded letter sounds (src/assets/sons)
 
 export interface Settings {
   feedback: {
@@ -35,7 +38,7 @@ export interface Settings {
   docFontSize: number;
   docFont: string;        // id from fonts.ts
   protectSettings: boolean;
-  lockPassword: string;   // hash of the password that ends full-screen mode ('' = not set)
+  lockPassword: string;   // hash of the password that ends full-screen mode ('' = not set); shared by both languages
 }
 
 export const DEFAULTS: Settings = {
@@ -50,11 +53,11 @@ export const DEFAULTS: Settings = {
     consonants: true,
     autoRepeat: true,
     calmMs: 3000,
-    message: 'Pensa bé cada lletra que escrius',
+    message: T('Pensa bé cada lletra que escrius', 'Piensa bien cada letra que escribes'),
   },
   motor: { debounceMs: 0 },
   voice: { id: null, rate: 1, pitch: 1, volume: 1, showAll: false },
-  recordedVoice: 'anna',
+  recordedVoice: LANG === 'es' ? '' : 'anna',
   highlight: true,
   keyboard: { visible: false, layout: 'simple', autoCapital: true, keySize: 3.4 },
   docFontSize: 22,
@@ -63,7 +66,8 @@ export const DEFAULTS: Settings = {
   lockPassword: '',
 };
 
-const KEY = 'lecaa-docs:settings';
+const KEY = LANG === 'ca' ? 'lecaa-docs:settings' : `lecaa-docs:settings:${LANG}`;
+const PASSWORD_KEY = 'lecaa-docs:lock-password';
 
 function merge<T>(base: T, over: unknown): T {
   if (typeof base !== 'object' || base === null || Array.isArray(base)) {
@@ -88,11 +92,18 @@ class Store {
     let saved: unknown = null;
     try { saved = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { /* private mode */ }
     this.value = merge(DEFAULTS, saved);
+    try {
+      const pw = localStorage.getItem(PASSWORD_KEY);
+      if (pw !== null) this.value.lockPassword = pw;
+    } catch { /* ignore */ }
   }
 
   update(fn: (s: Settings) => void) {
     fn(this.value);
-    try { localStorage.setItem(KEY, JSON.stringify(this.value)); } catch { /* ignore */ }
+    try {
+      localStorage.setItem(KEY, JSON.stringify(this.value));
+      localStorage.setItem(PASSWORD_KEY, this.value.lockPassword);
+    } catch { /* ignore */ }
     for (const l of this.listeners) l(this.value);
   }
 

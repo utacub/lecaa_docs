@@ -1,0 +1,31 @@
+{
+  "_about": "Sonidos de las letras en castellano de España (opción «Sonido de la letra»). Un clip por fonema, con el mismo nombre de archivo para cada voz: src/assets/sons/es/<voz>/<file>.mp3. 'text' es lo que se envía a ElevenLabs; revisa cada clip a oído, porque una voz sintética no siempre produce bien una consonante aislada. Las letras que lo producen siguen src/letters.ts (PHONEME_ES) y src/phonemes-es.json.",
+  "phonemes": [
+    { "file": "a",  "ipa": "a",   "letters": "a á à",   "example": "árbol",   "text": "a" },
+    { "file": "e",  "ipa": "e",   "letters": "e é è",   "example": "elefante", "text": "e" },
+    { "file": "i",  "ipa": "i",   "letters": "i í ï",   "example": "isla",    "text": "i" },
+    { "file": "o",  "ipa": "o",   "letters": "o ó ò",   "example": "oso",     "text": "o" },
+    { "file": "u",  "ipa": "u",   "letters": "u ú ü",   "example": "uva",     "text": "u" },
+    { "file": "p",  "ipa": "p",   "letters": "p",       "example": "pato",    "text": "p" },
+    { "file": "b",  "ipa": "b",   "letters": "b v",     "example": "bota",    "text": "b" },
+    { "file": "t",  "ipa": "t",   "letters": "t",       "example": "toro",    "text": "t" },
+    { "file": "d",  "ipa": "d",   "letters": "d",       "example": "dedo",    "text": "d" },
+    { "file": "k",  "ipa": "k",   "letters": "c k q",   "example": "casa",    "text": "k" },
+    { "file": "g",  "ipa": "ɡ",   "letters": "g",       "example": "gato",    "text": "g" },
+    { "file": "f",  "ipa": "f",   "letters": "f",       "example": "foca",    "text": "fff" },
+    { "file": "z",  "ipa": "θ",   "letters": "z",       "example": "zapato",  "text": "zzz" },
+    { "file": "s",  "ipa": "s",   "letters": "s ç",     "example": "sol",     "text": "sss" },
+    { "file": "j",  "ipa": "x",   "letters": "j",       "example": "jirafa",  "text": "jjj" },
+    { "file": "y",  "ipa": "ʝ",   "letters": "y",       "example": "yate",    "text": "y" },
+    { "file": "m",  "ipa": "m",   "letters": "m",       "example": "mano",    "text": "mmm" },
+    { "file": "n",  "ipa": "n",   "letters": "n",       "example": "nube",    "text": "nnn" },
+    { "file": "ny", "ipa": "ɲ",   "letters": "ñ",       "example": "ñu",      "text": "ñ" },
+    { "file": "l",  "ipa": "l",   "letters": "l",       "example": "luna",    "text": "lll" },
+    { "file": "rr", "ipa": "r",   "letters": "r",       "example": "ratón",   "text": "rrr" },
+    { "file": "w",  "ipa": "w",   "letters": "w",       "example": "web",     "text": "u" },
+    { "file": "ks", "ipa": "ks",  "letters": "x",       "example": "taxi",    "text": "ks" },
+    { "file": "ch", "ipa": "t͡ʃ",  "letters": "(ch, aún no en una tecla)", "example": "chocolate", "text": "ch" },
+    { "file": "ll", "ipa": "ʎ",   "letters": "(ll, aún no en una tecla)", "example": "lluvia",    "text": "ll" },
+    { "file": "r",  "ipa": "ɾ",   "letters": "(r suave, aún no en una tecla)", "example": "pera", "text": "r" }
+  ]
+}

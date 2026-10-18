@@ -9,6 +9,7 @@ import {
   TextRun, WidthType, type ParagraphChild,
 } from 'docx';
 import { fontByFamily, fontById } from './fonts';
+import { BCP47, T } from './i18n';
 import { settings } from './settings';
 import { inTauri } from './speech/native';
 
@@ -152,7 +153,7 @@ export async function docxFromEditor(editor: Editor, title: string): Promise<Blo
   const doc = new Document({
     title,
     creator: 'LECAA Docs',
-    styles: { default: { document: { run: { font: fontById(settings.value.docFont).family, size: BASE_PT * 2 } } } },
+    styles: { default: { document: { run: { font: fontById(settings.value.docFont).family, size: BASE_PT * 2, language: { value: BCP47 } } } } },
     numbering: {
       config: [{
         reference: 'lecaa-ordered',
@@ -167,14 +168,14 @@ export async function docxFromEditor(editor: Editor, title: string): Promise<Blo
 // ---------- device files ----------
 
 export function safeName(title: string) {
-  return (title.trim() || 'Document sense títol').replace(/[\\/:*?"<>|]+/g, '-').slice(0, 120);
+  return (title.trim() || T('Document sense títol', 'Documento sin título')).replace(/[\\/:*?"<>|]+/g, '-').slice(0, 120);
 }
 
 export async function saveFile(blob: Blob, name: string): Promise<boolean> {
   if (inTauri()) {
     const { save } = await import('@tauri-apps/plugin-dialog');
     const { writeFile } = await import('@tauri-apps/plugin-fs');
-    const path = await save({ defaultPath: name, filters: [{ name: 'Document de Word (compatible amb Google Docs)', extensions: ['docx'] }] });
+    const path = await save({ defaultPath: name, filters: [{ name: T('Document de Word (compatible amb Google Docs)', 'Documento de Word (compatible con Google Docs)'), extensions: ['docx'] }] });
     if (!path) return false;
     await writeFile(path, new Uint8Array(await blob.arrayBuffer()));
     return true;
@@ -182,7 +183,7 @@ export async function saveFile(blob: Blob, name: string): Promise<boolean> {
   const w = window as unknown as { showSaveFilePicker?: (o: object) => Promise<FileSystemFileHandle> };
   if (w.showSaveFilePicker && window.self === window.top) {
     try {
-      const handle = await w.showSaveFilePicker({ suggestedName: name, types: [{ description: 'Document .docx', accept: { [DOCX_MIME]: ['.docx'] } }] });
+      const handle = await w.showSaveFilePicker({ suggestedName: name, types: [{ description: T('Document .docx', 'Documento .docx'), accept: { [DOCX_MIME]: ['.docx'] } }] });
       const stream = await handle.createWritable();
       await stream.write(blob);
       await stream.close();
@@ -205,7 +206,7 @@ export async function openFile(): Promise<{ name: string; data: ArrayBuffer } | 
   if (inTauri()) {
     const { open } = await import('@tauri-apps/plugin-dialog');
     const { readFile } = await import('@tauri-apps/plugin-fs');
-    const path = await open({ multiple: false, filters: [{ name: 'Documents', extensions: ['docx', 'html', 'htm', 'txt'] }] });
+    const path = await open({ multiple: false, filters: [{ name: T('Documents', 'Documentos'), extensions: ['docx', 'html', 'htm', 'txt'] }] });
     if (!path || Array.isArray(path)) return null;
     const bytes = await readFile(path);
     return { name: path.split(/[\\/]/).pop() ?? 'document.docx', data: bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer };

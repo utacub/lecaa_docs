@@ -1,6 +1,7 @@
 // Web Speech API engine. Exposes whatever voices the browser or webview reports;
 // on several platforms that is not every voice installed (see planificacio.md §4).
 
+import { BCP47 } from '../i18n';
 import type { SpeakOptions, SpeechEngine, VoiceInfo } from './types';
 
 const PREFIX = 'web:';
@@ -47,7 +48,7 @@ export class WebSpeechEngine implements SpeechEngine {
       const u = new SpeechSynthesisUtterance(text);
       const v = this.voices().find(x => PREFIX + x.voiceURI + '|' + x.name === voiceId);
       try {
-        if (v) { u.voice = v; u.lang = v.lang; } else { u.lang = 'ca-ES'; }
+        if (v) { u.voice = v; u.lang = v.lang; } else { u.lang = BCP47; }
       } catch { /* voice object from another realm */ }
       u.rate = opts.rate; u.pitch = opts.pitch; u.volume = opts.volume;
       let done = false;

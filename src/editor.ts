@@ -9,6 +9,7 @@ import { ReplaceStep } from '@tiptap/pm/transform';
 import StarterKit from '@tiptap/starter-kit';
 import { itemsForChar, itemsForEnter, playFeedback } from './feedback';
 import { guard } from './guard';
+import { LANG, T } from './i18n';
 import { reader, ReaderHighlight } from './reader';
 
 // Text of the current block up to the caret (images and breaks count as a space).
@@ -89,7 +90,7 @@ export function createEditor(el: HTMLElement, content: object | string | null) {
     ],
     content: content ?? '',
     editorProps: {
-      attributes: { spellcheck: 'false', autocorrect: 'off', autocapitalize: 'off', 'aria-label': 'Document', lang: 'ca' },
+      attributes: { spellcheck: 'false', autocorrect: 'off', autocapitalize: 'off', 'aria-label': T('Document', 'Documento'), lang: LANG },
     },
   });
   reader.attach(editor);

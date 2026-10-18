@@ -2,19 +2,29 @@
 // available on this device, and the recorded letter sounds. Sequences can be cancelled
 // as a whole, and `busy` tells the input guard whether audio feedback is still playing.
 
+import { isLangVoice, LANG } from '../i18n';
 import { settings } from '../settings';
 import { NativeEngine } from './native';
 import { neural } from './neural';
-import { isCatalan, type SpeechEngine, type VoiceInfo } from './types';
+import type { SpeechEngine, VoiceInfo } from './types';
 import { WebSpeechEngine } from './web';
 
 export type { VoiceInfo } from './types';
 
-const clipUrls = import.meta.glob('../assets/sons/*/*.mp3', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+const clipUrls = import.meta.glob('../assets/sons/**/*.mp3', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 
 export type SoundItem =
   | { kind: 'tts'; text: string; onWord?: (i: number, len: number) => void }
   | { kind: 'clip'; file: string };
+
+const CLIP_DIR = LANG === 'es' ? '../assets/sons/es/' : '../assets/sons/';
+
+// Recorded voices available for the interface language (folders that hold clips).
+export const recordedVoices = [...new Set(Object.keys(clipUrls)
+  .filter(k => k.startsWith(CLIP_DIR))
+  .map(k => k.slice(CLIP_DIR.length).split('/'))
+  .filter(parts => parts.length === 2)
+  .map(parts => parts[0]))];
 
 type BusyListener = (busy: boolean) => void;
 
@@ -48,15 +58,16 @@ class SpeechHub {
     return this.voices;
   }
 
-  catalanVoices() { return this.voices.filter(v => isCatalan(v.lang)); }
+  // Voices of the interface language (Spanish: Spain's Spanish only).
+  langVoices() { return this.voices.filter(v => isLangVoice(v.lang)); }
 
-  // The configured voice, or the best Catalan default: system voices first, then the voices
-  // downloaded into the app, offline first.
+  // The configured voice, or the best default in the interface language: system voices first,
+  // then the voices downloaded into the app, offline first.
   currentVoice(): VoiceInfo | null {
     const id = settings.value.voice.id;
     const chosen = id ? this.voices.find(v => v.id === id) : undefined;
     if (chosen) return chosen;
-    const ca = this.catalanVoices();
+    const ca = this.langVoices();
     return ca.find(v => v.id.startsWith('native:') && v.offline !== false)
       ?? ca.find(v => v.id.startsWith('neural:'))
       ?? ca.find(v => v.offline !== false)
@@ -111,8 +122,11 @@ class SpeechHub {
     ]);
   }
 
+  // Recorded letter sounds: Catalan in sons/<voice>, Spanish in sons/es/<voice>.
   clipUrl(file: string) {
-    return clipUrls[`../assets/sons/${settings.value.recordedVoice}/${file}.mp3`] ?? null;
+    const rv = settings.value.recordedVoice;
+    const voice = recordedVoices.includes(rv) ? rv : recordedVoices[0];
+    return voice ? clipUrls[`${CLIP_DIR}${voice}/${file}.mp3`] ?? null : null;
   }
 
   private clip(file: string) {

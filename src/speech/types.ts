@@ -25,5 +25,3 @@ export interface SpeechEngine {
   // True when speak() always settles by itself, so no safety timeout is needed.
   readonly reliableEnd?: boolean;
 }
-
-export const isCatalan = (lang: string) => /^ca($|[-_])/i.test(lang.trim());

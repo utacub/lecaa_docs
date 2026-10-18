@@ -1,6 +1,6 @@
 // End-to-end check of the in-app Piper voices with real models: downloads (served locally in
 // place of Hugging Face), IndexedDB storage, synthesis in the worker and audio playback.
-// Usage: PIPER_DIR=/path/with/{ona,pau} node tests/neural.mjs http://localhost:4173/
+// Usage: PIPER_DIR=/path/with/{ona,es} node tests/neural.mjs http://localhost:4173/
 import { chromium } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -10,6 +10,9 @@ const dir = process.env.PIPER_DIR || '/tmp/claude-0/piper';
 const local = {
   'ca_ES-upc_ona-medium.onnx': `${dir}/ona/ca-upc_ona-x-low.onnx`,
   'ca_ES-upc_ona-medium.onnx.json': `${dir}/ona/ca-upc_ona-x-low.onnx.json`,
+  // Spanish: Davefx medium is served by the carlfm x_low voice (same espeak "es" pipeline).
+  'es_ES-davefx-medium.onnx': `${dir}/es/es-carlfm-x-low.onnx`,
+  'es_ES-davefx-medium.onnx.json': `${dir}/es/es-carlfm-x-low.onnx.json`,
 };
 const npm = f => path.resolve('node_modules', f);
 const cdn = {
@@ -105,6 +108,23 @@ await page.click('.neural-item:has-text("Ona") button:has-text("Esborra")');
 await page.waitForSelector('[data-install="ona-medium"]');
 await page.waitForFunction(() => !window.lecaa.speech.voices.some(v => v.id === 'neural:ona-medium'), null, { timeout: 5000 }).catch(() => null);
 ok(!(await page.evaluate(() => window.lecaa.speech.voices.some(v => v.id === 'neural:ona-medium'))), 'es pot esborrar');
+
+// Spanish: its own voices, Spanish phonemes, and the Catalan voice is not offered
+await page.evaluate(() => localStorage.setItem('lecaa-docs:lang', 'es'));
+await page.reload();
+await page.waitForSelector('.ProseMirror');
+await page.waitForFunction(() => window.lecaa);
+await page.click('[aria-label="Configuración"]');
+await page.evaluate(() => { document.querySelector('.neural').open = true; });
+ok(!(await page.locator('[data-install="ona-medium"]').count()) && await page.locator('[data-install="sharvard-medium"]').count() === 1, 'en castellà només s’ofereixen les veus castellanes');
+await page.click('[data-install="davefx-medium"]');
+await page.waitForFunction(() => document.querySelector('.neural-ok'), null, { timeout: 60000 });
+await page.waitForFunction(() => window.lecaa?.settings.value.voice.id === 'neural:davefx-medium', null, { timeout: 5000 }).catch(() => null);
+ok((await page.evaluate(() => window.lecaa.settings.value.voice.id)) === 'neural:davefx-medium', 'veu castellana descarregada i seleccionada');
+await page.evaluate(() => { window.__played.length = 0; return window.lecaa.speech.play([{ kind: 'tts', text: 'Hola, me llamo Davefx y hablo castellano.' }], { lock: false }); });
+const esPlayed = await page.evaluate(() => window.__played.slice());
+ok(esPlayed.length === 1 && esPlayed[0] > 1 && esPlayed[0] < 7, `frase castellana sintetitzada (${esPlayed[0]?.toFixed(2)} s)`);
+await page.evaluate(() => localStorage.setItem('lecaa-docs:lang', 'ca'));
 
 ok(errors.length === 0, 'sense errors a la consola' + (errors.length ? ': ' + errors.join(' | ') : ''));
 await browser.close();

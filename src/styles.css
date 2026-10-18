@@ -58,6 +58,12 @@ button { touch-action: manipulation; }
 .doc-title:hover { border-color: var(--line); }
 .doc-title:focus { border-color: var(--accent); outline: none; background: var(--surface); }
 .save-state { color: var(--muted); font-size: 13px; white-space: nowrap; }
+.lang-switch { display: inline-flex; border: 1px solid var(--accent); border-radius: var(--radius); overflow: hidden; flex: none; }
+.lang-btn { font: inherit; font-weight: 700; font-size: 15px; padding: 8px 14px; border: 0; background: var(--surface); color: var(--accent); cursor: pointer; min-height: 40px; }
+.lang-btn + .lang-btn { border-left: 1px solid var(--accent); }
+.lang-btn[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+@media (max-width: 560px) { .save-state, .brand span { display: none; } .lang-btn { padding: 8px 10px; } }
+.lang-btn:focus-visible { outline: 3px solid var(--warn, #f0a400); outline-offset: -3px; }
 
 /* ---------- toolbars ---------- */
 .toolbar {

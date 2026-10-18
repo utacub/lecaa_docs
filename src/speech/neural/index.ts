@@ -2,6 +2,7 @@
 // synthesised in a worker, so they work offline in every edition, on any device with a browser.
 
 import { LETTER_NAMES } from '../../letters';
+import { LANG, T } from '../../i18n';
 import { settings } from '../../settings';
 import type { SpeakOptions, SpeechEngine, VoiceInfo } from '../types';
 import { MODELS, modelOf, type NeuralModel } from './catalog';
@@ -93,11 +94,11 @@ export class NeuralEngine implements SpeechEngine {
 
   async listVoices(): Promise<VoiceInfo[]> {
     await this.scan();
-    return MODELS.filter(m => this.installed.has(m.key)).flatMap(m => m.voices.map(v => ({
+    return MODELS.filter(m => m.lang === LANG && this.installed.has(m.key)).flatMap(m => m.voices.map(v => ({
       id: PREFIX + v.id,
       name: `${v.name} · ${v.dialect}`,
-      lang: 'ca-ES',
-      engine: 'Veus Piper (dins l’app)',
+      lang: m.lang === 'es' ? 'es-ES' : 'ca-ES',
+      engine: T('Veus Piper (dins l’app)', 'Voces Piper (dentro de la app)'),
       offline: true,
     })));
   }
@@ -218,7 +219,7 @@ export class NeuralEngine implements SpeechEngine {
         };
         this.worker = w;
       }
-      if (m.bytes > 100_000_000) this.notice('Preparant la veu… La primera vegada pot trigar una estona.', true);
+      if (m.bytes > 100_000_000) this.notice(T('Preparant la veu… La primera vegada pot trigar una estona.', 'Preparando la voz… La primera vez puede tardar un rato.'), true);
       const t0 = performance.now();
       const model = await fileStore.get(`model:${m.key}`);
       if (!model) throw new Error('voice not downloaded');
@@ -286,7 +287,7 @@ export class NeuralEngine implements SpeechEngine {
     try { buf = await this.buffer(id, text, opts.rate); } catch (e) {
       const msg = String((e as Error)?.message ?? e);
       console.warn('[neural]', e);
-      this.notice(`La veu no ha pogut parlar (${msg}).`);
+      this.notice(T(`La veu no ha pogut parlar (${msg}).`, `La voz no ha podido hablar (${msg}).`));
       return;
     }
     if (!buf || my !== this.token) return;

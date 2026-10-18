@@ -4,6 +4,7 @@
 // This keeps learners in the editor; it is not a security barrier against an adult with the
 // browser's developer tools.
 
+import { T } from './i18n';
 import { settings } from './settings';
 import { inTauri } from './speech/native';
 import { h, toast } from './ui';
@@ -42,7 +43,7 @@ function modal(title: string, text: string, fields: string[], submit: string, on
   const form = h('form', { class: 'lock-card' },
     h('h2', {}, title), h('p', { class: 'hint' }, text), ...inputs, msg,
     h('div', { class: 'row' },
-      h('button', { class: 'small-btn', type: 'button', onclick: close }, 'Cancel·la'),
+      h('button', { class: 'small-btn', type: 'button', onclick: close }, T('Cancel·la', 'Cancelar')),
       h('button', { class: 'small-btn primary', type: 'submit' }, submit)));
   const back = h('div', { class: 'lock-modal', role: 'dialog', 'aria-modal': 'true', 'aria-label': title }, form);
   form.addEventListener('submit', async e => {
@@ -58,10 +59,10 @@ function modal(title: string, text: string, fields: string[], submit: string, on
 export function askNewPassword(): Promise<boolean> {
   return new Promise(resolve => {
     let done = false;
-    modal('Contrasenya per sortir', 'Aquesta contrasenya caldrà per sortir de la pantalla completa. Guarda-la bé.',
-      ['Contrasenya nova', 'Repeteix la contrasenya'], 'Desa', async ([a, b], show) => {
-        if (a.length < 4) { show('Ha de tenir 4 caràcters o més.'); return false; }
-        if (a !== b) { show('Les dues contrasenyes no coincideixen.'); return false; }
+    modal(T('Contrasenya per sortir', 'Contraseña para salir'), T('Aquesta contrasenya caldrà per sortir de la pantalla completa. Guarda-la bé.', 'Esta contraseña será necesaria para salir de la pantalla completa. Guárdala bien.'),
+      [T('Contrasenya nova', 'Contraseña nueva'), T('Repeteix la contrasenya', 'Repite la contraseña')], T('Desa', 'Guardar'), async ([a, b], show) => {
+        if (a.length < 4) { show(T('Ha de tenir 4 caràcters o més.', 'Debe tener 4 caracteres o más.')); return false; }
+        if (a !== b) { show(T('Les dues contrasenyes no coincideixen.', 'Las dos contraseñas no coinciden.')); return false; }
         const hash = await hashPassword(a);
         settings.update(s => { s.lockPassword = hash; });
         done = true;
@@ -74,8 +75,8 @@ export function askNewPassword(): Promise<boolean> {
 }
 
 class Lock {
-  private back = h('button', { class: 'lock-return', type: 'button', hidden: true }, 'Torna a la pantalla completa');
-  private exitBtn = h('button', { class: 'lock-exit', type: 'button', title: 'Surt de la pantalla completa', 'aria-label': 'Surt de la pantalla completa', hidden: true }, '🔒');
+  private back = h('button', { class: 'lock-return', type: 'button', hidden: true }, T('Torna a la pantalla completa', 'Volver a la pantalla completa'));
+  private exitBtn = h('button', { class: 'lock-exit', type: 'button', title: T('Surt de la pantalla completa', 'Salir de la pantalla completa'), 'aria-label': T('Surt de la pantalla completa', 'Salir de la pantalla completa'), hidden: true }, '🔒');
   onChange: (() => void) | null = null;
 
   get on() { try { return localStorage.getItem(KEY) === '1'; } catch { return document.body.classList.contains('is-kiosk'); } }
@@ -105,13 +106,13 @@ class Lock {
   }
 
   private askExit() {
-    modal('Sortir de la pantalla completa', 'Escriu la contrasenya.', ['Contrasenya'], 'Surt', async ([pw], show) => {
-      if (await hashPassword(pw) !== settings.value.lockPassword) { show('La contrasenya no és correcta.'); return false; }
+    modal(T('Sortir de la pantalla completa', 'Salir de la pantalla completa'), T('Escriu la contrasenya.', 'Escribe la contraseña.'), [T('Contrasenya', 'Contraseña')], T('Surt', 'Salir'), async ([pw], show) => {
+      if (await hashPassword(pw) !== settings.value.lockPassword) { show(T('La contrasenya no és correcta.', 'La contraseña no es correcta.')); return false; }
       try { localStorage.removeItem(KEY); } catch { /* ignore */ }
       document.body.classList.remove('is-kiosk');
       await setFullscreen(false);
       this.refresh();
-      toast('Has sortit de la pantalla completa');
+      toast(T('Has sortit de la pantalla completa', 'Has salido de la pantalla completa'));
       return true;
     });
   }
