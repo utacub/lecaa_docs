@@ -216,6 +216,24 @@ ok((await page.evaluate(() => getComputedStyle(document.querySelector('.ProseMir
 await set(`s => { s.docFont = 'andika'; }`);
 await page.screenshot({ path: 'test-results/fonts.png' });
 
+// 15b. text size in points: drop-down plus bigger / smaller buttons, exported to the .docx
+await clear();
+await page.evaluate(() => window.lecaa.editor.chain().command(({ tr }) => { tr.setMeta('lecaa-system', true); return true; }).insertContent('Mida').selectAll().run());
+ok((await page.inputValue('.size-select')) === '14', 'el text sense format és de 14 punts');
+await page.selectOption('.size-select', '24');
+await page.click('[aria-label="Augmenta la mida de la lletra"]');
+await page.click('[aria-label="Augmenta la mida de la lletra"]');
+await page.click('[aria-label="Redueix la mida de la lletra"]');
+ok((await page.inputValue('.size-select')) === '28', 'desplegable de punts i botons per pujar i baixar: ' + await page.inputValue('.size-select'));
+const sizePx = await page.evaluate(() => [parseFloat(getComputedStyle(document.querySelector('.ProseMirror p span')).fontSize), parseFloat(getComputedStyle(document.querySelector('.ProseMirror')).fontSize)]);
+ok(Math.abs(sizePx[0] / sizePx[1] - 2) < 0.01, 'a la pantalla, 28 punts és el doble de 14: ' + JSON.stringify(sizePx));
+const [dl2] = await Promise.all([page.waitForEvent('download'), page.click('[aria-label="Desa com a .docx"]')]);
+await dl2.saveAs('test-results/mida.docx');
+const { execSync } = await import('node:child_process');
+ok(execSync('unzip -p test-results/mida.docx word/document.xml').toString().includes('<w:sz w:val="56"/>'), 'el .docx desa la mida en punts (28 pt)');
+await page.evaluate(() => window.lecaa.editor.chain().selectAll().setFontSize('0.8em').run());
+ok((await page.inputValue('.size-select')) === '11', 'una mida fora de la llista (11,2 → 11) es mostra igualment');
+
 // 16. full-screen mode: password set first, toolbars hidden, survives reload, exits only with the password
 await page.click('[aria-label="Pantalla completa"]');
 await page.fill('.lock-input >> nth=0', 'gat1');

@@ -1,13 +1,13 @@
 import './styles.css';
 import type { Editor } from '@tiptap/core';
 import {
-  Bold, Check, ChevronDown, Columns3, Maximize, FileDown, FilePlus, FolderOpen, Globe, Image as ImageIcon, Italic, Keyboard, List, ListOrdered, Pause, Play,
+  AArrowDown, AArrowUp, Bold, Check, ChevronDown, Columns3, Maximize, FileDown, FilePlus, FolderOpen, Globe, Image as ImageIcon, Italic, Keyboard, List, ListOrdered, Pause, Play,
   Printer, Redo2, Rows3, Settings as SettingsIcon, Square, SquareMinus, Table as TableIcon, TextAlignCenter, TextAlignEnd,
   TextAlignStart, TextCursorInput, Trash2, Underline, Undo2, Volume2,
 } from 'lucide';
 import { FONTS, fontByFamily, fontById, loadFonts } from './fonts';
 import { LANG, LANGS, switchLang, T } from './i18n';
-import { docxFromEditor, htmlFromFile, openFile, safeName, saveFile } from './docio';
+import { BASE_PT, docxFromEditor, htmlFromFile, openFile, safeName, saveFile } from './docio';
 import { createEditor, installKeyboardGuard } from './editor';
 import { OnScreenKeyboard } from './keyboard';
 import { reader } from './reader';
@@ -23,7 +23,16 @@ neural.onNotice((message, preparing) => toast(message, preparing ? 5000 : 10000)
 
 const LOGO = `<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="5" y="3" width="22" height="26" rx="4" fill="#17676b"/><path d="M10 10h12M10 15h12M10 20h7" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><path d="M21 19.5c1.6 1 1.6 3.9 0 5M23.5 17.5c2.8 2.2 2.8 6.8 0 9" stroke="#f0a400" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`;
 
-const SIZES: [string, string | null][] = [[T('Petita', 'Pequeña'), '0.8em'], ['Normal', null], [T('Gran', 'Grande'), '1.4em'], [T('Molt gran', 'Muy grande'), '2em']];
+// Text sizes in points, as in a word processor. Unmarked text is BASE_PT (the size of the exported
+// .docx); a size is stored relative to it (em), so the screen-size setting still scales everything.
+const SIZES_PT = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 28, 32, 36, 40, 48, 60, 72];
+const toEm = (pt: number) => `${+(pt / BASE_PT).toFixed(4)}em`;
+function toPt(fontSize?: string): number {
+  const m = /^([\d.]+)(em|px|pt)$/.exec(fontSize ?? '');
+  if (!m) return BASE_PT;
+  const v = parseFloat(m[1]);
+  return Math.round((m[2] === 'em' ? v * BASE_PT : m[2] === 'px' ? v * 0.75 : v) * 2) / 2;
+}
 
 function tb(label: string, ic: Parameters<typeof icon>[0], onclick: () => void, extra: Record<string, string> = {}) {
   return h('button', { class: 'tb', type: 'button', title: label, 'aria-label': label, onclick, ...extra }, icon(ic));
@@ -107,12 +116,19 @@ async function boot() {
 
   // ----- formatting toolbar -----
   const run = (fn: (c: ReturnType<Editor['chain']>) => ReturnType<Editor['chain']>) => () => fn(editor.chain().focus()).run();
-  const sizeSel = h('select', { class: 'tb', 'aria-label': T('Mida de la lletra', 'Tamaño de la letra'), title: T('Mida de la lletra', 'Tamaño de la letra') },
-    ...SIZES.map(([l, v]) => h('option', { value: v ?? '' }, l))) as HTMLSelectElement;
-  sizeSel.addEventListener('change', () => {
-    const v = sizeSel.value;
-    (v ? editor.chain().focus().setFontSize(v) : editor.chain().focus().unsetFontSize()).run();
-  });
+  const sizeLabel = T('Mida de la lletra (punts)', 'Tamaño de la letra (puntos)');
+  const sizeSel = h('select', { class: 'tb size-select', 'aria-label': sizeLabel, title: sizeLabel },
+    ...SIZES_PT.map(pt => h('option', { value: String(pt) }, String(pt)))) as HTMLSelectElement;
+  const setSize = (pt: number) => {
+    pt = Math.min(Math.max(pt, SIZES_PT[0]), SIZES_PT[SIZES_PT.length - 1]);
+    (pt === BASE_PT ? editor.chain().focus().unsetFontSize() : editor.chain().focus().setFontSize(toEm(pt))).run();
+  };
+  sizeSel.addEventListener('change', () => setSize(parseFloat(sizeSel.value)));
+  const currentPt = () => toPt(editor.getAttributes('textStyle').fontSize);
+  const sizeDown = tb(T('Redueix la mida de la lletra', 'Reducir el tamaño de la letra'), AArrowDown,
+    () => setSize([...SIZES_PT].reverse().find(p => p < currentPt()) ?? SIZES_PT[0]));
+  const sizeUp = tb(T('Augmenta la mida de la lletra', 'Aumentar el tamaño de la letra'), AArrowUp,
+    () => setSize(SIZES_PT.find(p => p > currentPt()) ?? SIZES_PT[SIZES_PT.length - 1]));
 
   // Font of the selection (or of what is typed next); "" = the document font from the settings.
   const fontSel = h('select', { class: 'tb font-select', 'aria-label': T('Tipus de lletra', 'Tipo de letra'), title: T('Tipus de lletra', 'Tipo de letra') },
@@ -145,7 +161,7 @@ async function boot() {
   const toolbar = h('div', { class: 'toolbar', role: 'toolbar', 'aria-label': T('Format', 'Formato') },
     tb(T('Document nou', 'Documento nuevo'), FilePlus, newDoc), tb(T('Obre un document', 'Abrir un documento'), FolderOpen, open), tb(T('Desa com a .docx', 'Guardar como .docx'), FileDown, save), tb(T('Imprimeix o desa en PDF', 'Imprimir o guardar en PDF'), Printer, () => window.print()),
     h('span', { class: 'sep' }), undo, redo,
-    h('span', { class: 'sep' }), fontSel, sizeSel,
+    h('span', { class: 'sep' }), fontSel, sizeSel, sizeDown, sizeUp,
     h('span', { class: 'sep' }), fmt.bold, fmt.italic, fmt.underline,
     h('span', { class: 'sep' }), fmt.left, fmt.center, fmt.right,
     h('span', { class: 'sep' }), fmt.bullet, fmt.ordered,
@@ -262,8 +278,16 @@ async function boot() {
     (undo as HTMLButtonElement).disabled = !editor.can().undo();
     (redo as HTMLButtonElement).disabled = !editor.can().redo();
     tableTools.hidden = !editor.isActive('table');
-    const fs = editor.getAttributes('textStyle').fontSize ?? '';
-    sizeSel.value = SIZES.some(([, v]) => v === fs) ? fs : '';
+    // A size that is not in the list (from an opened document) gets its own option while selected.
+    const pt = currentPt();
+    sizeSel.querySelector('.size-other')?.remove();
+    if (!SIZES_PT.includes(pt)) {
+      const o = h('option', { class: 'size-other', value: String(pt) }, String(pt).replace('.', ','));
+      sizeSel.insertBefore(o, [...sizeSel.options].find(x => parseFloat(x.value) > pt) ?? null);
+    }
+    sizeSel.value = String(pt);
+    (sizeDown as HTMLButtonElement).disabled = pt <= SIZES_PT[0];
+    (sizeUp as HTMLButtonElement).disabled = pt >= SIZES_PT[SIZES_PT.length - 1];
     const ff = editor.getAttributes('textStyle').fontFamily as string | undefined;
     fontSel.value = ff ? fontByFamily(ff)?.id ?? '' : '';
   };

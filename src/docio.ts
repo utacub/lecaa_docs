@@ -13,7 +13,7 @@ import { BCP47, T } from './i18n';
 import { settings } from './settings';
 import { inTauri } from './speech/native';
 
-const BASE_PT = 14; // body text size in exported documents
+export const BASE_PT = 14; // body text size in exported documents
 const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
 // ---------- import ----------
@@ -46,6 +46,8 @@ function sizeHalfPoints(fontSize?: string): number | undefined {
   if (!fontSize) return undefined;
   const em = /([\d.]+)em/.exec(fontSize);
   if (em) return Math.round(parseFloat(em[1]) * BASE_PT * 2);
+  const pt = /([\d.]+)pt/.exec(fontSize);
+  if (pt) return Math.round(parseFloat(pt[1]) * 2);
   const px = /([\d.]+)px/.exec(fontSize);
   return px ? Math.round(parseFloat(px[1]) * 0.75 * 2) : undefined;
 }
