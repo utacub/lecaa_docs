@@ -2,7 +2,7 @@ import { Editor, Extension } from '@tiptap/core';
 import Image from '@tiptap/extension-image';
 import { TableKit } from '@tiptap/extension-table';
 import TextAlign from '@tiptap/extension-text-align';
-import { FontSize, TextStyle } from '@tiptap/extension-text-style';
+import { FontFamily, FontSize, TextStyle } from '@tiptap/extension-text-style';
 import type { EditorState, Transaction } from '@tiptap/pm/state';
 import { Plugin } from '@tiptap/pm/state';
 import { ReplaceStep } from '@tiptap/pm/transform';
@@ -80,6 +80,7 @@ export function createEditor(el: HTMLElement, content: object | string | null) {
       StarterKit.configure({ code: false, codeBlock: false, blockquote: false, horizontalRule: false, strike: false, link: false, heading: { levels: [1, 2] } }),
       TextStyle,
       FontSize,
+      FontFamily,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
       TableKit.configure({ table: { resizable: true } }),
       Image.configure({ allowBase64: true, resize: { enabled: true, alwaysPreserveAspectRatio: true, minWidth: 40, minHeight: 40 } }),

@@ -33,7 +33,9 @@ export interface Settings {
   highlight: boolean;
   keyboard: { visible: boolean; layout: KeyboardLayout; autoCapital: boolean; keySize: number };
   docFontSize: number;
+  docFont: string;        // id from fonts.ts
   protectSettings: boolean;
+  lockPassword: string;   // hash of the password that ends full-screen mode ('' = not set)
 }
 
 export const DEFAULTS: Settings = {
@@ -56,7 +58,9 @@ export const DEFAULTS: Settings = {
   highlight: true,
   keyboard: { visible: false, layout: 'simple', autoCapital: true, keySize: 3.4 },
   docFontSize: 22,
+  docFont: 'andika',
   protectSettings: false,
+  lockPassword: '',
 };
 
 const KEY = 'lecaa-docs:settings';

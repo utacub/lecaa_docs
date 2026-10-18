@@ -1,5 +1,7 @@
 import { X } from 'lucide';
+import { FONTS } from './fonts';
 import { guard } from './guard';
+import { askNewPassword } from './lock';
 import { inTauri } from './speech/native';
 import { settings, type LetterMode, type Settings } from './settings';
 import { speech, type VoiceInfo } from './speech';
@@ -94,11 +96,27 @@ function neuralVoicesBox(onInstalled: (voiceId: string) => void) {
   return box;
 }
 
+function fontField() {
+  const sel = h('select', { id: 'doc-font' },
+    ...FONTS.map(f => h('option', { value: f.id, style: `font-family: ${f.css}` }, f.label + (f.joined ? ' · lletra lligada' : '')))) as HTMLSelectElement;
+  sel.value = settings.value.docFont;
+  sel.addEventListener('change', () => upd(x => { x.docFont = sel.value; }));
+  return h('div', { class: 'field' }, h('label', { for: 'doc-font' }, 'Lletra del document'), sel);
+}
+
 export function openSettings(onClose: () => void) {
   const s = settings.value;
   const backdrop = h('div', { class: 'drawer-backdrop' });
   const close = () => { backdrop.remove(); drawer.remove(); onClose(); };
   backdrop.addEventListener('click', close);
+
+  // ----- full-screen password -----
+  const passwordBox = h('div', {});
+  const renderPassword = () => passwordBox.replaceChildren(h('div', { class: 'row' },
+    h('span', {}, settings.value.lockPassword ? 'Contrasenya configurada.' : 'Encara no hi ha cap contrasenya.'),
+    h('button', { class: 'small-btn', type: 'button', onclick: async () => { if (await askNewPassword()) { renderPassword(); toast('Contrasenya desada'); } } },
+      settings.value.lockPassword ? 'Canvia la contrasenya' : 'Posa una contrasenya')));
+  renderPassword();
 
   // ----- voice -----
   const voiceBox = h('div', {});
@@ -225,7 +243,11 @@ export function openSettings(onClose: () => void) {
         range('Mida de les tecles', 2.2, 5, 0.1, x => x.keyboard.keySize, (x, v) => { x.keyboard.keySize = v; }, v => `${Math.round(v * 16)} px`)),
       h('fieldset', {}, h('legend', {}, 'Lectura i document'),
         check('Ressalta el que s’està llegint', null, x => x.highlight, (x, v) => { x.highlight = v; }),
-        range('Mida del text a la pantalla', 16, 40, 1, x => x.docFontSize, (x, v) => { x.docFontSize = v; }, v => `${v} px`)),
+        range('Mida del text a la pantalla', 16, 40, 1, x => x.docFontSize, (x, v) => { x.docFontSize = v; }, v => `${v} px`),
+        fontField()),
+      h('fieldset', {}, h('legend', {}, 'Pantalla completa'),
+        h('p', { class: 'hint' }, 'El botó de pantalla completa amaga les barres d’eines i la configuració. Només se’n pot sortir amb aquesta contrasenya (botó 🔒 a la cantonada).'),
+        passwordBox),
       h('fieldset', {}, h('legend', {}, 'Configuració'),
         check('Protegeix la configuració', 'Cal mantenir premut el botó de configuració 2 segons per obrir-la.', x => x.protectSettings, (x, v) => { x.protectSettings = v; }),
         h('div', { class: 'row' },

@@ -6,6 +6,8 @@ Versió 0.2.0. L'app és gratuïta per a tothom. La planificació completa és a
 
 ## Què fa
 
+- **Sis tipus de lletra**, totes incloses a l'app i amb llicència lliure (SIL OFL): Andika, Atkinson Hyperlegible, Lexend, OpenDyslexic i dues de **lletra lligada**, Playwrite ES (model escolar) i Playwrite FR Moderne. Es poden aplicar a una part del text o com a lletra de tot el document, i es conserven en desar en .docx (a l'altre ordinador, cal que la lletra hi sigui instal·lada; si no, se'n mostra una de semblant).
+- **Pantalla completa amb contrasenya**: un botó amaga la barra d'eines i la configuració i posa l'app en pantalla completa. Només se'n surt amb una contrasenya configurada abans (botó 🔒 a la cantonada). Si es prem Esc, el navegador surt de la pantalla completa, però les barres continuen amagades i apareix un botó per tornar-hi. Es manté després de recarregar. És una protecció pensada per a l'aula, no una barrera de seguretat.
 - **Editor net**, amb negreta, cursiva, subratllat, mides de lletra, alineació, llistes, taules senzilles i imatges.
 - **Lectura a demanda**: llegeix tot, la selecció o des del cursor, amb pausa i atura. Ressalta la frase i, si el motor ho permet, la paraula.
 - **Feedback mentre s'escriu**, combinable:
@@ -82,4 +84,4 @@ src-tauri/           app d'escriptori i pont natiu de veu (src/tts)
 
 ## Llicències de tercers
 
-Andika i Manrope: SIL Open Font License 1.1. Tiptap, docx, Tauri, ONNX Runtime Web, piper-wasm i vits-web (Diffusion Studio): MIT. El fonemitzador inclou espeak-ng (GPL-3.0), de manera que les versions que el distribueixen s'han de publicar sota una llicència compatible amb la GPL-3.0. Veu Piper Ona: dades de la UPC (Festcat), CC BY-SA 3.0 ES. Mammoth: BSD-2-Clause. DOMPurify: MPL-2.0 o Apache-2.0. Lucide: ISC. Les locucions d'Anna i Jordi s'han creat per a LECAA.
+Andika, Manrope, Atkinson Hyperlegible, Lexend, OpenDyslexic, Playwrite ES i Playwrite FR Moderne (via Fontsource): SIL Open Font License 1.1. Tiptap, docx, Tauri, ONNX Runtime Web, piper-wasm i vits-web (Diffusion Studio): MIT. El fonemitzador inclou espeak-ng (GPL-3.0), de manera que les versions que el distribueixen s'han de publicar sota una llicència compatible amb la GPL-3.0. Veu Piper Ona: dades de la UPC (Festcat), CC BY-SA 3.0 ES. Mammoth: BSD-2-Clause. DOMPurify: MPL-2.0 o Apache-2.0. Lucide: ISC. Les locucions d'Anna i Jordi s'han creat per a LECAA.

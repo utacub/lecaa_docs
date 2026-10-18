@@ -8,6 +8,8 @@ import {
   AlignmentType, Document, HeadingLevel, ImageRun, LevelFormat, Packer, Paragraph, Table, TableCell, TableRow,
   TextRun, WidthType, type ParagraphChild,
 } from 'docx';
+import { fontByFamily, fontById } from './fonts';
+import { settings } from './settings';
 import { inTauri } from './speech/native';
 
 const BASE_PT = 14; // body text size in exported documents
@@ -81,6 +83,7 @@ async function inlines(nodes: JSONContent[] = []): Promise<ParagraphChild[]> {
       out.push(new TextRun({
         text: n.text ?? '', bold: has('bold') || undefined, italics: has('italic') || undefined,
         underline: has('underline') ? {} : undefined, size: sizeHalfPoints(style.fontSize),
+        font: style.fontFamily ? fontByFamily(String(style.fontFamily))?.family : undefined,
       }));
     } else if (n.type === 'hardBreak') {
       out.push(new TextRun({ text: '', break: 1 }));
@@ -149,7 +152,7 @@ export async function docxFromEditor(editor: Editor, title: string): Promise<Blo
   const doc = new Document({
     title,
     creator: 'LECAA Docs',
-    styles: { default: { document: { run: { font: 'Andika', size: BASE_PT * 2 } } } },
+    styles: { default: { document: { run: { font: fontById(settings.value.docFont).family, size: BASE_PT * 2 } } } },
     numbering: {
       config: [{
         reference: 'lecaa-ordered',

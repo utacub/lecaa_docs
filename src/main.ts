@@ -1,10 +1,11 @@
 import './styles.css';
 import type { Editor } from '@tiptap/core';
 import {
-  Bold, Columns3, FileDown, FilePlus, FolderOpen, Image as ImageIcon, Italic, Keyboard, List, ListOrdered, Pause, Play,
+  Bold, Columns3, Maximize, FileDown, FilePlus, FolderOpen, Image as ImageIcon, Italic, Keyboard, List, ListOrdered, Pause, Play,
   Printer, Redo2, Rows3, Settings as SettingsIcon, Square, SquareMinus, Table as TableIcon, TextAlignCenter, TextAlignEnd,
   TextAlignStart, TextCursorInput, Trash2, Underline, Undo2, Volume2,
 } from 'lucide';
+import { FONTS, fontByFamily, fontById, loadFonts } from './fonts';
 import { docxFromEditor, htmlFromFile, openFile, safeName, saveFile } from './docio';
 import { createEditor, installKeyboardGuard } from './editor';
 import { OnScreenKeyboard } from './keyboard';
@@ -13,6 +14,7 @@ import { anyTypingFeedback, settings } from './settings';
 import { openSettings } from './settings-panel';
 import { speech } from './speech';
 import { neural } from './speech/neural';
+import { lock } from './lock';
 import { loadDoc, storeDoc } from './storage';
 import { h, icon, toast } from './ui';
 
@@ -27,6 +29,7 @@ function tb(label: string, ic: Parameters<typeof icon>[0], onclick: () => void, 
 }
 
 async function boot() {
+  loadFonts();
   const saved = await loadDoc();
   const title = h('input', { class: 'doc-title', value: saved?.title ?? 'Document sense títol', 'aria-label': 'Títol del document' }) as HTMLInputElement;
   const saveState = h('span', { class: 'save-state', 'aria-live': 'polite' });
@@ -107,6 +110,15 @@ async function boot() {
     (v ? editor.chain().focus().setFontSize(v) : editor.chain().focus().unsetFontSize()).run();
   });
 
+  // Font of the selection (or of what is typed next); "" = the document font from the settings.
+  const fontSel = h('select', { class: 'tb font-select', 'aria-label': 'Tipus de lletra', title: 'Tipus de lletra' },
+    h('option', { value: '' }, 'Lletra del document'),
+    ...FONTS.map(f => h('option', { value: f.id, style: `font-family: ${f.css}` }, f.label))) as HTMLSelectElement;
+  fontSel.addEventListener('change', () => {
+    const f = fontSel.value ? fontById(fontSel.value) : null;
+    (f ? editor.chain().focus().setFontFamily(f.css) : editor.chain().focus().unsetFontFamily()).run();
+  });
+
   const fmt = {
     bold: tb('Negreta', Bold, run(c => c.toggleBold())),
     italic: tb('Cursiva', Italic, run(c => c.toggleItalic())),
@@ -129,7 +141,7 @@ async function boot() {
   const toolbar = h('div', { class: 'toolbar', role: 'toolbar', 'aria-label': 'Format' },
     tb('Document nou', FilePlus, newDoc), tb('Obre un document', FolderOpen, open), tb('Desa com a .docx', FileDown, save), tb('Imprimeix o desa en PDF', Printer, () => window.print()),
     h('span', { class: 'sep' }), undo, redo,
-    h('span', { class: 'sep' }), sizeSel,
+    h('span', { class: 'sep' }), fontSel, sizeSel,
     h('span', { class: 'sep' }), fmt.bold, fmt.italic, fmt.underline,
     h('span', { class: 'sep' }), fmt.left, fmt.center, fmt.right,
     h('span', { class: 'sep' }), fmt.bullet, fmt.ordered,
@@ -142,7 +154,9 @@ async function boot() {
   const pauseBtn = h('button', { class: 'vbtn ghost', type: 'button', title: 'Pausa', 'aria-label': 'Pausa', hidden: true }, icon(Pause), h('span', { class: 'lbl', 'aria-hidden': 'true' }, 'Pausa'));
   const stopBtn = h('button', { class: 'vbtn ghost', type: 'button', title: 'Atura', 'aria-label': 'Atura', hidden: true }, icon(Square), h('span', { class: 'lbl', 'aria-hidden': 'true' }, 'Atura'));
   const kbBtn = h('button', { class: 'vbtn ghost', type: 'button', title: 'Teclat', 'aria-label': 'Teclat', 'aria-pressed': 'false' }, icon(Keyboard), h('span', { class: 'lbl', 'aria-hidden': 'true' }, 'Teclat'));
-  const setBtn = h('button', { class: 'vbtn ghost', type: 'button', 'aria-label': 'Configuració' }, icon(SettingsIcon));
+  const setBtn = h('button', { class: 'vbtn ghost kiosk-hide', type: 'button', 'aria-label': 'Configuració' }, icon(SettingsIcon));
+  const fullBtn = h('button', { class: 'vbtn ghost kiosk-hide', type: 'button', title: 'Pantalla completa', 'aria-label': 'Pantalla completa' }, icon(Maximize));
+  fullBtn.addEventListener('click', () => void lock.enter());
   const summary = h('span', { class: 'feedback-summary' });
   const warning = h('span', { class: 'voice-warning', hidden: true });
 
@@ -185,12 +199,13 @@ async function boot() {
   });
 
   const voicebar = h('div', { class: 'toolbar voicebar', role: 'toolbar', 'aria-label': 'Veu' },
-    playAll, playSel, playCur, pauseBtn, stopBtn, h('span', { class: 'spacer' }), warning, summary, kbBtn, setBtn);
+    playAll, playSel, playCur, pauseBtn, stopBtn, h('span', { class: 'spacer' }), warning, summary, kbBtn, fullBtn, setBtn);
 
   const topbar = h('header', { class: 'topbar' }, h('span', { class: 'brand' }), title, saveState);
   (topbar.firstChild as HTMLElement).innerHTML = LOGO + '<span>LECAA Docs</span>';
 
   document.getElementById('app')!.replaceWith(topbar, toolbar, voicebar, workspace, osk.el);
+  lock.install();
 
   // ----- state refresh -----
   const refreshFormat = () => {
@@ -208,6 +223,8 @@ async function boot() {
     tableTools.hidden = !editor.isActive('table');
     const fs = editor.getAttributes('textStyle').fontSize ?? '';
     sizeSel.value = SIZES.some(([, v]) => v === fs) ? fs : '';
+    const ff = editor.getAttributes('textStyle').fontFamily as string | undefined;
+    fontSel.value = ff ? fontByFamily(ff)?.id ?? '' : '';
   };
   editor.on('selectionUpdate', refreshFormat);
   editor.on('transaction', refreshFormat);
@@ -216,6 +233,7 @@ async function boot() {
   const refreshSettings = () => {
     const s = settings.value;
     document.documentElement.style.setProperty('--doc-size', `${s.docFontSize}px`);
+    document.documentElement.style.setProperty('--doc-font', fontById(s.docFont).css);
     kbBtn.setAttribute('aria-pressed', String(s.keyboard.visible));
     const parts: string[] = [];
     if (s.feedback.sentence) parts.push('frase');

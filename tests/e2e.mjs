@@ -199,6 +199,45 @@ ok((await page.locator('#voice-select option').count()) >= 1, 'la configuració 
 await page.screenshot({ path: 'test-results/settings.png' });
 await page.keyboard.press('Escape');
 
+await page.click('[aria-label="Tanca"]').catch(() => {});
+
+// 15. fonts: six bundled fonts, two joined; applied to the selection and to the document
+await clear();
+const fontOpts = await page.locator('.font-select option').allTextContents();
+ok(fontOpts.length === 7 && fontOpts.filter(t => t.includes('Lligada')).length === 2, 'sis lletres al selector, dues lligades: ' + JSON.stringify(fontOpts));
+await page.evaluate(() => window.lecaa.editor.chain().command(({ tr }) => { tr.setMeta('lecaa-system', true); return true; }).insertContent('Escric amb lletra lligada').selectAll().run());
+await page.selectOption('.font-select', 'lligada-es');
+const ffHtml = await page.evaluate(() => window.lecaa.editor.getHTML());
+ok(ffHtml.includes('Playwrite ES'), 'la lletra lligada s’aplica a la selecció');
+const fontsReady = await page.evaluate(async () => { await document.fonts.ready; return ['Playwrite ES', 'Playwrite FR Moderne', 'Lexend', 'Atkinson Hyperlegible', 'OpenDyslexic'].map(f => document.fonts.check(`16px "${f}"`)); });
+ok(fontsReady.every(Boolean), 'les lletres es carreguen sense connexió: ' + JSON.stringify(fontsReady));
+await set(`s => { s.docFont = 'lexend'; }`);
+ok((await page.evaluate(() => getComputedStyle(document.querySelector('.ProseMirror')).fontFamily)).includes('Lexend'), 'lletra del document configurable');
+await set(`s => { s.docFont = 'andika'; }`);
+await page.screenshot({ path: 'test-results/fonts.png' });
+
+// 16. full-screen mode: password set first, toolbars hidden, survives reload, exits only with the password
+await page.click('[aria-label="Pantalla completa"]');
+await page.fill('.lock-input >> nth=0', 'gat1');
+await page.fill('.lock-input >> nth=1', 'gat1');
+await page.click('.lock-card button[type=submit]');
+await wait(300);
+ok(await page.evaluate(() => document.body.classList.contains('is-kiosk')), 'entra en pantalla completa després de posar la contrasenya');
+ok(!(await page.locator('.toolbar:not(.voicebar)').isVisible()) && !(await page.locator('[aria-label="Configuració"]').isVisible()), 'amaga la barra d’eines i la configuració');
+ok(await page.locator('.voicebar').isVisible(), 'els botons de lectura continuen visibles');
+await page.reload();
+await page.waitForSelector('.ProseMirror');
+await wait(300);
+ok(await page.evaluate(() => document.body.classList.contains('is-kiosk')), 'continua bloquejat després de recarregar');
+await page.click('.lock-exit');
+await page.fill('.lock-input', 'gos');
+await page.click('.lock-card button[type=submit]');
+await wait(200);
+ok(await page.evaluate(() => document.body.classList.contains('is-kiosk')) && (await page.locator('.lock-msg').textContent()).includes('no és correcta'), 'una contrasenya incorrecta no en surt');
+await page.fill('.lock-input', 'gat1');
+await page.click('.lock-card button[type=submit]');
+await wait(300);
+ok(!(await page.evaluate(() => document.body.classList.contains('is-kiosk'))) && await page.locator('.toolbar:not(.voicebar)').isVisible(), 'la contrasenya correcta en surt');
 await page.screenshot({ path: 'test-results/main.png' });
 ok(errors.length === 0, 'sense errors a la consola: ' + JSON.stringify(errors));
 await browser.close();
