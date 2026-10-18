@@ -12,8 +12,11 @@ import { reader } from './reader';
 import { anyTypingFeedback, settings } from './settings';
 import { openSettings } from './settings-panel';
 import { speech } from './speech';
+import { neural } from './speech/neural';
 import { loadDoc, storeDoc } from './storage';
 import { h, icon, toast } from './ui';
+
+neural.onNotice((message, preparing) => toast(message, preparing ? 5000 : 10000));
 
 const LOGO = `<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="5" y="3" width="22" height="26" rx="4" fill="#17676b"/><path d="M10 10h12M10 15h12M10 20h7" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><path d="M21 19.5c1.6 1 1.6 3.9 0 5M23.5 17.5c2.8 2.2 2.8 6.8 0 9" stroke="#f0a400" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`;
 

@@ -59,6 +59,18 @@ export class NeuralEngine implements SpeechEngine {
   private token = 0;
   private cache = new Map<string, AudioBuffer>();
   private scanned: Promise<void> | null = null;
+  private errorListeners = new Set<(message: string, slow: boolean) => void>();
+
+  // Problems the user should hear about (the voice stays silent otherwise), and the notice that a
+  // large voice is being prepared.
+  onNotice(cb: (message: string, slow: boolean) => void) { this.errorListeners.add(cb); }
+  private lastNotice = { text: '', at: 0 };
+  private notice(message: string, slow = false) {
+    const now = Date.now();
+    if (message === this.lastNotice.text && now - this.lastNotice.at < 10_000) return;
+    this.lastNotice = { text: message, at: now };
+    for (const l of this.errorListeners) l(message, slow);
+  }
 
   available() {
     return typeof Worker !== 'undefined' && typeof indexedDB !== 'undefined' && typeof WebAssembly !== 'undefined'
@@ -68,8 +80,13 @@ export class NeuralEngine implements SpeechEngine {
   // ----- installed voices -----
 
   private scan() {
-    this.scanned ??= fileStore.keys().then(keys => {
+    this.scanned ??= fileStore.keys().then(async keys => {
       this.installed = new Set(MODELS.filter(m => keys.includes(`model:${m.key}`)).map(m => m.key));
+      // Free the space of voices that are no longer offered.
+      for (const k of keys) {
+        const [kind, key] = k.split(':');
+        if ((kind === 'model' || kind === 'config') && !MODELS.some(m => m.key === key)) await fileStore.delete(k);
+      }
     });
     return this.scanned;
   }
@@ -122,6 +139,7 @@ export class NeuralEngine implements SpeechEngine {
       if (m.config) await cached(`config:${m.key}`, m.config);
       await cached(`model:${m.key}`, m.model, progress('model'));
       this.installed.add(key);
+      this.loadErrors.delete(key);
     } finally {
       this.downloads.delete(key);
       this.changed(true);
@@ -133,6 +151,7 @@ export class NeuralEngine implements SpeechEngine {
     await fileStore.delete(`model:${key}`);
     await fileStore.delete(`config:${key}`);
     this.installed.delete(key);
+    this.loadErrors.delete(key);
     this.cache.clear();
     this.changed(true);
   }
@@ -176,18 +195,31 @@ export class NeuralEngine implements SpeechEngine {
       : { ortWasm: { [ORT_FILE]: ortWasm } };
   }
 
+  private loadErrors = new Map<string, string>(); // a model that failed to load is not retried on every key
+
   private ensureLoaded(m: NeuralModel): Promise<void> {
     if (this.loaded === m.key) return Promise.resolve();
+    const failed = this.loadErrors.get(m.key);
+    if (failed) return Promise.reject(new Error(failed));
     if (this.loading) return this.loading.then((): Promise<void> => this.ensureLoaded(m));
     this.loading = (async () => {
       if (!this.worker) {
-        this.worker = await createWorker();
-        this.worker.onmessage = (e: MessageEvent<WorkerResponse>) => {
+        const w = await createWorker();
+        w.onmessage = (e: MessageEvent<WorkerResponse>) => {
           const r = this.pending.get(e.data.id);
           this.pending.delete(e.data.id);
           r?.(e.data);
         };
+        // A worker that crashes (for example, out of memory with a large model) answers nothing:
+        // fail what is waiting and start a fresh one next time.
+        w.onerror = e => {
+          e.preventDefault();
+          this.failWorker(e.message || 'worker error');
+        };
+        this.worker = w;
       }
+      if (m.bytes > 100_000_000) this.notice('Preparant la veu… La primera vegada pot trigar una estona.', true);
+      const t0 = performance.now();
       const model = await fileStore.get(`model:${m.key}`);
       if (!model) throw new Error('voice not downloaded');
       const configBlob = m.config ? await fileStore.get(`config:${m.key}`) : undefined;
@@ -197,13 +229,27 @@ export class NeuralEngine implements SpeechEngine {
       if (!r.ok) throw new Error(r.error);
       this.loaded = m.key;
       this.cache.clear();
-    })().finally(() => { this.loading = null; });
+      console.info(`[neural] ${m.key} loaded in ${Math.round(performance.now() - t0)} ms`);
+    })().catch(e => {
+      this.loadErrors.set(m.key, String((e as Error)?.message ?? e));
+      throw e;
+    }).finally(() => { this.loading = null; });
     return this.loading;
   }
 
+  private failWorker(message: string) {
+    this.worker?.terminate();
+    this.worker = null;
+    this.loaded = null;
+    const waiting = [...this.pending.values()];
+    this.pending.clear();
+    for (const r of waiting) r({ id: 0, ok: false, error: message });
+  }
+
   // Letter names are short and frequent: synthesise them ahead so feedback has no delay.
+  // Not for Matxa, whose synthesis is too heavy to run dozens of times in the background.
   private prewarm(voiceId: string, rate: number) {
-    if (settings.value.feedback.letter !== 'name') return;
+    if (settings.value.feedback.letter !== 'name' || modelOf(voiceId)?.family !== 'piper') return;
     for (const name of new Set(Object.values(LETTER_NAMES))) void this.buffer(voiceId, name, rate, true).catch(() => null);
   }
 
@@ -218,8 +264,10 @@ export class NeuralEngine implements SpeechEngine {
     if (fresh && !low) this.prewarm(voiceId, rate);
     if (low && this.loaded !== m.key) return null;
     const speaker = m.voices.find(v => v.id === voiceId)?.speaker;
+    const t0 = performance.now();
     const r = await this.call({ type: 'synth', text, rate, speaker }, [], low);
     if (!r.ok) throw new Error(r.error);
+    if (!low) console.info(`[neural] ${voiceId}: ${r.audio?.length ?? 0} samples in ${Math.round(performance.now() - t0)} ms`);
     if (!r.audio?.length) return null;
     this.ctx ??= new AudioContext();
     const buf = this.ctx.createBuffer(1, r.audio.length, r.sampleRate!);
@@ -236,7 +284,12 @@ export class NeuralEngine implements SpeechEngine {
     const my = ++this.token;
     const id = voiceId.slice(PREFIX.length);
     let buf: AudioBuffer | null;
-    try { buf = await this.buffer(id, text, opts.rate); } catch (e) { console.warn('[neural]', e); return; }
+    try { buf = await this.buffer(id, text, opts.rate); } catch (e) {
+      const msg = String((e as Error)?.message ?? e);
+      console.warn('[neural]', e);
+      this.notice(`La veu no ha pogut parlar (${msg}).`);
+      return;
+    }
     if (!buf || my !== this.token) return;
     const ctx = this.ctx!;
     if (ctx.state === 'suspended') await ctx.resume().catch(() => undefined);

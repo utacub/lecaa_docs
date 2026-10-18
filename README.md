@@ -9,7 +9,7 @@ Versió 0.2.0. L'app és gratuïta per a tothom. La planificació completa és a
 - **Editor net**, amb negreta, cursiva, subratllat, mides de lletra, alineació, llistes, taules senzilles i imatges.
 - **Lectura a demanda**: llegeix tot, la selecció o des del cursor, amb pausa i atura. Ressalta la frase i, si el motor ho permet, la paraula.
 - **Feedback mentre s'escriu**, combinable:
-  - frase (en escriure `.` `?` `!` o en prémer Intro);
+  - frase (en escriure `.` `?` `!` o en prémer Intro); quan es llegeix la frase, la darrera paraula no es llegeix abans per separat;
   - paraula (en prémer l'espai, i opcionalment amb la puntuació);
   - lletra: **nom** ("be", "ce trencada"…, amb veu sintètica) **o so** (locució enregistrada d'Anna o Jordi). Són excloents.
   - "Cap feedback": només sonen els botons de lectura.
@@ -19,7 +19,7 @@ Versió 0.2.0. L'app és gratuïta per a tothom. La planificació completa és a
 - **Teclat en pantalla**: simplificat (cada tecla fa una sola cosa) o QWERTY complet amb majúscules i accents.
 - **Veus**: detecta les veus catalanes instal·lades al dispositiu i deixa triar-ne una, amb velocitat, to i volum.
 - **Veus catalanes gratuïtes dins l'app** (Configuració > Veu sintètica > Veus catalanes gratuïtes per descarregar). Es descarreguen una vegada, es guarden al dispositiu (IndexedDB) i després funcionen sense connexió a totes les versions, fins i tot al fitxer únic:
-  - **Piper**: Ona (qualitat mitjana, 63 MB), Ona lleugera (21 MB) i Pau lleugera (28 MB), totes en català central. El motor (fonemitzador espeak-ng i ONNX Runtime en WebAssembly, uns 29 MB) es descarrega amb la primera veu.
+  - **Piper**: Ona (63 MB, català central). El motor (fonemitzador espeak-ng i ONNX Runtime en WebAssembly, uns 29 MB) es descarrega amb la veu. Les versions lleugeres d'Ona i Pau s'han retirat per decisió de Marc; si algú les tenia descarregades, l'app n'allibera l'espai.
   - **Veus Aina (Matxa v2, BSC)**, *experimental*: 16 veus en 5 variants (balear, central, nord-occidental, valencià i septentrional), 273 MB. Abans de descarregar-les, l'usuari ha d'acceptar la llicència no comercial del BSC.
   - Les veus en línia del navegador (per exemple les naturals de Microsoft a Edge) també es poden triar; a la llista surten marcades "necessita connexió".
 - **Documents**: desat automàtic al dispositiu; obrir i desar `.docx` (Google Docs l'obre i l'exporta); imprimir o desar en PDF.
@@ -51,7 +51,7 @@ npx tauri dev          # app d'escriptori en mode desenvolupament
 npx tauri build        # instal·ladors a src-tauri/target/release/bundle/
 npx vitest run                              # proves unitàries
 node tests/e2e.mjs http://localhost:4173/   # proves (amb `npx vite preview --port 4173` engegat)
-PIPER_DIR=… node tests/neural.mjs http://localhost:4173/   # veus Piper reals (models x_low a PIPER_DIR/{ona,pau})
+PIPER_DIR=… node tests/neural.mjs http://localhost:4173/   # veus Piper reals (model x_low d'Ona a PIPER_DIR/ona, que fa de model mitjà)
 ```
 
 GitHub Actions (`.github/workflows/build.yml`) genera la versió web, el fitxer únic i els instal·ladors per a totes les plataformes d'escriptori.
@@ -81,7 +81,7 @@ src-tauri/           app d'escriptori i pont natiu de veu (src/tts)
 - Les locucions de sons aïllats, que provenen de LECAA i no s'han revisat fonèticament.
 - El comportament de les veus de Speech Platform i de les veus de 32 bits a Windows, i de macOS, en dispositius reals.
 - **Veus Aina (Matxa)**: no s'han pogut provar (Hugging Face no era accessible des de l'entorn de desenvolupament). La preparació del text segueix el codi públic del BSC (`symbols.py`, `cli.py`, `onnx/infer.py`, branca `v2-graphemes`), però cal confirmar-ho en un dispositiu real, i també la memòria i la velocitat amb un model de 273 MB.
-- Ona qualitat mitjana: s'ha provat el mateix circuit amb les versions lleugeres d'Ona i Pau, però no amb aquest model.
+- Veus Aina: el circuit (descàrrega, llicència, càrrega al worker, entrades `x`, `x_lengths`, `scales`, `spks` i sortides `wav`, `wav_lengths`) es prova amb un model fals amb la mateixa interfície (`tests/fixtures/`). Si el model real falla, l'app ara mostra el motiu en pantalla.
 
 ## Llicències de tercers
 

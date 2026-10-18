@@ -36,25 +36,11 @@ const MATXA = 'https://huggingface.co/BSC-LT/matxa-tts-v2-ca-multiaccent-graphem
 
 export const MODELS: NeuralModel[] = [
   {
-    key: 'ona-medium', family: 'piper', title: 'Ona (qualitat mitjana)',
-    description: 'Veu femenina, català central. La més natural de les veus Piper.',
+    key: 'ona-medium', family: 'piper', title: 'Ona',
+    description: 'Veu femenina, català central.',
     bytes: 63_201_294, ...piper('ca/ca_ES/upc_ona/medium/ca_ES-upc_ona-medium.onnx'),
     licence: PIPER_LICENCE, licenceUrl: 'https://huggingface.co/rhasspy/piper-voices/tree/main/ca/ca_ES',
     voices: [{ id: 'ona-medium', name: 'Ona', dialect: 'central' }],
-  },
-  {
-    key: 'ona-xlow', family: 'piper', title: 'Ona (lleugera)',
-    description: 'La mateixa veu, més petita i ràpida per a ordinadors o tauletes senzills.',
-    bytes: 20_628_813, ...piper('ca/ca_ES/upc_ona/x_low/ca_ES-upc_ona-x_low.onnx'),
-    licence: PIPER_LICENCE, licenceUrl: 'https://huggingface.co/rhasspy/piper-voices/tree/main/ca/ca_ES',
-    voices: [{ id: 'ona-xlow', name: 'Ona lleugera', dialect: 'central' }],
-  },
-  {
-    key: 'pau-xlow', family: 'piper', title: 'Pau (lleugera)',
-    description: 'Veu masculina, català central.',
-    bytes: 28_130_791, ...piper('ca/ca_ES/upc_pau/x_low/ca_ES-upc_pau-x_low.onnx'),
-    licence: PIPER_LICENCE, licenceUrl: 'https://huggingface.co/rhasspy/piper-voices/tree/main/ca/ca_ES',
-    voices: [{ id: 'pau-xlow', name: 'Pau lleugera', dialect: 'central' }],
   },
   {
     key: 'matxa', family: 'matxa', title: 'Veus Aina – Matxa (16 veus, 5 variants)',
@@ -85,7 +71,7 @@ const MATXA_SYMBOLS = ['_', ...';:,.!?¡¿—…"«»“”()- ', ...'ABCDEFGHIJ
   ...'ɑɐɒæɓʙβɔɕçɗɖðʤəɘɚɛɜɝɞɟʄɡɠɢʛɦɧħɥʜɨɪʝɭɬɫɮʟɱɯɰŋɳɲɴøɵɸθœɶʘɹɺɾɻʀʁɽʂʃʈʧʉʊʋⱱʌɣɤʍχʎʏʑʐʒʔʡʕʢǀǁǂǃˈˌːˑʼʴʰʱʲʷˠˤ˞↓↑→↗↘\'̩\'ᵻ',
   ...'àáèéìíòóùú·üïöñ’#´'];
 const SYMBOL_ID = new Map<string, number>();
-MATXA_SYMBOLS.forEach((s, i) => { if (!SYMBOL_ID.has(s)) SYMBOL_ID.set(s, i); });
+MATXA_SYMBOLS.forEach((s, i) => SYMBOL_ID.set(s, i)); // last index wins, as in the Python dict
 
 const UNITS = ['zero', 'un', 'dos', 'tres', 'quatre', 'cinc', 'sis', 'set', 'vuit', 'nou', 'deu', 'onze', 'dotze', 'tretze', 'catorze', 'quinze', 'setze', 'disset', 'divuit', 'dinou'];
 const TENS = ['', '', 'vint', 'trenta', 'quaranta', 'cinquanta', 'seixanta', 'setanta', 'vuitanta', 'noranta'];

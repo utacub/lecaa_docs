@@ -23,10 +23,10 @@ export function icon(node: IconNode): SVGElement {
 }
 
 let toastTimer = 0;
-export function toast(text: string) {
+export function toast(text: string, ms = 3200) {
   document.querySelector('.toast')?.remove();
   const t = h('div', { class: 'toast', role: 'status' }, text);
   document.body.append(t);
   clearTimeout(toastTimer);
-  toastTimer = window.setTimeout(() => t.remove(), 3200);
+  toastTimer = window.setTimeout(() => t.remove(), ms);
 }

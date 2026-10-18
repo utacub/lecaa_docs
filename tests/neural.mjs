@@ -6,12 +6,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 const url = process.argv[2] || 'http://localhost:4173/';
 const dir = process.env.PIPER_DIR || '/tmp/claude-0/piper';
+// The Ona medium model is served by its small x_low sibling (same voice, same pipeline).
 const local = {
-  'ca_ES-upc_ona-x_low.onnx': `${dir}/ona/ca-upc_ona-x-low.onnx`,
-  'ca_ES-upc_ona-x_low.onnx.json': `${dir}/ona/ca-upc_ona-x-low.onnx.json`,
-  'ca_ES-upc_pau-x_low.onnx': `${dir}/pau/ca-upc_pau-x-low.onnx`,
-  'ca_ES-upc_pau-x_low.onnx.json': `${dir}/pau/ca-upc_pau-x-low.onnx.json`,
+  'ca_ES-upc_ona-medium.onnx': `${dir}/ona/ca-upc_ona-x-low.onnx`,
+  'ca_ES-upc_ona-medium.onnx.json': `${dir}/ona/ca-upc_ona-x-low.onnx.json`,
 };
+// Matxa: a tiny model with the same inputs and outputs (tests/fixtures/make-fake-matxa.py).
+local['matxa_v2_multiaccent_graphemes_20_steps_wavenext.onnx'] = path.resolve('tests/fixtures/fake-matxa.onnx');
 const npm = f => path.resolve('node_modules', f);
 const cdn = {
   'piper_phonemize.wasm': npm('@diffusionstudio/piper-wasm/build/piper_phonemize.wasm'),
@@ -49,16 +50,16 @@ await page.waitForSelector('.ProseMirror');
 await page.click('[aria-label="Configuració"], button:has-text("Configuració")');
 await page.waitForSelector('.neural');
 await page.evaluate(() => { document.querySelector('.neural').open = true; });
-await page.click('[data-install="ona-xlow"]');
+await page.click('[data-install="ona-medium"]');
 await page.waitForFunction(() => document.querySelector('.neural-ok'), null, { timeout: 60000 });
-ok(true, 'Ona lleugera descarregada');
-ok(hits.some(h => h.includes('rhasspy/piper-voices') && h.endsWith('ca_ES-upc_ona-x_low.onnx')), 'model demanat a Hugging Face (rhasspy)');
+ok(true, 'Ona descarregada');
+ok(hits.some(h => h.includes('rhasspy/piper-voices') && h.endsWith('ca_ES-upc_ona-medium.onnx')), 'model demanat a Hugging Face (rhasspy)');
 await page.waitForFunction(() => window.lecaa.settings.value.voice.id, null, { timeout: 5000 }).catch(() => null);
 const voice = await page.evaluate(() => window.lecaa.settings.value.voice.id);
-ok(voice === 'neural:ona-xlow', 'la veu descarregada queda seleccionada: ' + voice);
-await page.waitForFunction(() => document.querySelector('#voice-select option[value="neural:ona-xlow"]'), null, { timeout: 5000 }).catch(() => null);
+ok(voice === 'neural:ona-medium', 'la veu descarregada queda seleccionada: ' + voice);
+await page.waitForFunction(() => document.querySelector('#voice-select option[value="neural:ona-medium"]'), null, { timeout: 5000 }).catch(() => null);
 const opts = await page.evaluate(() => [...document.querySelectorAll('#voice-select option')].map(o => o.textContent));
-ok(opts.some(o => o.includes('Ona lleugera')), 'apareix a la llista de veus');
+ok(opts.some(o => o.includes('Ona ·')), 'apareix a la llista de veus');
 
 const t0 = Date.now();
 await page.evaluate(() => window.lecaa.speech.play([{ kind: 'tts', text: 'Hola, em dic Ona i parlo català.' }], { lock: false }));
@@ -93,19 +94,36 @@ await page.reload();
 await page.waitForSelector('.ProseMirror');
 let offline = true;
 await ctx.route(/huggingface|jsdelivr/, r => offline ? r.abort('internetdisconnected') : r.fallback());
-await page.waitForFunction(() => window.lecaa?.speech.voices.some(v => v.id === 'neural:ona-xlow'), null, { timeout: 10000 });
+await page.waitForFunction(() => window.lecaa?.speech.voices.some(v => v.id === 'neural:ona-medium'), null, { timeout: 10000 });
 await page.evaluate(() => { window.__played.length = 0; return window.lecaa.speech.play([{ kind: 'tts', text: 'Funciono sense connexió.' }], { lock: false }); });
 ok((await page.evaluate(() => window.__played.length)) === 1 && hits.length === 0, 'sense connexió, després de recarregar, continua parlant');
 offline = false;
 
-// uninstall
+// Aina (Matxa): licence accepted, download, synthesis through the same worker
 page.on('dialog', d => d.accept());
 await page.click('[aria-label="Configuració"], button:has-text("Configuració")');
 await page.evaluate(() => { document.querySelector('.neural').open = true; });
-await page.click('.neural-item:has-text("Ona (lleugera)") button:has-text("Esborra")');
-await page.waitForSelector('[data-install="ona-xlow"]');
-await page.waitForFunction(() => !window.lecaa.speech.voices.some(v => v.id === 'neural:ona-xlow'), null, { timeout: 5000 }).catch(() => null);
-ok(!(await page.evaluate(() => window.lecaa.speech.voices.some(v => v.id === 'neural:ona-xlow'))), 'es pot esborrar');
+await page.click('[data-install="matxa"]');
+await page.waitForFunction(() => window.lecaa.speech.voices.some(v => v.id === 'neural:matxa-6'), null, { timeout: 30000 });
+ok((await page.evaluate(() => window.lecaa.speech.voices.filter(v => v.id.startsWith('neural:matxa-')).length)) === 16, 'les 16 veus Aina apareixen a la llista');
+const aina = await page.evaluate(async () => {
+  window.lecaa.settings.update(s => { s.voice.id = 'neural:matxa-6'; });
+  window.__played.length = 0;
+  await window.lecaa.speech.play([{ kind: 'tts', text: 'Hola' }], { lock: false });
+  return window.__played.slice();
+});
+// "hola" → 4 symbols interspersed with pads = 9 ids → 9 × 256 samples at 22 050 Hz
+ok(aina.length === 1 && Math.abs(aina[0] - 9 * 256 / 22050) < 1e-3, 'una veu Aina sintetitza i sona: ' + JSON.stringify(aina));
+await page.evaluate(() => window.lecaa.settings.update(s => { s.voice.id = 'neural:ona-medium'; }));
+await page.click('[aria-label="Tanca"]');
+
+// uninstall
+await page.click('[aria-label="Configuració"], button:has-text("Configuració")');
+await page.evaluate(() => { document.querySelector('.neural').open = true; });
+await page.click('.neural-item:has-text("Ona") button:has-text("Esborra")');
+await page.waitForSelector('[data-install="ona-medium"]');
+await page.waitForFunction(() => !window.lecaa.speech.voices.some(v => v.id === 'neural:ona-medium'), null, { timeout: 5000 }).catch(() => null);
+ok(!(await page.evaluate(() => window.lecaa.speech.voices.some(v => v.id === 'neural:ona-medium'))), 'es pot esborrar');
 
 ok(errors.length === 0, 'sense errors a la consola' + (errors.length ? ': ' + errors.join(' | ') : ''));
 await browser.close();

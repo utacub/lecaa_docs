@@ -33,7 +33,7 @@ await reset();
 await page.keyboard.type('món.', { delay: 120 });
 await wait(800);
 let sp = await spoken();
-ok(sp.at(-2) === 'món' && sp.at(-1) === 'Hola món.', 'paraula + frase en escriure punt: ' + JSON.stringify(sp));
+ok(JSON.stringify(sp) === '["Hola món."]', 'en escriure punt només es llegeix la frase: ' + JSON.stringify(sp));
 
 // 2. Enter speaks the unfinished sentence
 await clear();
@@ -42,7 +42,7 @@ await reset();
 await page.keyboard.press('Enter');
 await wait(600);
 sp = await spoken();
-ok(sp.includes('El gat'), 'frase en prémer Intro: ' + JSON.stringify(sp));
+ok(JSON.stringify(sp) === '["El gat"]', 'en prémer Intro només es llegeix la frase, no la darrera paraula: ' + JSON.stringify(sp));
 
 // 3. letter names
 await set(`s => { s.feedback = { sentence: false, word: false, wordOnPunct: false, letter: 'name', upperCaseWord: false }; }`);

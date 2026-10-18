@@ -25,8 +25,9 @@ export function itemsForChar(ch: string, before: string): SoundItem[] {
   if (ends || WORD_PUNCT.test(ch)) {
     const w = f.word && f.wordOnPunct && !prevIsEnd ? lastWord(before) : '';
     const s = f.sentence && ends && !prevIsEnd ? lastSentence(before + ch) : '';
-    if (w && w !== s.replace(/[.!?…]+$/, '').trim()) items.push({ kind: 'tts', text: w });
+    // When the sentence is read, the last word is not read on its own first (Marc, 18/10/2026).
     if (s) items.push({ kind: 'tts', text: s });
+    else if (w) items.push({ kind: 'tts', text: w });
     spokeUnit = items.length > 0;
   }
 
@@ -51,8 +52,8 @@ export function itemsForEnter(blockBefore: string): SoundItem[] {
   const endsWord = !/[\s,.;:!?…)»"]$/.test(blockBefore);
   const s = f.sentence && !endsSentence ? lastSentence(text) : '';
   const w = f.word && endsWord ? lastWord(text) : '';
-  if (w && w !== s) items.push({ kind: 'tts', text: w });
   if (s) items.push({ kind: 'tts', text: s });
+  else if (w) items.push({ kind: 'tts', text: w });
   return items;
 }
 
