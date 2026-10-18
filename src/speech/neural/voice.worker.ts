@@ -1,9 +1,8 @@
 // Runs the in-app neural voices off the main thread, so typing stays responsive while a
 // sentence is synthesised. Piper (VITS): espeak-ng phonemizer in WebAssembly, then the ONNX model.
-// Matxa v2 (Matcha-TTS + WaveNext, BSC): graphemes straight into one end-to-end ONNX model.
 
 import * as ort from 'onnxruntime-web/wasm';
-import { matxaIds, type Family } from './catalog';
+import type { Family } from './catalog';
 import { createPiperPhonemize, type PiperPhonemizeModule } from './phonemize-glue.js';
 
 // Runtime files as Blobs: the worker makes its own object URLs, because a worker started from
@@ -18,7 +17,7 @@ const wasmUrl = (b: Blob) => URL.createObjectURL(new Blob([b], { type: 'applicat
 
 export type WorkerRequest =
   | { type: 'load'; id: number; runtime: RuntimeFiles; key: string; family: Family; model: ArrayBuffer; config?: PiperConfig }
-  | { type: 'synth'; id: number; text: string; rate: number; speaker?: number };
+  | { type: 'synth'; id: number; text: string; rate: number; speaker?: number }; // speaker: multi-speaker models
 
 export type WorkerResponse =
   | { id: number; ok: true; audio?: Float32Array; sampleRate?: number }
@@ -35,9 +34,7 @@ let phonemizer: PiperPhonemizeModule | null = null;
 let onLine: ((line: string) => void) | null = null;
 let session: ort.InferenceSession | null = null;
 let loadedKey = '';
-let family: Family = 'piper';
 let config: PiperConfig | null = null;
-const MATXA_RATE = 22050;
 
 async function ensurePhonemizer(runtime: RuntimeFiles) {
   if (phonemizer) return;
@@ -81,13 +78,11 @@ async function handle(m: WorkerRequest): Promise<WorkerResponse> {
       session = null;
       session = await ort.InferenceSession.create(new Uint8Array(m.model), { executionProviders: ['wasm'] });
       loadedKey = m.key;
-      family = m.family;
       config = m.config ?? null;
     }
     return { id: m.id, ok: true };
   }
   if (!session) throw new Error('No voice loaded');
-  if (family === 'matxa') return synthMatxa(m.id, m.text, m.rate, m.speaker ?? 0);
   if (!config) throw new Error('No voice config');
   const ids = phonemeIds(m.text.trim(), config.espeak.voice);
   if (!ids.length) return { id: m.id, ok: true, audio: new Float32Array(0), sampleRate: config.audio.sample_rate };
@@ -101,31 +96,6 @@ async function handle(m: WorkerRequest): Promise<WorkerResponse> {
   const out = await session.run(feeds);
   const audio = new Float32Array(out.output.data as Float32Array);
   return { id: m.id, ok: true, audio, sampleRate: config.audio.sample_rate };
-}
-
-// Inputs as in the BSC demo for this model (huggingface.co/spaces/BSC-LT/matxa-tts-v2, app.py):
-// x, x_lengths, scales [temperature, length scale (higher = slower)], spks. The demo reads the
-// waveform from the second output (hfwaveform, after mel_lengths), so the waveform is found by
-// its type and size: the largest float output.
-async function synthMatxa(id: number, text: string, rate: number, speaker: number): Promise<WorkerResponse> {
-  const ids = matxaIds(text);
-  if (ids.length < 3) return { id, ok: true, audio: new Float32Array(0), sampleRate: MATXA_RATE };
-  const feeds: Record<string, ort.Tensor> = {
-    x: new ort.Tensor('int64', BigInt64Array.from(ids.map(BigInt)), [1, ids.length]),
-    x_lengths: new ort.Tensor('int64', BigInt64Array.from([BigInt(ids.length)]), [1]),
-    scales: new ort.Tensor('float32', Float32Array.from([0.667, 1 / rate]), [2]),
-  };
-  if (session!.inputNames.includes('spks')) feeds.spks = new ort.Tensor('int64', BigInt64Array.from([BigInt(speaker)]), [1]);
-  const out = await session!.run(feeds);
-  const tensors = session!.outputNames.map(n => out[n]).filter(Boolean);
-  const wav = tensors.filter(t => t.type === 'float32').sort((a, b) => b.size - a.size)[0];
-  if (!wav) throw new Error('model without audio output');
-  // One sentence per call, so there is no batch padding to trim. The model's other output,
-  // mel_lengths, counts spectrogram frames, not samples: using it as a length cut the audio to a
-  // few milliseconds.
-  const audio = (wav.data as Float32Array).slice();
-  if (!audio.length) throw new Error('la veu no ha generat so');
-  return { id, ok: true, audio, sampleRate: MATXA_RATE };
 }
 
 self.onmessage = async (e: MessageEvent<WorkerRequest>) => {

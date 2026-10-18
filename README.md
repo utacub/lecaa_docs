@@ -20,7 +20,6 @@ Versió 0.2.0. L'app és gratuïta per a tothom. La planificació completa és a
 - **Veus**: detecta les veus catalanes instal·lades al dispositiu i deixa triar-ne una, amb velocitat, to i volum.
 - **Veus catalanes gratuïtes dins l'app** (Configuració > Veu sintètica > Veus catalanes gratuïtes per descarregar). Es descarreguen una vegada, es guarden al dispositiu (IndexedDB) i després funcionen sense connexió a totes les versions, fins i tot al fitxer únic:
   - **Piper**: Ona (63 MB, català central). El motor (fonemitzador espeak-ng i ONNX Runtime en WebAssembly, uns 29 MB) es descarrega amb la veu. Les versions lleugeres d'Ona i Pau s'han retirat per decisió de Marc; si algú les tenia descarregades, l'app n'allibera l'espai.
-  - **Veus Aina (Matxa v2, BSC)**, *experimental*: 16 veus en 5 variants (balear, central, nord-occidental, valencià i septentrional), 273 MB. Abans de descarregar-les, l'usuari ha d'acceptar la llicència no comercial del BSC.
   - Les veus en línia del navegador (per exemple les naturals de Microsoft a Edge) també es poden triar; a la llista surten marcades "necessita connexió".
 - **Documents**: desat automàtic al dispositiu; obrir i desar `.docx` (Google Docs l'obre i l'exporta); imprimir o desar en PDF.
 - **Sense connexió**: totes les versions funcionen sense Internet.
@@ -29,9 +28,9 @@ Versió 0.2.0. L'app és gratuïta per a tothom. La planificació completa és a
 
 | Versió | Com s'obté | Veus que veu |
 |---|---|---|
-| Fitxer únic (`LECAA-Docs.html`) | Es descarrega i s'obre amb el navegador | Les que exposa el navegador + Piper i Aina descarregades |
-| Web (`dist/`) | Es publica en un servidor; es pot instal·lar com a app | Les que exposa el navegador + Piper i Aina descarregades |
-| App d'escriptori (Tauri) | Instal·lador per a Windows (64 i 32 bits), macOS i Linux | **Totes les del sistema** + Piper i Aina descarregades |
+| Fitxer únic (`LECAA-Docs.html`) | Es descarrega i s'obre amb el navegador | Les que exposa el navegador + Ona (Piper) descarregada |
+| Web (`dist/`) | Es publica en un servidor; es pot instal·lar com a app | Les que exposa el navegador + Ona (Piper) descarregada |
+| App d'escriptori (Tauri) | Instal·lador per a Windows (64 i 32 bits), macOS i Linux | **Totes les del sistema** + Ona (Piper) descarregada |
 
 L'app d'escriptori llegeix directament les veus del sistema:
 
@@ -68,7 +67,7 @@ src/
   keyboard.ts        teclats en pantalla
   reader.ts          lectura a demanda i ressaltat
   speech/            motors de veu (navegador i natiu) i locucions
-  speech/neural/     veus dins l'app: catàleg, descàrregues, worker Piper/Matxa
+  speech/neural/     veus dins l'app: catàleg, descàrregues, worker Piper
   docio.ts           .docx (mammoth / docx), fitxers del dispositiu
   settings*.ts       configuració i panell
   assets/sons/       sons aïllats d'Anna i Jordi (de LECAA)
@@ -80,10 +79,7 @@ src-tauri/           app d'escriptori i pont natiu de veu (src/tts)
 - La taula de noms de les lletres i la taula grafia → so (`src/letters.ts`).
 - Les locucions de sons aïllats, que provenen de LECAA i no s'han revisat fonèticament.
 - El comportament de les veus de Speech Platform i de les veus de 32 bits a Windows, i de macOS, en dispositius reals.
-- **Veus Aina (Matxa)**: provades amb el model real (273 MB) a Chromium, al servidor de desenvolupament (sense GPU, un sol fil): càrrega uns 36 s, una frase de 2,6 s d'àudio uns 10,5 s, el nom d'una lletra uns 2 s. El model té dues sortides, `mel_lengths` (trames de l'espectrograma, no mostres) i `hfwaveform`; l'app agafa tot `hfwaveform`. Falta mesurar-ho en ordinadors reals.
-- Veus Aina: el model fals de `tests/fixtures/` té exactament les entrades i sortides del real.
-- Veus Aina: la numeració dels parlants segueix el `spk_to_id_multiaccent.json` de la demo del BSC (la fitxa del model intercanvia 0-7). El to mitjà de cada veu amb el model real ho confirma, llevat de "Jordi" (15), que té un to de veu femenina (uns 210 Hz) tot i el nom.
 
 ## Llicències de tercers
 
-Andika i Manrope: SIL Open Font License 1.1. Tiptap, docx, Tauri, ONNX Runtime Web, piper-wasm i vits-web (Diffusion Studio): MIT. El fonemitzador inclou espeak-ng (GPL-3.0), de manera que les versions que el distribueixen s'han de publicar sota una llicència compatible amb la GPL-3.0. Veus Piper Ona i Pau: dades de la UPC (Festcat), CC BY-SA 3.0 ES. Veus Aina (Matxa v2): llicència RAIL no comercial del BSC (custom-ro-nc-openrail-m), només per a finalitats acadèmiques, de recerca o sense ànim de lucre; l'app la mostra i en demana l'acceptació abans de descarregar-les. Mammoth: BSD-2-Clause. DOMPurify: MPL-2.0 o Apache-2.0. Lucide: ISC. Les locucions d'Anna i Jordi s'han creat per a LECAA.
+Andika i Manrope: SIL Open Font License 1.1. Tiptap, docx, Tauri, ONNX Runtime Web, piper-wasm i vits-web (Diffusion Studio): MIT. El fonemitzador inclou espeak-ng (GPL-3.0), de manera que les versions que el distribueixen s'han de publicar sota una llicència compatible amb la GPL-3.0. Veu Piper Ona: dades de la UPC (Festcat), CC BY-SA 3.0 ES. Mammoth: BSD-2-Clause. DOMPurify: MPL-2.0 o Apache-2.0. Lucide: ISC. Les locucions d'Anna i Jordi s'han creat per a LECAA.

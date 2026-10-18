@@ -1,4 +1,4 @@
-// In-app neural voices (Piper, Matxa). Voice files are downloaded once, kept in IndexedDB and
+// In-app neural voices (Piper). Voice files are downloaded once, kept in IndexedDB and
 // synthesised in a worker, so they work offline in every edition, on any device with a browser.
 
 import { LETTER_NAMES } from '../../letters';
@@ -97,7 +97,7 @@ export class NeuralEngine implements SpeechEngine {
       id: PREFIX + v.id,
       name: `${v.name} · ${v.dialect}`,
       lang: 'ca-ES',
-      engine: m.family === 'piper' ? 'Veus Piper (dins l’app)' : 'Veus Aina (dins l’app)',
+      engine: 'Veus Piper (dins l’app)',
       offline: true,
     })));
   }
@@ -247,7 +247,6 @@ export class NeuralEngine implements SpeechEngine {
   }
 
   // Letter names are short and frequent: synthesise them ahead so feedback has no delay.
-  // Not for Matxa, whose synthesis is too heavy to run dozens of times in the background.
   private prewarm(voiceId: string, rate: number) {
     if (settings.value.feedback.letter !== 'name' || modelOf(voiceId)?.family !== 'piper') return;
     for (const name of new Set(Object.values(LETTER_NAMES))) void this.buffer(voiceId, name, rate, true).catch(() => null);

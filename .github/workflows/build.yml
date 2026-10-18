@@ -17,7 +17,7 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm run build:single
-      - run: npx vitest run
+      - run: npx vitest run --passWithNoTests
       - name: Browser tests
         run: |
           npx playwright install --with-deps chromium

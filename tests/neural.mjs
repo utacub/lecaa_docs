@@ -11,8 +11,6 @@ const local = {
   'ca_ES-upc_ona-medium.onnx': `${dir}/ona/ca-upc_ona-x-low.onnx`,
   'ca_ES-upc_ona-medium.onnx.json': `${dir}/ona/ca-upc_ona-x-low.onnx.json`,
 };
-// Matxa: a tiny model with the same inputs and outputs (tests/fixtures/make-fake-matxa.py).
-local['matxa_v2_multiaccent_graphemes_20_steps_wavenext.onnx'] = path.resolve('tests/fixtures/fake-matxa.onnx');
 const npm = f => path.resolve('node_modules', f);
 const cdn = {
   'piper_phonemize.wasm': npm('@diffusionstudio/piper-wasm/build/piper_phonemize.wasm'),
@@ -99,24 +97,7 @@ await page.evaluate(() => { window.__played.length = 0; return window.lecaa.spee
 ok((await page.evaluate(() => window.__played.length)) === 1 && hits.length === 0, 'sense connexió, després de recarregar, continua parlant');
 offline = false;
 
-// Aina (Matxa): licence accepted, download, synthesis through the same worker
 page.on('dialog', d => d.accept());
-await page.click('[aria-label="Configuració"], button:has-text("Configuració")');
-await page.evaluate(() => { document.querySelector('.neural').open = true; });
-await page.click('[data-install="matxa"]');
-await page.waitForFunction(() => window.lecaa.speech.voices.some(v => v.id === 'neural:matxa-6'), null, { timeout: 30000 });
-ok((await page.evaluate(() => window.lecaa.speech.voices.filter(v => v.id.startsWith('neural:matxa-')).length)) === 16, 'les 16 veus Aina apareixen a la llista');
-const aina = await page.evaluate(async () => {
-  window.lecaa.settings.update(s => { s.voice.id = 'neural:matxa-6'; });
-  window.__played.length = 0;
-  await window.lecaa.speech.play([{ kind: 'tts', text: 'Hola' }], { lock: false });
-  return window.__played.slice();
-});
-// "hola" → 4 symbols interspersed with pads = 9 ids → 9 × 256 samples at 22 050 Hz
-ok(aina.length === 1 && Math.abs(aina[0] - 9 * 256 / 22050) < 1e-3, 'una veu Aina sintetitza i sona: ' + JSON.stringify(aina));
-await page.evaluate(() => window.lecaa.settings.update(s => { s.voice.id = 'neural:ona-medium'; }));
-await page.click('[aria-label="Tanca"]');
-
 // uninstall
 await page.click('[aria-label="Configuració"], button:has-text("Configuració")');
 await page.evaluate(() => { document.querySelector('.neural').open = true; });
