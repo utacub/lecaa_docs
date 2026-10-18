@@ -234,6 +234,19 @@ ok(execSync('unzip -p test-results/mida.docx word/document.xml').toString().incl
 await page.evaluate(() => window.lecaa.editor.chain().selectAll().setFontSize('0.8em').run());
 ok((await page.inputValue('.size-select')) === '11', 'una mida fora de la llista (11,2 → 11) es mostra igualment');
 
+// 15c. PDF export: same fonts embedded, text selectable, lists, tables and images
+await clear();
+await page.evaluate(() => window.lecaa.editor.chain().command(({ tr }) => { tr.setMeta('lecaa-system', true); return true; })
+  .setContent('<p><strong>Negreta</strong> i <span style="font-family: \'Playwrite ES\', cursive; font-size: 2em">col·legi lligat</span></p><ol><li><p>primer</p></li><li><p>segon</p></li></ol><table><tbody><tr><td colspan="2"><p>Fusionada</p></td></tr><tr><td><p>A2</p></td><td><p>B2</p></td></tr></tbody></table><p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" alt="punt"></p>').run());
+await page.locator('.doc-title').fill('Prova PDF');
+const [dl3] = await Promise.all([page.waitForEvent('download', { timeout: 30000 }), page.click('[aria-label="Desa com a PDF"]')]);
+await dl3.saveAs('test-results/prova.pdf');
+const pdfText = execSync('pdftotext test-results/prova.pdf -').toString().replace(/· /g, '·');
+const pdfFonts = execSync('pdffonts test-results/prova.pdf').toString();
+ok(dl3.suggestedFilename() === 'Prova PDF.pdf' && ['Negreta', 'col·legi lligat', 'primer', 'segon', 'Fusionada', 'A2', 'B2'].every(t => pdfText.includes(t)), 'desa en PDF amb el text seleccionable: ' + JSON.stringify(pdfText.replace(/\s+/g, ' ').trim()));
+ok(/Andika-Bold/.test(pdfFonts) && /PlaywriteES/.test(pdfFonts), 'el PDF porta incrustades les mateixes lletres');
+ok(execSync('pdfimages -list test-results/prova.pdf').toString().split('\n').length > 3, 'el PDF inclou la imatge');
+
 // 16. full-screen mode: password set first, toolbars hidden, survives reload, exits only with the password
 await page.click('[aria-label="Pantalla completa"]');
 await page.fill('.lock-input >> nth=0', 'gat1');

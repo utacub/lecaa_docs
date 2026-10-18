@@ -1,7 +1,7 @@
 import './styles.css';
 import type { Editor } from '@tiptap/core';
 import {
-  AArrowDown, AArrowUp, Bold, Check, ChevronDown, Columns3, Maximize, FileDown, FilePlus, FolderOpen, Globe, Image as ImageIcon, Italic, Keyboard, List, ListOrdered, Pause, Play,
+  AArrowDown, AArrowUp, Bold, Check, ChevronDown, Columns3, Maximize, FileDown, FilePlus, FileType, FolderOpen, Globe, Image as ImageIcon, Italic, Keyboard, List, ListOrdered, Pause, Play,
   Printer, Redo2, Rows3, Settings as SettingsIcon, Square, SquareMinus, Table as TableIcon, TextAlignCenter, TextAlignEnd,
   TextAlignStart, TextCursorInput, Trash2, Underline, Undo2, Volume2,
 } from 'lucide';
@@ -90,6 +90,17 @@ async function boot() {
       toast(T('No s’ha pogut obrir aquest fitxer', 'No se ha podido abrir este archivo'));
     }
   };
+  const savePdf = async () => {
+    try {
+      toast(T('Preparant el PDF…', 'Preparando el PDF…'));
+      const { pdfFromEditor } = await import('./pdf');
+      const blob = await pdfFromEditor(editor, title.value);
+      if (await saveFile(blob, safeName(title.value) + '.pdf', 'pdf')) toast(T('Desat com a PDF', 'Guardado como PDF'));
+    } catch (e) {
+      console.error(e);
+      toast(T('No s’ha pogut desar el PDF', 'No se ha podido guardar el PDF'));
+    }
+  };
   const save = async () => {
     try {
       const blob = await docxFromEditor(editor, title.value);
@@ -159,7 +170,7 @@ async function boot() {
     tb(T('Esborra la taula', 'Borrar la tabla'), Trash2, run(c => c.deleteTable())));
 
   const toolbar = h('div', { class: 'toolbar', role: 'toolbar', 'aria-label': T('Format', 'Formato') },
-    tb(T('Document nou', 'Documento nuevo'), FilePlus, newDoc), tb(T('Obre un document', 'Abrir un documento'), FolderOpen, open), tb(T('Desa com a .docx', 'Guardar como .docx'), FileDown, save), tb(T('Imprimeix o desa en PDF', 'Imprimir o guardar en PDF'), Printer, () => window.print()),
+    tb(T('Document nou', 'Documento nuevo'), FilePlus, newDoc), tb(T('Obre un document', 'Abrir un documento'), FolderOpen, open), tb(T('Desa com a .docx', 'Guardar como .docx'), FileDown, save), tb(T('Desa com a PDF', 'Guardar como PDF'), FileType, savePdf), tb(T('Imprimeix', 'Imprimir'), Printer, () => window.print()),
     h('span', { class: 'sep' }), undo, redo,
     h('span', { class: 'sep' }), fontSel, sizeSel, sizeDown, sizeUp,
     h('span', { class: 'sep' }), fmt.bold, fmt.italic, fmt.underline,

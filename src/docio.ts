@@ -173,11 +173,17 @@ export function safeName(title: string) {
   return (title.trim() || T('Document sense títol', 'Documento sin título')).replace(/[\\/:*?"<>|]+/g, '-').slice(0, 120);
 }
 
-export async function saveFile(blob: Blob, name: string): Promise<boolean> {
+const KINDS = {
+  docx: { mime: DOCX_MIME, ext: 'docx', label: () => T('Document de Word (compatible amb Google Docs)', 'Documento de Word (compatible con Google Docs)') },
+  pdf: { mime: 'application/pdf', ext: 'pdf', label: () => T('Document PDF', 'Documento PDF') },
+};
+
+export async function saveFile(blob: Blob, name: string, kind: keyof typeof KINDS = 'docx'): Promise<boolean> {
+  const k = KINDS[kind];
   if (inTauri()) {
     const { save } = await import('@tauri-apps/plugin-dialog');
     const { writeFile } = await import('@tauri-apps/plugin-fs');
-    const path = await save({ defaultPath: name, filters: [{ name: T('Document de Word (compatible amb Google Docs)', 'Documento de Word (compatible con Google Docs)'), extensions: ['docx'] }] });
+    const path = await save({ defaultPath: name, filters: [{ name: k.label(), extensions: [k.ext] }] });
     if (!path) return false;
     await writeFile(path, new Uint8Array(await blob.arrayBuffer()));
     return true;
@@ -185,7 +191,7 @@ export async function saveFile(blob: Blob, name: string): Promise<boolean> {
   const w = window as unknown as { showSaveFilePicker?: (o: object) => Promise<FileSystemFileHandle> };
   if (w.showSaveFilePicker && window.self === window.top) {
     try {
-      const handle = await w.showSaveFilePicker({ suggestedName: name, types: [{ description: T('Document .docx', 'Documento .docx'), accept: { [DOCX_MIME]: ['.docx'] } }] });
+      const handle = await w.showSaveFilePicker({ suggestedName: name, types: [{ description: k.label(), accept: { [k.mime]: [`.${k.ext}`] } }] });
       const stream = await handle.createWritable();
       await stream.write(blob);
       await stream.close();
