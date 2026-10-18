@@ -109,7 +109,8 @@ button { touch-action: manipulation; }
 .tb select, select.tb { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 6px 8px; min-height: 40px; }
 .table-tools { display: inline-flex; gap: 2px; padding-left: 4px; border-left: 1px solid var(--line); }
 
-.voicebar { gap: 8px; background: var(--mint); }
+.topbar-actions { display: flex; align-items: center; gap: 8px; flex: none; }
+.topbar-actions .voice-warning { max-width: 16rem; }
 .vbtn {
   display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 10px 16px;
   border-radius: var(--radius); border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink);
@@ -119,7 +120,7 @@ button { touch-action: manipulation; }
 .vbtn:hover { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 13%, transparent); }
 .vbtn[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
 .vbtn svg { width: 22px; height: 22px; }
-.feedback-summary { color: var(--muted); font-size: 14px; }
+.vbtn.icon-only { width: 48px; height: 48px; padding: 0; justify-content: center; }
 .voice-warning { color: var(--warn); background: var(--warn-soft); border-radius: 10px; padding: 6px 10px; font-size: 14px; }
 
 /* ---------- page ---------- */
@@ -172,9 +173,9 @@ body.is-locked .key, body.is-calm .key { opacity: .45; }
   .osk-row { gap: 3px; width: 100%; }
   .key { max-width: none; height: min(var(--key), 12vw); font-size: min(calc(var(--key) * .45), 6vw); padding: 0 2px; border-radius: 8px; }
   .key.wide { font-size: 12px; }
-  .vbtn .lbl { display: none; }
-  .vbtn { padding: 10px 12px; }
-  .feedback-summary { display: none; }
+  .vbtn.icon-only { width: 42px; height: 42px; }
+  .topbar-actions { gap: 4px; }
+  .topbar .doc-title { min-width: 4rem; }
 }
 
 /* ---------- calm overlay ---------- */
@@ -246,7 +247,8 @@ body.is-locked .key, body.is-calm .key { opacity: .45; }
 
 /* ----- full-screen writing mode ----- */
 .font-select { max-width: 13rem; }
-.is-kiosk .topbar, .is-kiosk .toolbar:not(.voicebar), .is-kiosk .kiosk-hide { display: none !important; }
+.is-kiosk .toolbar, .is-kiosk .kiosk-hide, .is-kiosk .topbar > :not(.topbar-actions) { display: none !important; }
+.is-kiosk .topbar { justify-content: flex-end; }
 .lock-exit {
   position: fixed; right: 10px; bottom: 10px; z-index: 50; width: 36px; height: 36px; border-radius: 50%;
   border: 1px solid var(--line); background: var(--surface); opacity: .45; cursor: pointer; font-size: 16px;

@@ -66,9 +66,24 @@ await clear();
 await page.keyboard.type('Bon dia. ', { delay: 100 });
 await wait(300);
 ok((await spoken()).length === 0, 'cap feedback mentre s’escriu');
-await page.click('text=Llegeix tot');
+await page.click('[aria-label="Llegeix"]');
 await wait(1500);
-ok((await spoken()).some(t => t.includes('Bon dia')), 'Llegeix tot funciona sense feedback: ' + JSON.stringify(await spoken()));
+ok((await spoken()).some(t => t.includes('Bon dia')), 'el botó Llegeix funciona sense feedback (cursor al final: llegeix tot): ' + JSON.stringify(await spoken()));
+
+// 5b. one reading button: the selection if there is one, otherwise from the cursor
+await clear();
+await page.evaluate(() => window.lecaa.editor.chain().command(({ tr }) => { tr.setMeta('lecaa-system', true); return true; }).insertContent('<p>Primera frase.</p><p>Segona frase.</p>').run());
+await page.evaluate(() => window.__spoken.length = 0);
+await page.evaluate(() => { const ed = window.lecaa.editor; let pos = 0; ed.state.doc.descendants((n, p) => { if (n.isText && n.text.startsWith('Segona')) pos = p; }); ed.commands.setTextSelection(pos); });
+await page.click('[aria-label="Llegeix"]');
+await wait(1500);
+ok((await spoken()).join(' ').includes('Segona') && !(await spoken()).join(' ').includes('Primera'), 'sense selecció llegeix des del cursor: ' + JSON.stringify(await spoken()));
+await page.evaluate(() => window.__spoken.length = 0);
+await page.evaluate(() => window.lecaa.editor.commands.setTextSelection({ from: 1, to: 8 }));
+await page.click('[aria-label="Llegeix"]');
+await wait(1500);
+ok(JSON.stringify(await spoken()).includes('Primera') && !(await spoken()).join(' ').includes('Segona'), 'amb selecció llegeix només la selecció: ' + JSON.stringify(await spoken()));
+ok((await page.locator('.toolbar').count()) === 1 && await page.locator('.topbar [aria-label="Configuració"]').isVisible() && await page.locator('.topbar [aria-label="Teclat"]').isVisible(), 'tot en dues franges: els botons de veu a la barra superior');
 
 // 6. triple letter → calm overlay, letter rejected, everything blocked
 await clear();
@@ -255,8 +270,8 @@ await page.fill('.lock-input >> nth=1', 'gat1');
 await page.click('.lock-card button[type=submit]');
 await wait(300);
 ok(await page.evaluate(() => document.body.classList.contains('is-kiosk')), 'entra en pantalla completa després de posar la contrasenya');
-ok(!(await page.locator('.toolbar:not(.voicebar)').isVisible()) && !(await page.locator('[aria-label="Configuració"]').isVisible()), 'amaga la barra d’eines i la configuració');
-ok(await page.locator('.voicebar').isVisible(), 'els botons de lectura continuen visibles');
+ok(!(await page.locator('.toolbar').isVisible()) && !(await page.locator('[aria-label="Configuració"]').isVisible()), 'amaga la barra d’eines i la configuració');
+ok(await page.locator('[aria-label="Llegeix"]').isVisible() && await page.locator('[aria-label="Teclat"]').isVisible() && !(await page.locator('.doc-title').isVisible()), 'els botons de lectura i de teclat continuen visibles');
 await page.reload();
 await page.waitForSelector('.ProseMirror');
 await wait(300);
@@ -269,7 +284,7 @@ ok(await page.evaluate(() => document.body.classList.contains('is-kiosk')) && (a
 await page.fill('.lock-input', 'gat1');
 await page.click('.lock-card button[type=submit]');
 await wait(300);
-ok(!(await page.evaluate(() => document.body.classList.contains('is-kiosk'))) && await page.locator('.toolbar:not(.voicebar)').isVisible(), 'la contrasenya correcta en surt');
+ok(!(await page.evaluate(() => document.body.classList.contains('is-kiosk'))) && await page.locator('.toolbar').isVisible(), 'la contrasenya correcta en surt');
 await page.screenshot({ path: 'test-results/main.png' });
 
 // 17. Spanish: the language button changes the interface, the configuration, the letters and the voices
@@ -281,7 +296,7 @@ ok(await page.isVisible('.lang-menu') && (await page.textContent('.lang-btn')).i
 await page.click('.lang-item[data-lang="es"]');
 await page.waitForFunction(() => document.documentElement.lang === 'es' && document.querySelector('.ProseMirror'));
 await wait(400);
-ok(await page.locator('[aria-label="Leer todo"]').isVisible() && await page.locator('[aria-label="Configuración"]').isVisible(), 'la interfície canvia al castellà');
+ok(await page.locator('[aria-label="Leer"]').isVisible() && await page.locator('[aria-label="Configuración"]').isVisible(), 'la interfície canvia al castellà');
 ok((await text()).includes('Texto que se conserva'), 'el document es conserva en canviar d’idioma');
 const esCfg = await page.evaluate(() => { const v = window.lecaa.settings.value; return { word: v.feedback.word, message: v.guard.message, pw: v.lockPassword }; });
 ok(esCfg.word === true && esCfg.message === 'Piensa bien cada letra que escribes', 'configuració pròpia del castellà: ' + JSON.stringify(esCfg));
@@ -320,7 +335,7 @@ await page.keyboard.press('ArrowDown');
 await page.keyboard.press('Enter');
 await page.waitForFunction(() => document.documentElement.lang === 'ca' && document.querySelector('.ProseMirror'));
 await wait(400);
-ok(await page.locator('[aria-label="Llegeix tot"]').isVisible() && (await page.evaluate(() => window.lecaa.settings.value.feedback.word)) === false, 'en tornar al català recupera la seva configuració');
+ok(await page.locator('[aria-label="Llegeix"]').isVisible() && (await page.evaluate(() => window.lecaa.settings.value.feedback.word)) === false, 'en tornar al català recupera la seva configuració');
 ok((await page.evaluate(() => window.lecaa.speech.currentVoice()?.lang)) === 'ca-ES', 'i la veu catalana');
 await page.screenshot({ path: 'test-results/ca-again.png' });
 ok(errors.length === 0, 'sense errors a la consola: ' + JSON.stringify(errors));

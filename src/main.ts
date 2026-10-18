@@ -3,7 +3,7 @@ import type { Editor } from '@tiptap/core';
 import {
   AArrowDown, AArrowUp, Bold, Check, ChevronDown, Columns3, Maximize, FileDown, FilePlus, FileType, FolderOpen, Globe, Image as ImageIcon, Italic, Keyboard, List, ListOrdered, Pause, Play,
   Printer, Redo2, Rows3, Settings as SettingsIcon, Square, SquareMinus, Table as TableIcon, TextAlignCenter, TextAlignEnd,
-  TextAlignStart, TextCursorInput, Trash2, Underline, Undo2, Volume2,
+  TextAlignStart, TextCursorInput, Trash2, Underline, Undo2,
 } from 'lucide';
 import { FONTS, fontByFamily, fontById, loadFonts } from './fonts';
 import { LANG, LANGS, switchLang, T } from './i18n';
@@ -179,39 +179,37 @@ async function boot() {
     h('span', { class: 'sep' }), tb(T('Insereix una taula', 'Insertar una tabla'), TableIcon, run(c => c.insertTable({ rows: 3, cols: 3, withHeaderRow: false }))), tb(T('Insereix una imatge', 'Insertar una imagen'), ImageIcon, insertImage), tableTools);
 
   // ----- voice bar (the main controls) -----
-  const playAll = h('button', { class: 'vbtn', type: 'button', title: T('Llegeix tot', 'Leer todo'), 'aria-label': T('Llegeix tot', 'Leer todo') }, icon(Play), h('span', { class: 'lbl', 'aria-hidden': 'true' }, T('Llegeix tot', 'Leer todo')));
-  const playSel = h('button', { class: 'vbtn ghost', type: 'button', title: T('Llegeix la selecció', 'Leer la selección'), 'aria-label': T('Llegeix la selecció', 'Leer la selección') }, icon(Volume2), h('span', { class: 'lbl', 'aria-hidden': 'true' }, T('Llegeix la selecció', 'Leer la selección')));
-  const playCur = h('button', { class: 'vbtn ghost', type: 'button', title: T('Des del cursor', 'Desde el cursor'), 'aria-label': T('Des del cursor', 'Desde el cursor') }, icon(Play), h('span', { class: 'lbl', 'aria-hidden': 'true' }, T('Des del cursor', 'Desde el cursor')));
-  const pauseBtn = h('button', { class: 'vbtn ghost', type: 'button', title: T('Pausa', 'Pausa'), 'aria-label': T('Pausa', 'Pausa'), hidden: true }, icon(Pause), h('span', { class: 'lbl', 'aria-hidden': 'true' }, T('Pausa', 'Pausa')));
-  const stopBtn = h('button', { class: 'vbtn ghost', type: 'button', title: T('Atura', 'Detener'), 'aria-label': T('Atura', 'Detener'), hidden: true }, icon(Square), h('span', { class: 'lbl', 'aria-hidden': 'true' }, T('Atura', 'Detener')));
-  const kbBtn = h('button', { class: 'vbtn ghost', type: 'button', title: T('Teclat', 'Teclado'), 'aria-label': T('Teclat', 'Teclado'), 'aria-pressed': 'false' }, icon(Keyboard), h('span', { class: 'lbl', 'aria-hidden': 'true' }, T('Teclat', 'Teclado')));
-  const setBtn = h('button', { class: 'vbtn ghost kiosk-hide', type: 'button', 'aria-label': T('Configuració', 'Configuración') }, icon(SettingsIcon));
-  const fullBtn = h('button', { class: 'vbtn ghost kiosk-hide', type: 'button', title: T('Pantalla completa', 'Pantalla completa'), 'aria-label': T('Pantalla completa', 'Pantalla completa') }, icon(Maximize));
+  // One reading button: reads the selection if there is one, otherwise from the cursor (or the
+  // whole text when the cursor is at the end). While reading it pauses, and when paused it resumes.
+  const readLabel = T('Llegeix', 'Leer');
+  const playBtn = h('button', { class: 'vbtn icon-only', type: 'button', title: T('Llegeix la selecció o des del cursor', 'Leer la selección o desde el cursor'), 'aria-label': readLabel }, icon(Play));
+  const stopBtn = h('button', { class: 'vbtn ghost icon-only', type: 'button', title: T('Atura', 'Detener'), 'aria-label': T('Atura', 'Detener'), hidden: true }, icon(Square));
+  const kbBtn = h('button', { class: 'vbtn ghost icon-only', type: 'button', title: T('Teclat en pantalla', 'Teclado en pantalla'), 'aria-label': T('Teclat', 'Teclado'), 'aria-pressed': 'false' }, icon(Keyboard));
+  const setBtn = h('button', { class: 'vbtn ghost icon-only kiosk-hide', type: 'button', 'aria-label': T('Configuració', 'Configuración') }, icon(SettingsIcon));
+  const fullBtn = h('button', { class: 'vbtn ghost icon-only kiosk-hide', type: 'button', title: T('Pantalla completa', 'Pantalla completa'), 'aria-label': T('Pantalla completa', 'Pantalla completa') }, icon(Maximize));
   fullBtn.addEventListener('click', () => void lock.enter());
-  const summary = h('span', { class: 'feedback-summary' });
   const warning = h('span', { class: 'voice-warning', hidden: true });
 
-  const startRead = (mode: 'all' | 'selection' | 'cursor') => {
-    if (reader.paused && mode === 'all') { reader.resume(); return; }
+  const read = () => {
+    if (reader.reading) { reader.pause(); return; }
+    if (reader.paused) { reader.resume(); return; }
     if (!speech.currentVoice()) { toast(T('No hi ha cap veu catalana disponible. Obre la configuració.', 'No hay ninguna voz en castellano disponible. Abre la configuración.')); return; }
-    if (!reader.start(mode)) toast(mode === 'selection' ? T('Primer selecciona el text que vols escoltar', 'Primero selecciona el texto que quieres escuchar') : T('No hi ha text per llegir', 'No hay texto para leer'));
+    if (!editor.state.selection.empty) reader.start('selection');
+    else if (!reader.start('cursor') && !reader.start('all')) toast(T('No hi ha text per llegir', 'No hay texto para leer'));
   };
-  playAll.addEventListener('click', () => startRead('all'));
-  playSel.addEventListener('click', () => startRead('selection'));
-  playCur.addEventListener('click', () => startRead('cursor'));
-  pauseBtn.addEventListener('click', () => reader.pause());
+  playBtn.addEventListener('click', read);
   stopBtn.addEventListener('click', () => { reader.stop(); speech.stop(); });
   // Reading buttons must keep the editor selection.
-  for (const b of [playAll, playSel, playCur, pauseBtn, stopBtn]) b.addEventListener('mousedown', e => e.preventDefault());
+  for (const b of [playBtn, stopBtn]) b.addEventListener('mousedown', e => e.preventDefault());
   kbBtn.addEventListener('mousedown', e => e.preventDefault());
   kbBtn.addEventListener('click', () => settings.update(s => { s.keyboard.visible = !s.keyboard.visible; }));
 
   reader.onState = () => {
-    pauseBtn.hidden = !reader.reading;
     stopBtn.hidden = !reader.reading && !reader.paused;
-    const label = reader.paused ? T('Continua', 'Continuar') : T('Llegeix tot', 'Leer todo');
-    playAll.lastChild!.textContent = label;
-    playAll.setAttribute('aria-label', label);
+    const label = reader.reading ? T('Pausa', 'Pausa') : reader.paused ? T('Continua', 'Continuar') : readLabel;
+    playBtn.replaceChildren(icon(reader.reading ? Pause : Play));
+    playBtn.setAttribute('aria-label', label);
+    playBtn.title = reader.reading || reader.paused ? label : T('Llegeix la selecció o des del cursor', 'Leer la selección o desde el cursor');
   };
 
   // Settings, optionally protected by a 2-second press so learners don't change them by accident.
@@ -229,8 +227,8 @@ async function boot() {
     else if (!held) toast(T('Mantén premut el botó 2 segons per obrir la configuració', 'Mantén pulsado el botón 2 segundos para abrir la configuración'));
   });
 
-  const voicebar = h('div', { class: 'toolbar voicebar', role: 'toolbar', 'aria-label': T('Veu', 'Voz') },
-    playAll, playSel, playCur, pauseBtn, stopBtn, h('span', { class: 'spacer' }), warning, summary, kbBtn, fullBtn, setBtn);
+  const actions = h('div', { class: 'topbar-actions', role: 'toolbar', 'aria-label': T('Veu i pantalla', 'Voz y pantalla') },
+    warning, playBtn, stopBtn, kbBtn, fullBtn, setBtn);
 
   // Language menu: the interface, the configuration and the voices all change with it.
   // Closed it shows the current language's code; open, every language in its own name.
@@ -269,10 +267,10 @@ async function boot() {
     else if (e.key === 'Tab') closeLang();
   });
   document.addEventListener('pointerdown', e => { if (!langSwitch.contains(e.target as Node)) closeLang(); });
-  const topbar = h('header', { class: 'topbar' }, h('span', { class: 'brand' }), title, saveState, langSwitch);
+  const topbar = h('header', { class: 'topbar' }, h('span', { class: 'brand' }), title, saveState, langSwitch, actions);
   (topbar.firstChild as HTMLElement).innerHTML = LOGO + '<span>LECAA Docs</span>';
 
-  document.getElementById('app')!.replaceWith(topbar, toolbar, voicebar, workspace, osk.el);
+  document.getElementById('app')!.replaceWith(topbar, toolbar, workspace, osk.el);
   lock.install();
 
   // ----- state refresh -----
@@ -316,8 +314,10 @@ async function boot() {
     if (s.feedback.word) parts.push(T('paraula', 'palabra'));
     if (s.feedback.letter === 'name') parts.push(T('nom de la lletra', 'nombre de la letra'));
     if (s.feedback.letter === 'sound') parts.push(T('so de la lletra', 'sonido de la letra'));
-    summary.textContent = anyTypingFeedback(s) ? `Feedback: ${parts.join(', ')}` : T('Sense feedback', 'Sin feedback');
-    if (s.lockWhileSpeaking) summary.textContent += T(' · protecció activa', ' · protección activa');
+    // The feedback in use is shown as the settings button's tooltip.
+    let summary = anyTypingFeedback(s) ? `Feedback: ${parts.join(', ')}` : T('Sense feedback', 'Sin feedback');
+    if (s.lockWhileSpeaking) summary += T(' · protecció activa', ' · protección activa');
+    setBtn.title = `${T('Configuració', 'Configuración')} (${summary})`;
   };
   settings.subscribe(refreshSettings);
   refreshSettings();
