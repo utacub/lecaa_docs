@@ -114,7 +114,3 @@ export function contentMisuse(before: string, ch: string, opts: { repeatLetters:
   return null;
 }
 
-// Capital letter expected at the start of the text or after a sentence end.
-export function wantsCapital(before: string): boolean {
-  return before.trim() === '' || /[.!?…]\s+$/.test(before);
-}

@@ -5,7 +5,6 @@
 import { LANG, T } from './i18n';
 
 export type LetterMode = 'off' | 'name' | 'sound';
-export type KeyboardLayout = 'full' | 'simple';
 export type RecordedVoice = string; // folder of recorded letter sounds (src/assets/sons)
 
 export interface Settings {
@@ -34,7 +33,7 @@ export interface Settings {
   voice: { id: string | null; rate: number; pitch: number; volume: number; showAll: boolean };
   recordedVoice: RecordedVoice;
   highlight: boolean;
-  keyboard: { visible: boolean; layout: KeyboardLayout; autoCapital: boolean; keySize: number };
+  keyboard: { visible: boolean; keySize: number };
   docFontSize: number;
   docFont: string;        // id from fonts.ts
   protectSettings: boolean;
@@ -59,7 +58,7 @@ export const DEFAULTS: Settings = {
   voice: { id: null, rate: 1, pitch: 1, volume: 1, showAll: false },
   recordedVoice: LANG === 'es' ? 'sara' : 'anna',
   highlight: true,
-  keyboard: { visible: false, layout: 'simple', autoCapital: true, keySize: 3.4 },
+  keyboard: { visible: false, keySize: 3.4 },
   docFontSize: 22,
   docFont: 'andika',
   protectSettings: false,

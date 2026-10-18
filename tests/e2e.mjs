@@ -124,7 +124,7 @@ ok(await page.locator('.calm').isVisible(), 'mantenir una lletra continua sent u
 await wait(3200);
 
 // 8c. holding the on-screen "esborra" key keeps deleting
-await set(`s => { s.keyboard.visible = true; s.keyboard.layout = 'simple'; }`);
+await set(`s => { s.keyboard.visible = true; }`);
 await clear();
 await page.evaluate(() => window.lecaa.editor.chain().command(({ tr }) => { tr.setMeta('lecaa-system', true); return true; }).insertContent('abcdefghij').focus('end').run());
 const back = page.locator('.osk .key[data-a="back"]');
@@ -149,20 +149,21 @@ await page.keyboard.type('x', { delay: 10 });
 ok((await text()) === 'Casa x', 'protecció: tecla acceptada quan acaba');
 await set(`s => { s.lockWhileSpeaking = false; }`);
 
-// 10. on-screen simple keyboard with auto capital
+// 10. on-screen keyboard: shift, space, delete and enter (only the full QWERTY exists)
 await clear();
-await set(`s => { s.keyboard.visible = true; s.keyboard.layout = 'simple'; s.feedback.word = false; }`);
-for (const k of ['s', 'o', 'l']) { await page.locator(`.osk .key[data-k="${k}"]`).click(); await wait(150); }
+await set(`s => { s.keyboard.visible = true; s.feedback.word = false; }`);
+await page.locator('.osk .key[data-a="shift"]').click(); await wait(150);
+for (const k of ['S', 'o', 'l']) { await page.locator(`.osk .key[data-k="${k}"]`).click(); await wait(150); }
 await page.locator('.osk .key[data-a="space"]').click(); await wait(150);
-await page.locator('.osk .key[data-k="à"]').click(); await wait(150);
+await page.locator('.osk .key[data-k="x"]').click(); await wait(150);
 await page.locator('.osk .key[data-a="back"]').click(); await wait(150);
 await page.locator('.osk .key[data-a="enter"]').click(); await wait(150);
-ok((await page.evaluate(() => window.lecaa.editor.getHTML())) === '<p>Sol </p><p></p>', 'teclat simplificat: ' + await page.evaluate(() => window.lecaa.editor.getHTML()));
+ok((await page.evaluate(() => window.lecaa.editor.getHTML())) === '<p>Sol </p><p></p>', 'teclat en pantalla: ' + await page.evaluate(() => window.lecaa.editor.getHTML()));
+ok((await page.locator('.osk .key').count()) > 45 && (await page.locator('.osk .key[data-k="·"]').count()) === 0, 'només hi ha el teclat QWERTY complet');
 ok((await page.locator('.ProseMirror').getAttribute('inputmode')) === 'none', 'teclat del sistema desactivat amb el teclat propi');
 await page.screenshot({ path: 'test-results/osk.png' });
 
 // 11. full keyboard dead key
-await set(`s => { s.keyboard.layout = 'full'; }`);
 await clear();
 await page.locator('.osk .key[data-a="dead"][data-k="grave"]').click(); await wait(150);
 await page.locator('.osk .key[data-k="e"]').click(); await wait(150);
@@ -287,12 +288,12 @@ ok(esCfg.word === true && esCfg.message === 'Piensa bien cada letra que escribes
 ok(esCfg.pw === caPassword && !!caPassword, 'la contrasenya de pantalla completa és la mateixa en els dos idiomes');
 ok((await page.evaluate(() => window.lecaa.speech.currentVoice()?.lang)) === 'es-ES', 'fa servir una veu de castellà d’Espanya');
 await ed.click();
-await set(`s => { s.feedback = { sentence: true, word: true, wordOnPunct: true, letter: 'name', upperCaseWord: false }; s.keyboard.visible = true; s.keyboard.layout = 'simple'; s.keyboard.autoCapital = false; }`);
+await set(`s => { s.feedback = { sentence: true, word: true, wordOnPunct: true, letter: 'name', upperCaseWord: false }; s.keyboard.visible = true; }`);
 await clear();
 for (const k of ['ñ', 'u', 'v']) { await page.locator(`.osk .key[data-k="${k}"]`).click(); await wait(250); }
 ok(JSON.stringify(await spoken()) === JSON.stringify(['eñe', 'u', 'uve']), 'noms de les lletres en castellà: ' + JSON.stringify(await spoken()));
 const oskKeys = await page.locator('.osk .key').allTextContents();
-ok(oskKeys.includes('¿') && oskKeys.includes('á') && oskKeys.includes('borrar') && !oskKeys.includes('ç') && !oskKeys.includes('·'), 'teclat simplificat castellà: ' + JSON.stringify(oskKeys));
+ok(oskKeys.includes('¡') && oskKeys.includes('ñ') && oskKeys.includes('borrar') && oskKeys.includes('⇧ Mayús'), 'teclat en pantalla en castellà: ' + JSON.stringify(oskKeys));
 await clear();
 await page.keyboard.type('Hola amigo ', { delay: 120 });
 await wait(400);

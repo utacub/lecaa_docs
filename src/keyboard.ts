@@ -1,11 +1,9 @@
-// On-screen keyboards. "simple": QWERTY where every key does exactly one thing
-// (no modifiers, no dead keys, only the characters needed to write the interface language).
-// "full": the Spanish/Catalan QWERTY used in Spain, with Shift, numbers and dead accent keys.
+// On-screen keyboard: the Spanish/Catalan QWERTY used in Spain, with Shift, numbers and dead
+// accent keys.
 
 import type { Editor } from '@tiptap/core';
 import { BACKSPACE_PER_SECOND, guard } from './guard';
-import { LANG, T } from './i18n';
-import { wantsCapital } from './letters';
+import { T } from './i18n';
 import { settings } from './settings';
 import { textBefore } from './editor';
 import { h } from './ui';
@@ -16,20 +14,6 @@ type Key = string | { label: string; action: 'space' | 'back' | 'enter' | 'shift
 const SPACE: Key = { label: T('espai', 'espacio'), action: 'space', value: 'espai' };
 const BACK: Key = { label: T('esborra', 'borrar'), action: 'back', value: 'esborra', wide: true };
 const ENTER: Key = { label: 'intro', action: 'enter', value: 'intro', wide: true };
-
-const SIMPLE: Key[][] = LANG === 'ca' ? [
-  ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
-  ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'ç'],
-  ['z', 'x', 'c', 'v', 'b', 'n', 'm', '·'],
-  ['à', 'è', 'é', 'í', 'ï', 'ò', 'ó', 'ú', 'ü'],
-  ['.', ',', '?', '!', SPACE, BACK, ENTER],
-] : [
-  ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
-  ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'ñ'],
-  ['z', 'x', 'c', 'v', 'b', 'n', 'm'],
-  ['á', 'é', 'í', 'ó', 'ú', 'ü'],
-  ['.', ',', '¿', '?', '¡', '!', SPACE, BACK, ENTER],
-];
 
 const FULL_LOWER: Key[][] = [
   ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', "'", '¡', BACK],
@@ -90,13 +74,12 @@ export class OnScreenKeyboard {
     document.documentElement.style.setProperty('--key', `${s.keySize}rem`);
     // Keep the operating system's keyboard closed while ours is shown.
     this.editor.view.dom.setAttribute('inputmode', s.visible ? 'none' : 'text');
-    const rows = s.layout === 'simple' ? SIMPLE : FULL_LOWER;
-    this.el.replaceChildren(...rows.map(r => h('div', { class: 'osk-row' }, ...r.map(k => this.keyEl(k, s.layout)))));
+    this.el.replaceChildren(...FULL_LOWER.map(r => h('div', { class: 'osk-row' }, ...r.map(k => this.keyEl(k)))));
   }
 
-  private keyEl(k: Key, layout: string) {
+  private keyEl(k: Key) {
     if (typeof k === 'string') {
-      const label = layout === 'full' && this.shift ? (SHIFTED[k] ?? k.toUpperCase()) : k;
+      const label = this.shift ? (SHIFTED[k] ?? k.toUpperCase()) : k;
       return h('button', { class: 'key', type: 'button', 'data-k': label, tabindex: 0 }, label);
     }
     const on = (k.action === 'shift' && this.shift) || (k.action === 'dead' && this.dead === k.value);
@@ -130,7 +113,6 @@ export class OnScreenKeyboard {
       this.render();
     }
     const before = textBefore(ed.state);
-    if (settings.value.keyboard.layout === 'simple' && settings.value.keyboard.autoCapital && /\p{L}/u.test(ch) && wantsCapital(before)) ch = ch.toUpperCase();
     if (!guard.content(before, ch)) return;
     ed.view.dispatch(ed.state.tr.insertText(ch).scrollIntoView());
     if (this.shift && ch !== ' ') { this.shift = false; this.render(); }
