@@ -80,9 +80,9 @@ src-tauri/           app d'escriptori i pont natiu de veu (src/tts)
 - La taula de noms de les lletres i la taula grafia → so (`src/letters.ts`).
 - Les locucions de sons aïllats, que provenen de LECAA i no s'han revisat fonèticament.
 - El comportament de les veus de Speech Platform i de les veus de 32 bits a Windows, i de macOS, en dispositius reals.
-- **Veus Aina (Matxa)**: el model real (273 MB) encara no s'ha pogut executar des de l'entorn de desenvolupament, perquè el CDN de Hugging Face hi està bloquejat. L'entrada i la sortida segueixen la demo oficial del BSC per a aquest mateix fitxer ONNX (`app.py` i `text/` a `huggingface.co/spaces/BSC-LT/matxa-tts-v2`): el text es prepara com `catalan_text` (sense puntuació) i l'àudio és la segona sortida del model, no la primera. L'app tria la sortida d'àudio per mida, de manera que funciona amb qualsevol dels dos ordres. Falta mesurar la memòria i la velocitat en un dispositiu real.
-- Veus Aina: el model fals de `tests/fixtures/` té les mateixes entrades (`x`, `x_lengths`, `scales`, `spks`) i, com el real, l'àudio a la segona sortida. Si la veu no genera so, l'app ho diu en pantalla en lloc de quedar en silenci.
-- Veus Aina: la numeració dels parlants 0 a 7 difereix entre la fitxa del model (Olga 0, Quim 1, Elia 2, Grau 3…) i el `spk_to_id_multiaccent.json` de la demo (Quim 0, Olga 1, Grau 2, Elia 3…). L'app segueix la fitxa; si una veu femenina sona masculina, cal intercanviar els parells.
+- **Veus Aina (Matxa)**: provades amb el model real (273 MB) a Chromium, al servidor de desenvolupament (sense GPU, un sol fil): càrrega uns 36 s, una frase de 2,6 s d'àudio uns 10,5 s, el nom d'una lletra uns 2 s. El model té dues sortides, `mel_lengths` (trames de l'espectrograma, no mostres) i `hfwaveform`; l'app agafa tot `hfwaveform`. Falta mesurar-ho en ordinadors reals.
+- Veus Aina: el model fals de `tests/fixtures/` té exactament les entrades i sortides del real.
+- Veus Aina: la numeració dels parlants segueix el `spk_to_id_multiaccent.json` de la demo del BSC (la fitxa del model intercanvia 0-7). El to mitjà de cada veu amb el model real ho confirma, llevat de "Jordi" (15), que té un to de veu femenina (uns 210 Hz) tot i el nom.
 
 ## Llicències de tercers
 

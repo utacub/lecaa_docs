@@ -105,8 +105,8 @@ async function handle(m: WorkerRequest): Promise<WorkerResponse> {
 
 // Inputs as in the BSC demo for this model (huggingface.co/spaces/BSC-LT/matxa-tts-v2, app.py):
 // x, x_lengths, scales [temperature, length scale (higher = slower)], spks. The demo reads the
-// waveform from the second output, not the first, so the waveform is found by its size: the
-// largest float output (a mel spectrogram, if present, has 256 times fewer values).
+// waveform from the second output (hfwaveform, after mel_lengths), so the waveform is found by
+// its type and size: the largest float output.
 async function synthMatxa(id: number, text: string, rate: number, speaker: number): Promise<WorkerResponse> {
   const ids = matxaIds(text);
   if (ids.length < 3) return { id, ok: true, audio: new Float32Array(0), sampleRate: MATXA_RATE };
@@ -120,10 +120,10 @@ async function synthMatxa(id: number, text: string, rate: number, speaker: numbe
   const tensors = session!.outputNames.map(n => out[n]).filter(Boolean);
   const wav = tensors.filter(t => t.type === 'float32').sort((a, b) => b.size - a.size)[0];
   if (!wav) throw new Error('model without audio output');
-  const data = wav.data as Float32Array;
-  const lengths = tensors.find(t => t.type === 'int64' && t.size === 1);
-  const len = lengths ? Number((lengths.data as BigInt64Array)[0]) : data.length;
-  const audio = data.slice(0, len > 0 && len <= data.length ? len : data.length);
+  // One sentence per call, so there is no batch padding to trim. The model's other output,
+  // mel_lengths, counts spectrogram frames, not samples: using it as a length cut the audio to a
+  // few milliseconds.
+  const audio = (wav.data as Float32Array).slice();
   if (!audio.length) throw new Error('la veu no ha generat so');
   return { id, ok: true, audio, sampleRate: MATXA_RATE };
 }

@@ -52,10 +52,12 @@ export const MODELS: NeuralModel[] = [
     mustAccept: 'Aquestes veus del projecte Aina només es poden fer servir per a finalitats acadèmiques, de recerca o sense ànim de lucre, mai comercials. Són veus sintètiques, no persones reals. En descarregar-les acceptes la llicència del BSC (enllaç a sota), que el BSC pot fer complir.',
     experimental: true,
     voices: [
-      ['Olga', 'balear', 0], ['Quim', 'balear', 1], ['BM', 'balear', 10],
-      ['Elia', 'central', 2], ['Grau', 'central', 3], ['CF', 'central', 11], ['CM', 'central', 12],
-      ['Emma', 'nord-occidental', 4], ['Pere', 'nord-occidental', 5], ['Estel', 'nord-occidental', 13],
-      ['Gina', 'valencià', 6], ['Lluc', 'valencià', 7], ['Arnau', 'valencià', 8], ['Berta', 'valencià', 9],
+      // Speaker numbers from spk_to_id_multiaccent.json of the BSC demo (the model card swaps 0-7);
+      // checked against the pitch of each voice with the real model.
+      ['Quim', 'balear', 0], ['Olga', 'balear', 1], ['BM', 'balear', 10],
+      ['Grau', 'central', 2], ['Elia', 'central', 3], ['CF', 'central', 11], ['CM', 'central', 12],
+      ['Pere', 'nord-occidental', 4], ['Emma', 'nord-occidental', 5], ['Estel', 'nord-occidental', 13],
+      ['Lluc', 'valencià', 6], ['Gina', 'valencià', 7], ['Arnau', 'valencià', 8], ['Berta', 'valencià', 9],
       ['Laura', 'septentrional', 14], ['Jordi', 'septentrional', 15],
     ].map(([name, dialect, speaker]) => ({ id: `matxa-${speaker}`, name: `${name} (Aina)`, dialect: dialect as string, speaker: speaker as number })),
   },
