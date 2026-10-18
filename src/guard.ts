@@ -11,6 +11,9 @@ import { h } from './ui';
 
 const MODIFIERS = new Set(['Shift', 'Control', 'Alt', 'AltGraph', 'Meta', 'CapsLock', 'Fn', 'OS', 'Dead']);
 
+// Holding Backspace keeps deleting (not a misuse), at most this many characters per second.
+export const BACKSPACE_PER_SECOND = 4;
+
 export type Misuse = 'simultaneous' | 'burst' | 'repeat' | 'consonants' | 'autorepeat';
 
 class InputGuard {
@@ -20,6 +23,7 @@ class InputGuard {
   private recent: { t: number; key: string }[] = [];
   private repeats = 0;
   private lastKey = { key: '', t: 0 };
+  private lastHeldDelete = 0;
   onMisuse: ((m: Misuse) => void) | null = null;
 
   constructor() {
@@ -34,6 +38,15 @@ class InputGuard {
 
   private refreshLock() { document.body.classList.toggle('is-locked', this.locked()); }
 
+  // A held Backspace (physical auto-repeat or held on-screen key): accepted at a limited pace.
+  heldDelete(): boolean {
+    if (this.blocked()) return false;
+    const now = performance.now();
+    if (now - this.lastHeldDelete < 1000 / BACKSPACE_PER_SECOND) return false;
+    this.lastHeldDelete = now;
+    return true;
+  }
+
   // Timing checks shared by both keyboards. Returns false when the press must be discarded.
   press(key: string, opts: { repeat?: boolean; simultaneous?: number } = {}): boolean {
     if (this.blocked()) return false;
@@ -46,6 +59,7 @@ class InputGuard {
       return false;
     }
     this.repeats = 0;
+    if (key.endsWith('Backspace') || key === 'osk:esborra') this.lastHeldDelete = now;
 
     const deb = settings.value.motor.debounceMs;
     if (deb > 0 && key === this.lastKey.key && now - this.lastKey.t < deb) return false;
@@ -73,6 +87,7 @@ class InputGuard {
   // Physical keyboard: called from a window-level capture listener.
   keydown(e: KeyboardEvent): boolean {
     if (MODIFIERS.has(e.key)) return !this.calming();
+    if (e.key === 'Backspace' && e.repeat) return this.heldDelete();
     if (!e.repeat) this.down.add(e.code || e.key);
     const counted = [...this.down].length;
     return this.press(e.code || e.key, { repeat: e.repeat, simultaneous: counted });

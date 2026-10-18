@@ -99,6 +99,44 @@ await wait(80);
 ok(await page.locator('.calm').isVisible(), 'avís amb tecles massa seguides');
 await wait(3200);
 
+// 8b. holding Backspace is allowed, at most 4 deletions per second, without a calm warning
+await set(`s => { s.feedback = { sentence: false, word: false, wordOnPunct: false, letter: 'off', upperCaseWord: false }; }`);
+await clear();
+const held = await page.evaluate(async () => {
+  const el = document.querySelector('.ProseMirror');
+  const send = repeat => { const e = new KeyboardEvent('keydown', { key: 'Backspace', code: 'Backspace', repeat, bubbles: true, cancelable: true }); el.dispatchEvent(e); return !e.defaultPrevented; };
+  let accepted = send(false) ? 1 : 0;
+  await new Promise(r => setTimeout(r, 500)); // the system's delay before auto-repeat
+  const t0 = performance.now();
+  while (performance.now() - t0 < 2000) { if (send(true)) accepted++; await new Promise(r => setTimeout(r, 33)); }
+  el.dispatchEvent(new KeyboardEvent('keyup', { key: 'Backspace', code: 'Backspace', bubbles: true }));
+  return accepted;
+});
+ok(held >= 8 && held <= 10, `mantenir esborrar: ${held} esborrats en 2,5 s (màxim 4 per segon)`);
+ok(!(await page.locator('.calm').isVisible()), 'mantenir esborrar no mostra l’avís de calma');
+// a held letter is still a misuse
+await page.evaluate(async () => {
+  const el = document.querySelector('.ProseMirror');
+  for (let i = 0; i < 10; i++) el.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', code: 'KeyA', repeat: i > 0, bubbles: true, cancelable: true }));
+  el.dispatchEvent(new KeyboardEvent('keyup', { key: 'a', code: 'KeyA', bubbles: true }));
+});
+ok(await page.locator('.calm').isVisible(), 'mantenir una lletra continua sent un mal ús');
+await wait(3200);
+
+// 8c. holding the on-screen "esborra" key keeps deleting
+await set(`s => { s.keyboard.visible = true; s.keyboard.layout = 'simple'; }`);
+await clear();
+await page.evaluate(() => window.lecaa.editor.chain().command(({ tr }) => { tr.setMeta('lecaa-system', true); return true; }).insertContent('abcdefghij').focus('end').run());
+const back = page.locator('.osk .key[data-a="back"]');
+const box = await back.boundingBox();
+await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+await page.mouse.down();
+await wait(1600);
+await page.mouse.up();
+const left = await text();
+ok(left.length >= 4 && left.length <= 6, 'mantenir “esborra” en pantalla: ' + JSON.stringify(left));
+await set(`s => { s.keyboard.visible = false; }`);
+
 // 9. lock while speaking
 await set(`s => { s.feedback = { sentence: false, word: true, wordOnPunct: true, letter: 'off', upperCaseWord: false }; s.lockWhileSpeaking = true; }`);
 await clear();

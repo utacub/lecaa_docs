@@ -3,7 +3,7 @@
 // "full": a Catalan/Spanish QWERTY with Shift, numbers and dead accent keys.
 
 import type { Editor } from '@tiptap/core';
-import { guard } from './guard';
+import { BACKSPACE_PER_SECOND, guard } from './guard';
 import { wantsCapital } from './letters';
 import { settings } from './settings';
 import { textBefore } from './editor';
@@ -41,6 +41,7 @@ export class OnScreenKeyboard {
   private shift = false;
   private dead: string | null = null;
   private pointers = new Set<number>();
+  private holdTimer = 0;
 
   constructor(private editor: Editor) {
     this.el.addEventListener('pointerdown', e => {
@@ -48,8 +49,17 @@ export class OnScreenKeyboard {
       const k = (e.target as HTMLElement).closest<HTMLButtonElement>('.key');
       e.preventDefault(); // keep the caret in the document and the system keyboard closed
       if (k) this.press(k.dataset.k!, k.dataset.a);
+      // Holding "esborra" keeps deleting, like a physical Backspace, at the guard's pace.
+      if (k?.dataset.a === 'back') {
+        clearTimeout(this.holdTimer);
+        const again = () => {
+          if (guard.heldDelete()) this.deleteBack();
+          this.holdTimer = window.setTimeout(again, 1000 / BACKSPACE_PER_SECOND);
+        };
+        this.holdTimer = window.setTimeout(again, 500);
+      }
     });
-    const up = (e: PointerEvent) => this.pointers.delete(e.pointerId);
+    const up = (e: PointerEvent) => { this.pointers.delete(e.pointerId); clearTimeout(this.holdTimer); };
     this.el.addEventListener('pointerup', up);
     this.el.addEventListener('pointercancel', up);
     this.el.addEventListener('pointerleave', up);
@@ -82,22 +92,24 @@ export class OnScreenKeyboard {
     return h('button', { class: cls, type: 'button', 'data-k': k.value ?? k.label, 'data-a': k.action, 'aria-pressed': k.action === 'shift' || k.action === 'dead' ? String(on) : null }, k.label);
   }
 
+  private deleteBack() {
+    // Browsers delete characters natively, so the editor keymap alone cannot do it.
+    const ed = this.editor;
+    const { empty, $from, from } = ed.state.selection;
+    if (!empty) ed.commands.deleteSelection();
+    else if ($from.parentOffset > 0) {
+      const prev = $from.parent.textBetween(0, $from.parentOffset, undefined, '\ufffc');
+      const len = [...prev].pop()?.length ?? 1;
+      ed.view.dispatch(ed.state.tr.delete(from - len, from).scrollIntoView());
+    } else ed.commands.keyboardShortcut('Backspace');
+  }
+
   private press(value: string, action?: string) {
     if (!guard.press('osk:' + value, { simultaneous: this.pointers.size })) return;
     const ed = this.editor;
     if (action === 'shift') { this.shift = !this.shift; this.render(); return; }
     if (action === 'dead') { this.dead = this.dead === value ? null : value; this.render(); return; }
-    if (action === 'back') {
-      // Browsers delete characters natively, so the editor keymap alone cannot do it.
-      const { empty, $from, from } = ed.state.selection;
-      if (!empty) ed.commands.deleteSelection();
-      else if ($from.parentOffset > 0) {
-        const prev = $from.parent.textBetween(0, $from.parentOffset, undefined, '\ufffc');
-        const len = [...prev].pop()?.length ?? 1;
-        ed.view.dispatch(ed.state.tr.delete(from - len, from).scrollIntoView());
-      } else ed.commands.keyboardShortcut('Backspace');
-      return;
-    }
+    if (action === 'back') { this.deleteBack(); return; }
     if (action === 'enter') { ed.commands.keyboardShortcut('Enter'); return; }
     let ch = action === 'space' ? ' ' : value;
     if (this.dead) {
