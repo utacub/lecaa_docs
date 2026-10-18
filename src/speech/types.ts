@@ -14,7 +14,7 @@ export interface SpeakOptions {
 }
 
 export interface SpeechEngine {
-  readonly kind: 'web' | 'native';
+  readonly kind: 'web' | 'native' | 'neural';
   available(): boolean;
   listVoices(): Promise<VoiceInfo[]>;
   // Resolves when the utterance ends, fails or is stopped.
@@ -22,6 +22,8 @@ export interface SpeechEngine {
   stop(): void;
   onVoicesChanged(cb: () => void): void;
   readonly wordBoundaries: boolean;
+  // True when speak() always settles by itself, so no safety timeout is needed.
+  readonly reliableEnd?: boolean;
 }
 
 export const isCatalan = (lang: string) => /^ca($|[-_])/i.test(lang.trim());

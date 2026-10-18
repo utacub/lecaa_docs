@@ -3,6 +3,8 @@ import { guard } from './guard';
 import { inTauri } from './speech/native';
 import { settings, type LetterMode, type Settings } from './settings';
 import { speech, type VoiceInfo } from './speech';
+import { neural } from './speech/neural';
+import { MODELS } from './speech/neural/catalog';
 import { isCatalan } from './speech/types';
 import { h, icon, toast } from './ui';
 
@@ -44,8 +46,52 @@ function noVoicesHelp() {
       ? 'A iOS i macOS, descarrega les veus Jordi, Montse o Pau a Configuració > Accessibilitat > Contingut llegit > Veus. Safari no mostra totes les veus descarregades a la versió web; l’app instal·lable sí que les veurà.'
       : /Windows/i.test(ua)
         ? 'A Windows, afegeix la veu catalana Herena des de Configuració > Hora i idioma > Veu, o instal·la Microsoft Speech Platform amb la veu Herena. L’app per a Windows les detecta totes; el navegador només en veu una part.'
-        : 'Instal·la una veu catalana al sistema (per exemple eSpeak NG o Festcat a Linux) i torna a carregar la llista.';
-  return h('div', { class: 'voice-list-empty' }, 'No s’ha trobat cap veu catalana en aquest dispositiu. ', where);
+        : 'Instal·la una veu catalana al sistema i torna a carregar la llista.';
+  return h('div', { class: 'voice-list-empty' }, 'No s’ha trobat cap veu catalana en aquest dispositiu. ', where,
+    ' També pots descarregar una veu catalana gratuïta aquí sota: funciona en qualsevol dispositiu i sense connexió.');
+}
+
+const mb = (bytes: number) => `${Math.round(bytes / 1_000_000)} MB`;
+
+// Free Catalan voices that run inside the app: download once, then they work offline.
+function neuralVoicesBox(onInstalled: (voiceId: string) => void) {
+  const box = h('div', { class: 'neural-list' });
+  const render = async () => {
+    const rows = await Promise.all(MODELS.map(async m => {
+      const st = await neural.state(m.key);
+      const status = st.state === 'downloading'
+        ? h('div', { class: 'neural-progress' },
+          h('progress', { max: st.total || 1, value: st.loaded, 'aria-label': `Descarregant ${m.title}` }),
+          h('span', {}, `${mb(st.loaded)} de ${mb(st.total)}`))
+        : st.state === 'installed'
+          ? h('div', { class: 'row' },
+            h('span', { class: 'neural-ok' }, 'Descarregada · funciona sense connexió'),
+            h('button', { class: 'small-btn', type: 'button', onclick: async () => {
+              if (!confirm(`Vols esborrar ${m.title} d’aquest dispositiu?`)) return;
+              await neural.uninstall(m.key);
+            } }, 'Esborra'))
+          : h('button', { class: 'small-btn', type: 'button', 'data-install': m.key, onclick: async () => {
+            if (m.mustAccept && !confirm(`${m.mustAccept}\n\nLlicència: ${m.licenceUrl}`)) return;
+            if (!navigator.onLine) { toast('Cal connexió a internet per descarregar la veu'); return; }
+            try {
+              await neural.install(m.key);
+              await speech.refresh();
+              toast(`${m.title} ja és a punt`);
+              onInstalled('neural:' + m.voices[0].id);
+            } catch {
+              toast('No s’ha pogut descarregar la veu. Torna-ho a provar més tard.');
+            }
+          } }, `Descarrega (${mb(await neural.downloadSize(m))})`);
+      return h('div', { class: 'neural-item' },
+        h('div', { class: 'neural-title' }, m.title, m.experimental ? h('span', { class: 'tag' }, 'experimental') : null),
+        h('p', { class: 'hint' }, m.description, ' ', h('a', { href: m.licenceUrl, target: '_blank', rel: 'noopener' }, 'Llicència'), ': ', m.licence),
+        status);
+    }));
+    box.replaceChildren(...rows);
+  };
+  neural.onStateChanged(() => { if (box.isConnected) void render(); });
+  void render();
+  return box;
 }
 
 export function openSettings(onClose: () => void) {
@@ -81,10 +127,17 @@ export function openSettings(onClose: () => void) {
         h('button', { class: 'small-btn', type: 'button', onclick: async () => { await speech.refresh(); renderVoices(); toast('Llista de veus actualitzada'); } }, 'Torna a buscar veus')),
       h('p', { class: 'hint' }, inTauri()
         ? 'L’app fa servir directament les veus instal·lades al sistema operatiu.'
-        : 'Versió web: només es mostren les veus que el navegador permet fer servir. L’app instal·lable en pot detectar més.'),
+        : 'Versió web: només es mostren les veus que el navegador permet fer servir. L’app instal·lable en pot detectar més. Les marcades “necessita connexió” (per exemple les veus naturals de Microsoft Edge) són gratuïtes però funcionen en línia.'),
     );
   };
   renderVoices();
+  speech.onVoices(() => { if (voiceBox.isConnected) renderVoices(); });
+  const neuralBox = h('details', { class: 'neural', open: speech.catalanVoices().length === 0 },
+    h('summary', {}, 'Veus catalanes gratuïtes per descarregar'),
+    h('p', { class: 'hint' }, 'Es descarreguen una sola vegada i després funcionen dins l’app, sense connexió, en qualsevol dispositiu.'),
+    neuralVoicesBox(id => {
+      if (!settings.value.voice.id || !speech.voices.some(v => v.id === settings.value.voice.id && v.id.startsWith('neural:'))) upd(x => { x.voice.id = id; });
+    }));
 
   // ----- letter sub-options -----
   const letterBox = h('div', { class: 'subgroup' });
@@ -143,7 +196,7 @@ export function openSettings(onClose: () => void) {
     h('header', {}, h('h2', { id: 'settings-title' }, 'Configuració'),
       h('button', { class: 'tb', type: 'button', 'aria-label': 'Tanca', onclick: close }, icon(X))),
     h('div', { class: 'body' },
-      h('fieldset', {}, h('legend', {}, 'Veu sintètica'), voiceBox,
+      h('fieldset', {}, h('legend', {}, 'Veu sintètica'), voiceBox, neuralBox,
         check('Mostra també veus d’altres llengües', null, x => x.voice.showAll, (x, v) => { x.voice.showAll = v; renderVoices(); }),
         range('Velocitat', 0.5, 1.6, 0.05, x => x.voice.rate, (x, v) => { x.voice.rate = v; }, v => `${Math.round(v * 100)} %`),
         range('To', 0.6, 1.4, 0.05, x => x.voice.pitch, (x, v) => { x.voice.pitch = v; }, v => `${Math.round(v * 100)} %`),

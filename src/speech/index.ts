@@ -4,6 +4,7 @@
 
 import { settings } from '../settings';
 import { NativeEngine } from './native';
+import { neural } from './neural';
 import { isCatalan, type SpeechEngine, type VoiceInfo } from './types';
 import { WebSpeechEngine } from './web';
 
@@ -18,7 +19,7 @@ export type SoundItem =
 type BusyListener = (busy: boolean) => void;
 
 class SpeechHub {
-  readonly engines: SpeechEngine[] = [new NativeEngine(), new WebSpeechEngine()];
+  readonly engines: SpeechEngine[] = [new NativeEngine(), neural, new WebSpeechEngine()];
   voices: VoiceInfo[] = [];
   private token = 0;
   private audio: HTMLAudioElement | null = null;
@@ -49,13 +50,15 @@ class SpeechHub {
 
   catalanVoices() { return this.voices.filter(v => isCatalan(v.lang)); }
 
-  // The configured voice, or the best Catalan default: native engines first, offline first.
+  // The configured voice, or the best Catalan default: system voices first, then the voices
+  // downloaded into the app, offline first.
   currentVoice(): VoiceInfo | null {
     const id = settings.value.voice.id;
     const chosen = id ? this.voices.find(v => v.id === id) : undefined;
     if (chosen) return chosen;
     const ca = this.catalanVoices();
     return ca.find(v => v.id.startsWith('native:') && v.offline !== false)
+      ?? ca.find(v => v.id.startsWith('neural:'))
       ?? ca.find(v => v.offline !== false)
       ?? ca[0]
       ?? null;
@@ -98,10 +101,12 @@ class SpeechHub {
     const v = this.currentVoice();
     if (!v || !text.trim()) return;
     const { rate, pitch, volume } = settings.value.voice;
+    const engine = this.engineFor(v);
+    if (engine.reliableEnd) return engine.speak(v.id, text, { rate, pitch, volume, onWord });
     // Safety net: some engines never report the end of an utterance.
     const limit = Math.max(2500, (text.length * 110) / rate) * 2 + 1500;
     await Promise.race([
-      this.engineFor(v).speak(v.id, text, { rate, pitch, volume, onWord }),
+      engine.speak(v.id, text, { rate, pitch, volume, onWord }),
       new Promise<void>(res => setTimeout(res, limit)),
     ]);
   }

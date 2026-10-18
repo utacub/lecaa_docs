@@ -11,6 +11,7 @@ export default defineConfig(({ mode }) => {
     plugins: single ? [viteSingleFile()] : [],
     build: {
       outDir: single ? 'dist-single' : 'dist',
+      copyPublicDir: !single, // the single file fetches the voice runtime from jsDelivr instead
       assetsInlineLimit: single ? 100_000_000 : 4096,
       chunkSizeWarningLimit: 4000,
     },

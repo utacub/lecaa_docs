@@ -17,12 +17,20 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm run build:single
+      - run: npx vitest run
       - name: Browser tests
         run: |
           npx playwright install --with-deps chromium
           npx vite preview --port 4173 --strictPort &
           sleep 3
-          CHROMIUM="$(node -e "console.log(require('@playwright/test').chromium.executablePath())")" node tests/e2e.mjs http://localhost:4173/
+          export CHROMIUM="$(node -e "console.log(require('@playwright/test').chromium.executablePath())")"
+          node tests/e2e.mjs http://localhost:4173/
+          # In-app Piper voices with the real (small) Ona and Pau models.
+          mkdir -p piper && cd piper
+          for v in ona pau; do mkdir -p $v && curl -sSL "https://github.com/rhasspy/piper/releases/download/v0.0.2/voice-ca-upc_$v-x-low.tar.gz" | tar xz -C $v; done
+          cd ..
+          PIPER_DIR="$PWD/piper" node tests/neural.mjs http://localhost:4173/
+          PIPER_DIR="$PWD/piper" node tests/neural.mjs "file://$PWD/dist-single/index.html"
       - uses: actions/upload-artifact@v4
         with: { name: LECAA-Docs-web, path: dist }
       - name: Single-file edition

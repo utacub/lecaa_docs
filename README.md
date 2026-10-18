@@ -2,7 +2,7 @@
 
 Processador de textos senzill amb funcions de text a veu per ajudar usuaris de CAA a aprendre a escriure en català. Comparteix paleta, tipografies (Manrope i Andika) i locucions de sons amb [LECAA](https://github.com/utacub/lecaa).
 
-Versió 0.1.0 (primera versió). La planificació completa és a `planificacio.md` del projecte.
+Versió 0.2.0. L'app és gratuïta per a tothom. La planificació completa és a `planificacio.md` del projecte.
 
 ## Què fa
 
@@ -18,6 +18,10 @@ Versió 0.1.0 (primera versió). La planificació completa és a `planificacio.m
 - **Ajust motriu**: ignora la mateixa tecla repetida en menys d'un temps configurable.
 - **Teclat en pantalla**: simplificat (cada tecla fa una sola cosa) o QWERTY complet amb majúscules i accents.
 - **Veus**: detecta les veus catalanes instal·lades al dispositiu i deixa triar-ne una, amb velocitat, to i volum.
+- **Veus catalanes gratuïtes dins l'app** (Configuració > Veu sintètica > Veus catalanes gratuïtes per descarregar). Es descarreguen una vegada, es guarden al dispositiu (IndexedDB) i després funcionen sense connexió a totes les versions, fins i tot al fitxer únic:
+  - **Piper**: Ona (qualitat mitjana, 63 MB), Ona lleugera (21 MB) i Pau lleugera (28 MB), totes en català central. El motor (fonemitzador espeak-ng i ONNX Runtime en WebAssembly, uns 29 MB) es descarrega amb la primera veu.
+  - **Veus Aina (Matxa v2, BSC)**, *experimental*: 16 veus en 5 variants (balear, central, nord-occidental, valencià i septentrional), 273 MB. Abans de descarregar-les, l'usuari ha d'acceptar la llicència no comercial del BSC.
+  - Les veus en línia del navegador (per exemple les naturals de Microsoft a Edge) també es poden triar; a la llista surten marcades "necessita connexió".
 - **Documents**: desat automàtic al dispositiu; obrir i desar `.docx` (Google Docs l'obre i l'exporta); imprimir o desar en PDF.
 - **Sense connexió**: totes les versions funcionen sense Internet.
 
@@ -25,9 +29,9 @@ Versió 0.1.0 (primera versió). La planificació completa és a `planificacio.m
 
 | Versió | Com s'obté | Veus que veu |
 |---|---|---|
-| Fitxer únic (`LECAA-Docs.html`) | Es descarrega i s'obre amb el navegador | Les que exposa el navegador |
-| Web (`dist/`) | Es publica en un servidor; es pot instal·lar com a app | Les que exposa el navegador |
-| App d'escriptori (Tauri) | Instal·lador per a Windows (64 i 32 bits), macOS i Linux | **Totes les del sistema** |
+| Fitxer únic (`LECAA-Docs.html`) | Es descarrega i s'obre amb el navegador | Les que exposa el navegador + Piper i Aina descarregades |
+| Web (`dist/`) | Es publica en un servidor; es pot instal·lar com a app | Les que exposa el navegador + Piper i Aina descarregades |
+| App d'escriptori (Tauri) | Instal·lador per a Windows (64 i 32 bits), macOS i Linux | **Totes les del sistema** + Piper i Aina descarregades |
 
 L'app d'escriptori llegeix directament les veus del sistema:
 
@@ -45,7 +49,9 @@ npm run build          # versió web a dist/
 npm run build:single   # fitxer únic a dist-single/index.html
 npx tauri dev          # app d'escriptori en mode desenvolupament
 npx tauri build        # instal·ladors a src-tauri/target/release/bundle/
+npx vitest run                              # proves unitàries
 node tests/e2e.mjs http://localhost:4173/   # proves (amb `npx vite preview --port 4173` engegat)
+PIPER_DIR=… node tests/neural.mjs http://localhost:4173/   # veus Piper reals (models x_low a PIPER_DIR/{ona,pau})
 ```
 
 GitHub Actions (`.github/workflows/build.yml`) genera la versió web, el fitxer únic i els instal·ladors per a totes les plataformes d'escriptori.
@@ -62,6 +68,7 @@ src/
   keyboard.ts        teclats en pantalla
   reader.ts          lectura a demanda i ressaltat
   speech/            motors de veu (navegador i natiu) i locucions
+  speech/neural/     veus dins l'app: catàleg, descàrregues, worker Piper/Matxa
   docio.ts           .docx (mammoth / docx), fitxers del dispositiu
   settings*.ts       configuració i panell
   assets/sons/       sons aïllats d'Anna i Jordi (de LECAA)
@@ -73,7 +80,9 @@ src-tauri/           app d'escriptori i pont natiu de veu (src/tts)
 - La taula de noms de les lletres i la taula grafia → so (`src/letters.ts`).
 - Les locucions de sons aïllats, que provenen de LECAA i no s'han revisat fonèticament.
 - El comportament de les veus de Speech Platform i de les veus de 32 bits a Windows, i de macOS, en dispositius reals.
+- **Veus Aina (Matxa)**: no s'han pogut provar (Hugging Face no era accessible des de l'entorn de desenvolupament). La preparació del text segueix el codi públic del BSC (`symbols.py`, `cli.py`, `onnx/infer.py`, branca `v2-graphemes`), però cal confirmar-ho en un dispositiu real, i també la memòria i la velocitat amb un model de 273 MB.
+- Ona qualitat mitjana: s'ha provat el mateix circuit amb les versions lleugeres d'Ona i Pau, però no amb aquest model.
 
 ## Llicències de tercers
 
-Andika i Manrope: SIL Open Font License 1.1. Tiptap, docx, Tauri: MIT. Mammoth: BSD-2-Clause. DOMPurify: MPL-2.0 o Apache-2.0. Lucide: ISC. Les locucions d'Anna i Jordi s'han creat per a LECAA.
+Andika i Manrope: SIL Open Font License 1.1. Tiptap, docx, Tauri, ONNX Runtime Web, piper-wasm i vits-web (Diffusion Studio): MIT. El fonemitzador inclou espeak-ng (GPL-3.0), de manera que les versions que el distribueixen s'han de publicar sota una llicència compatible amb la GPL-3.0. Veus Piper Ona i Pau: dades de la UPC (Festcat), CC BY-SA 3.0 ES. Veus Aina (Matxa v2): llicència RAIL no comercial del BSC (custom-ro-nc-openrail-m), només per a finalitats acadèmiques, de recerca o sense ànim de lucre; l'app la mostra i en demana l'acceptació abans de descarregar-les. Mammoth: BSD-2-Clause. DOMPurify: MPL-2.0 o Apache-2.0. Lucide: ISC. Les locucions d'Anna i Jordi s'han creat per a LECAA.
