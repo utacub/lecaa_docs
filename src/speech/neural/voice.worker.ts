@@ -103,8 +103,10 @@ async function handle(m: WorkerRequest): Promise<WorkerResponse> {
   return { id: m.id, ok: true, audio, sampleRate: config.audio.sample_rate };
 }
 
-// Inputs and outputs as in matcha/onnx/infer.py: x, x_lengths, scales [temperature, speaking
-// rate (higher = slower)], spks → wav, wav_lengths.
+// Inputs as in the BSC demo for this model (huggingface.co/spaces/BSC-LT/matxa-tts-v2, app.py):
+// x, x_lengths, scales [temperature, length scale (higher = slower)], spks. The demo reads the
+// waveform from the second output, not the first, so the waveform is found by its size: the
+// largest float output (a mel spectrogram, if present, has 256 times fewer values).
 async function synthMatxa(id: number, text: string, rate: number, speaker: number): Promise<WorkerResponse> {
   const ids = matxaIds(text);
   if (ids.length < 3) return { id, ok: true, audio: new Float32Array(0), sampleRate: MATXA_RATE };
@@ -115,10 +117,15 @@ async function synthMatxa(id: number, text: string, rate: number, speaker: numbe
   };
   if (session!.inputNames.includes('spks')) feeds.spks = new ort.Tensor('int64', BigInt64Array.from([BigInt(speaker)]), [1]);
   const out = await session!.run(feeds);
-  const [wavName, lenName] = session!.outputNames;
-  const wav = out[wavName].data as Float32Array;
-  const len = lenName && out[lenName] ? Number((out[lenName].data as BigInt64Array)[0]) : wav.length;
-  return { id, ok: true, audio: wav.slice(0, Math.min(len, wav.length)), sampleRate: MATXA_RATE };
+  const tensors = session!.outputNames.map(n => out[n]).filter(Boolean);
+  const wav = tensors.filter(t => t.type === 'float32').sort((a, b) => b.size - a.size)[0];
+  if (!wav) throw new Error('model without audio output');
+  const data = wav.data as Float32Array;
+  const lengths = tensors.find(t => t.type === 'int64' && t.size === 1);
+  const len = lengths ? Number((lengths.data as BigInt64Array)[0]) : data.length;
+  const audio = data.slice(0, len > 0 && len <= data.length ? len : data.length);
+  if (!audio.length) throw new Error('la veu no ha generat so');
+  return { id, ok: true, audio, sampleRate: MATXA_RATE };
 }
 
 self.onmessage = async (e: MessageEvent<WorkerRequest>) => {

@@ -8,12 +8,17 @@ describe('Matxa text front-end', () => {
     expect(numberToCatalan(200)).toBe('dos-cents');
     expect(numberToCatalan(1999)).toBe('mil nou-cents noranta-nou');
     expect(numberToCatalan(2000000)).toBe('dos milions');
-    expect(matxaText('Tinc 3 gats i 1.500 peixos, 2,5 kg.')).toBe('tinc tres gats i mil cinc-cents peixos, dos coma cinc kg.');
+    expect(matxaText('Tinc 3 gats i 1.500 peixos, 2,5 kg.')).toBe('tinc tres gats i mil cinc-cents peixos dos coma cinc kg');
   });
   it('maps graphemes to ids interspersed with the pad symbol', () => {
     const ids = matxaIds('Hi');
     expect(ids.length).toBe(5);
     expect(ids.filter((_, i) => i % 2 === 0).every(x => x === 0)).toBe(true);
     expect(matxaIds("l'àvia").length).toBe(13);
+  });
+  it('prepares text as the BSC demo does', () => {
+    expect(matxaText('L’àvia diu: «Col·loca-ho, sisplau!»')).toBe("l'àvia diu col·loca-ho sisplau");
+    expect(matxaText("'Hola' Pere.")).toBe('hola pere');
+    expect(matxaIds("l'a")).toEqual(matxaIds('l’a'));
   });
 });

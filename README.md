@@ -80,8 +80,9 @@ src-tauri/           app d'escriptori i pont natiu de veu (src/tts)
 - La taula de noms de les lletres i la taula grafia → so (`src/letters.ts`).
 - Les locucions de sons aïllats, que provenen de LECAA i no s'han revisat fonèticament.
 - El comportament de les veus de Speech Platform i de les veus de 32 bits a Windows, i de macOS, en dispositius reals.
-- **Veus Aina (Matxa)**: no s'han pogut provar (Hugging Face no era accessible des de l'entorn de desenvolupament). La preparació del text segueix el codi públic del BSC (`symbols.py`, `cli.py`, `onnx/infer.py`, branca `v2-graphemes`), però cal confirmar-ho en un dispositiu real, i també la memòria i la velocitat amb un model de 273 MB.
-- Veus Aina: el circuit (descàrrega, llicència, càrrega al worker, entrades `x`, `x_lengths`, `scales`, `spks` i sortides `wav`, `wav_lengths`) es prova amb un model fals amb la mateixa interfície (`tests/fixtures/`). Si el model real falla, l'app ara mostra el motiu en pantalla.
+- **Veus Aina (Matxa)**: el model real (273 MB) encara no s'ha pogut executar des de l'entorn de desenvolupament, perquè el CDN de Hugging Face hi està bloquejat. L'entrada i la sortida segueixen la demo oficial del BSC per a aquest mateix fitxer ONNX (`app.py` i `text/` a `huggingface.co/spaces/BSC-LT/matxa-tts-v2`): el text es prepara com `catalan_text` (sense puntuació) i l'àudio és la segona sortida del model, no la primera. L'app tria la sortida d'àudio per mida, de manera que funciona amb qualsevol dels dos ordres. Falta mesurar la memòria i la velocitat en un dispositiu real.
+- Veus Aina: el model fals de `tests/fixtures/` té les mateixes entrades (`x`, `x_lengths`, `scales`, `spks`) i, com el real, l'àudio a la segona sortida. Si la veu no genera so, l'app ho diu en pantalla en lloc de quedar en silenci.
+- Veus Aina: la numeració dels parlants 0 a 7 difereix entre la fitxa del model (Olga 0, Quim 1, Elia 2, Grau 3…) i el `spk_to_id_multiaccent.json` de la demo (Quim 0, Olga 1, Grau 2, Elia 3…). L'app segueix la fitxa; si una veu femenina sona masculina, cal intercanviar els parells.
 
 ## Llicències de tercers
 

@@ -101,16 +101,21 @@ export function numberToCatalan(n: number): string {
   return String(n).split('').map(d => UNITS[+d]).join(' ');
 }
 
-// The model card asks for numbers to be written out; the training cleaner lower-cases text.
+// Text as the BSC demo prepares it (catalan_text in text/cleaners.py and text/cleancat.py of
+// huggingface.co/spaces/BSC-LT/matxa-tts-v2): numbers written out, lower case, the apostrophe
+// inside a word as a straight ' and every other character outside the accepted set (punctuation
+// included) turned into a space.
+const MATXA_ACCEPTED = new Set("abcdefghijklmnopqrstuvwxyzàèìòùáéíóúäëïöüñçâêîôûæãẽĩõũ'· -");
+
 export function matxaText(text: string): string {
-  return text
+  const spelled = text
     .replace(/(\d)\.(?=\d{3}\b)/g, '$1') // 1.000 → 1000
     .replace(/\d+(?:,\d+)?/g, m => m.split(',').map(p => numberToCatalan(parseInt(p, 10))).join(' coma '))
     .normalize('NFC')
-    .toLowerCase()
-    .replace(/'/g, '’')
-    .replace(/\s+/g, ' ')
-    .trim();
+    .replace(/(?<=\p{L})[’‘`´](?=\p{L})/gu, "'")
+    .replace(/(?<!\p{L})'|'(?!\p{L})/gu, ' ') // quotes, not apostrophes
+    .toLowerCase();
+  return [...spelled].map(c => MATXA_ACCEPTED.has(c) ? c : ' ').join('').replace(/\s+/g, ' ').trim();
 }
 
 export function matxaIds(text: string): number[] {
