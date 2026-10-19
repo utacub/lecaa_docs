@@ -31,6 +31,22 @@ const brand = await page.evaluate(() => {
 });
 ok(brand.loaded && brand.alt === 'UTAC' && brand.label === 'LECAA Docs' && brand.left && brand.w > 80 && brand.svg, 'logos de la UTAC i de LECAA Docs a la barra: ' + JSON.stringify(brand));
 
+// 0b. "Sobre LECAA Docs" between full screen and settings, with the institutional logos
+const order = await page.evaluate(() => [...document.querySelectorAll('.topbar-actions button')].map(b => b.getAttribute('aria-label')));
+ok(order.indexOf('Sobre LECAA Docs') === order.indexOf('Pantalla completa') + 1 && order.indexOf('Configuració') === order.indexOf('Sobre LECAA Docs') + 1, 'botó Sobre LECAA Docs entre pantalla completa i configuració: ' + JSON.stringify(order));
+await page.click('[aria-label="Sobre LECAA Docs"]');
+await wait(500);
+const about = await page.evaluate(() => {
+  const d = document.querySelector('dialog.about');
+  return { open: d?.open, imgs: [...d.querySelectorAll('.about-institutions img')].map(i => i.alt + ':' + (i.complete && i.naturalWidth > 0)), text: d.textContent };
+});
+ok(about.open && about.imgs.length === 5 && about.imgs.every(x => x.endsWith(':true')) && about.text.includes('La UTAC és un equip de la Universitat de Barcelona i de la Fundació Bosch i Gimpera. Concreta la seva activitat'), 'diàleg Sobre LECAA Docs amb els 5 logos i el text de la UTAC: ' + JSON.stringify(about.imgs));
+await page.screenshot({ path: 'test-results/about.png' });
+await page.keyboard.press('Escape');
+await wait(300);
+ok(await page.evaluate(() => !document.querySelector('dialog.about')), 'Esc tanca el diàleg');
+await ed.click();
+
 // 1. word on space, sentence on period
 await set(`s => { s.feedback = { sentence: true, word: true, wordOnPunct: true, letter: 'off', upperCaseWord: false }; s.lockWhileSpeaking = false; }`);
 await clear();

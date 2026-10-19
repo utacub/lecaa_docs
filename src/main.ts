@@ -1,10 +1,11 @@
 import './styles.css';
 import type { Editor } from '@tiptap/core';
 import {
-  AArrowDown, AArrowUp, Bold, Check, ChevronDown, Columns3, Maximize, FileDown, FilePlus, FileType, FolderOpen, Globe, Image as ImageIcon, Italic, Keyboard, List, ListOrdered, Pause, Play,
+  AArrowDown, AArrowUp, Bold, Check, ChevronDown, Columns3, Maximize, FileDown, FilePlus, FileType, FolderOpen, Globe, Image as ImageIcon, Info, Italic, Keyboard, List, ListOrdered, Pause, Play,
   Printer, Redo2, Rows3, Settings as SettingsIcon, Square, SquareMinus, Table as TableIcon, TextAlignCenter, TextAlignEnd,
   TextAlignStart, TextCursorInput, Trash2, Underline, Undo2,
 } from 'lucide';
+import { openAbout } from './about';
 import { FONTS, fontByFamily, fontById, loadFonts } from './fonts';
 import { LANG, LANGS, switchLang, T } from './i18n';
 import { BASE_PT, docxFromEditor, htmlFromFile, openFile, safeName, saveFile } from './docio';
@@ -189,6 +190,9 @@ async function boot() {
   const setBtn = h('button', { class: 'vbtn ghost icon-only kiosk-hide', type: 'button', 'aria-label': T('Configuració', 'Configuración') }, icon(SettingsIcon));
   const fullBtn = h('button', { class: 'vbtn ghost icon-only kiosk-hide', type: 'button', title: T('Pantalla completa', 'Pantalla completa'), 'aria-label': T('Pantalla completa', 'Pantalla completa') }, icon(Maximize));
   fullBtn.addEventListener('click', () => void lock.enter());
+  const aboutLabel = T('Sobre LECAA Docs', 'Sobre LECAA Docs');
+  const aboutBtn = h('button', { class: 'vbtn ghost icon-only kiosk-hide', type: 'button', title: aboutLabel, 'aria-label': aboutLabel }, icon(Info));
+  aboutBtn.addEventListener('click', () => openAbout(() => aboutBtn.focus()));
   const warning = h('span', { class: 'voice-warning', hidden: true });
 
   const read = () => {
@@ -229,7 +233,7 @@ async function boot() {
   });
 
   const actions = h('div', { class: 'topbar-actions', role: 'toolbar', 'aria-label': T('Veu i pantalla', 'Voz y pantalla') },
-    warning, playBtn, stopBtn, kbBtn, fullBtn, setBtn);
+    warning, playBtn, stopBtn, kbBtn, fullBtn, aboutBtn, setBtn);
 
   // Language menu: the interface, the configuration and the voices all change with it.
   // Closed it shows the current language's code; open, every language in its own name.
