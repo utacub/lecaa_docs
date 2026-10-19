@@ -116,6 +116,7 @@ await page.waitForFunction(() => document.querySelector('.ProseMirror') && windo
 await page.waitForFunction(() => window.lecaa);
 await page.click('[aria-label="Configuración"]');
 await page.evaluate(() => { document.querySelector('.neural').open = true; });
+await page.waitForSelector('[data-install="sharvard-medium"]', { timeout: 15000 }).catch(() => null);
 ok(!(await page.locator('[data-install="ona-medium"]').count()) && await page.locator('[data-install="sharvard-medium"]').count() === 1, 'en castellà només s’ofereixen les veus castellanes');
 await page.click('[data-install="davefx-medium"]');
 await page.waitForFunction(() => document.querySelector('.neural-ok'), null, { timeout: 60000 });
