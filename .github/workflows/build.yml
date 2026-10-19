@@ -27,6 +27,7 @@ jobs:
           # Failed checks are also shown as annotations on the run, so they can be read without the log.
           check() { local s=0; "$@" 2>&1 | tee test-output.txt || s=$?; if [ "$s" -ne 0 ]; then grep -E "FAIL|Error" test-output.txt | head -20 | sed 's/^/::error::/'; tail -3 test-output.txt | sed 's/^/::error::/'; fi; return "$s"; }
           npx playwright install --with-deps chromium
+          sudo apt-get install -y poppler-utils   # pdftotext, pdffonts and pdfimages for the PDF checks
           npx vite preview --port 4173 --strictPort &
           sleep 3
           export CHROMIUM="$(node -e "console.log(require('@playwright/test').chromium.executablePath())")"
