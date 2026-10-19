@@ -74,9 +74,12 @@ export function openAbout(onClose: () => void): void {
           h('li', {}, h('span', { class: 'use' }, use), h('strong', {}, product), h('span', {}, owner), link(url.replace(/^https?:\/\//, '').replace(/\/$/, ''), url))))),
       h('section', {},
         h('h3', {}, T('Llicències', 'Licencias')),
+        h('p', {}, T('LECAA Docs és programari lliure, amb la llicència GNU GPL 3.0 o posterior: es pot fer servir, estudiar, modificar i compartir, i les versions modificades s’han de compartir amb la mateixa llicència. ',
+          'LECAA Docs es software libre, con la licencia GNU GPL 3.0 o posterior: se puede usar, estudiar, modificar y compartir, y las versiones modificadas deben compartirse con la misma licencia. '),
+          link(T('Codi font', 'Código fuente'), 'https://github.com/utacub/lecaa_docs'), ' · ', link('GNU GPL 3.0', 'https://www.gnu.org/licenses/gpl-3.0.html')),
         h('p', {}, T(
-          'Les tipografies tenen la llicència SIL Open Font License 1.1, i l’OpenDyslexic que s’inclou als PDF, Bitstream Vera i CC BY 3.0. La veu Ona prové de dades de la UPC (Festcat, CC BY-SA 3.0 ES); Davefx, de dades d’OHF-Voice (CC0), i Sharvard, del corpus Sharvard (CC BY 3.0). Els logotips identifiquen les institucions titulars i no formen part de cap llicència de l’app.',
-          'Las tipografías tienen la licencia SIL Open Font License 1.1, y la OpenDyslexic que se incluye en los PDF, Bitstream Vera y CC BY 3.0. La voz Ona procede de datos de la UPC (Festcat, CC BY-SA 3.0 ES); Davefx, de datos de OHF-Voice (CC0), y Sharvard, del corpus Sharvard (CC BY 3.0). Los logotipos identifican a las instituciones titulares y no forman parte de ninguna licencia de la app.')),
+          'Les tipografies tenen la llicència SIL Open Font License 1.1, i l’OpenDyslexic que s’inclou als PDF, Bitstream Vera i CC BY 3.0. La veu Ona prové de dades de la UPC (Festcat, CC BY-SA 3.0 ES); Davefx, de dades d’OHF-Voice (CC0), i Sharvard, del corpus Sharvard (CC BY 3.0). Els logotips són marques de les institucions titulars i no formen part de la llicència de l’app.',
+          'Las tipografías tienen la licencia SIL Open Font License 1.1, y la OpenDyslexic que se incluye en los PDF, Bitstream Vera y CC BY 3.0. La voz Ona procede de datos de la UPC (Festcat, CC BY-SA 3.0 ES); Davefx, de datos de OHF-Voice (CC0), y Sharvard, del corpus Sharvard (CC BY 3.0). Los logotipos son marcas de las instituciones titulares y no forman parte de la licencia de la app.')),
         h('p', { class: 'about-version' }, `${T('Versió', 'Versión')} ${VERSION}`))));
 
   dlg.addEventListener('close', () => { dlg.remove(); onClose(); });

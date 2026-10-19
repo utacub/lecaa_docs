@@ -108,6 +108,12 @@ Cada carpeta de `src/assets/sons/es/` surt com una veu a triar a la compilació 
 - Les locucions de sons aïllats, que provenen de LECAA i no s'han revisat fonèticament.
 - El comportament de les veus de Speech Platform i de les veus de 32 bits a Windows, i de macOS, en dispositius reals.
 
+## Llicència
+
+LECAA Docs és programari lliure: es distribueix amb la llicència **GNU General Public License 3.0 o posterior** (GPL-3.0-or-later), que és al fitxer `LICENSE`. Es pot fer servir, estudiar, modificar i redistribuir; les versions modificades que es distribueixin s'han de publicar amb la mateixa llicència i amb el codi font. Els documents que es creen amb l'app són de qui els escriu i no queden afectats per la llicència.
+
+La llicència cobreix el codi. **No** cobreix els logotips de la UTAC, de LECAA, de LECAA Docs ni de les institucions (Universitat de Barcelona, Fundació Bosch i Gimpera i Generalitat de Catalunya), que són marques dels seus titulars i no es poden fer servir sense el seu permís, ni les locucions i les tipografies, que conserven les condicions indicades a continuació.
+
 ## Llicències de tercers
 
 Andika, Manrope, Atkinson Hyperlegible, Lexend, OpenDyslexic, Playwrite ES i Playwrite FR Moderne (via Fontsource): SIL Open Font License 1.1. Tiptap, docx, Tauri, ONNX Runtime Web, piper-wasm i vits-web (Diffusion Studio): MIT. El fonemitzador inclou espeak-ng (GPL-3.0), de manera que les versions que el distribueixen s'han de publicar sota una llicència compatible amb la GPL-3.0. Veu Piper Ona: dades de la UPC (Festcat), CC BY-SA 3.0 ES. Veu Piper Davefx: dades d'OHF-Voice, CC0. Veu Piper Sharvard: corpus Sharvard (Universitat d'Edimburg), CC BY 3.0. Mammoth: BSD-2-Clause. pdfmake (exportació a PDF): MIT. OpenDyslexic per al PDF (paquet open-dyslexic 1.0.3, en OTF): Bitstream Vera i CC BY 3.0 (Abelardo Gonzalez). DOMPurify: MPL-2.0 o Apache-2.0. Lucide: ISC. Les locucions d'Anna i Jordi s'han creat per a LECAA. Els logos de la UTAC (`src/assets/marca/utac-negre.webp` per a fons clars i `utac-blanc.webp` per a fons foscos, facilitats per la UTAC) i de LECAA són marques de la UTAC; el de LECAA Docs és el de LECAA amb «Docs» en Lexend.

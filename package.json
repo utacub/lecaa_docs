@@ -1,5 +1,6 @@
 {
   "name": "lecaa-docs",
+  "license": "GPL-3.0-or-later",
   "private": true,
   "version": "0.3.0",
   "type": "module",
