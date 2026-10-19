@@ -178,8 +178,9 @@ export function openSettings(onClose: () => void) {
     letterBox.replaceChildren(
       ...(mode === 'name' ? [check(T('Diu “majúscula” davant d’una lletra majúscula', 'Dice “mayúscula” delante de una letra mayúscula'), null, x => x.feedback.upperCaseWord, (x, v) => { x.feedback.upperCaseWord = v; })] : []),
       ...(mode === 'sound' ? [
-        h('div', { class: 'hint' }, T('Els sons són locucions enregistrades (les mateixes de LECAA).', 'Los sonidos son locuciones generadas con ElevenLabs (voz de Mateo).')),
-        ...recordedVoices.map(id => radio('recvoice', id, voiceName(id), null, current, () => upd(x => { x.recordedVoice = id; }))),
+        h('div', { class: 'hint' }, T('Els sons són locucions enregistrades (les mateixes de LECAA).', 'Los sonidos son locuciones grabadas.')),
+        // With a single voice there is nothing to choose.
+        ...(recordedVoices.length < 2 ? [] : recordedVoices).map(id => radio('recvoice', id, voiceName(id), null, current, () => upd(x => { x.recordedVoice = id; }))),
       ] : []),
     );
   };

@@ -80,7 +80,7 @@ src-tauri/           app d'escriptori i pont natiu de veu (src/tts)
 
 ## Locucions en castellà (sons de les lletres)
 
-En castellà, de moment, hi ha una sola veu per als sons de les lletres: **Mateo** («Mateo – Warm educator», veu masculina d'ElevenLabs, `RD7LAtIKlFefBwftz7lj`, model eleven_v4), a `src/assets/sons/es/mateo/`. La llista de fonemes és a `locucions/es.json`.
+En castellà, de moment, hi ha una sola veu per als sons de les lletres: **Mateo** («Mateo – Warm educator», veu masculina d'ElevenLabs, `RD7LAtIKlFefBwftz7lj`, model eleven_v4), a `src/assets/sons/es/mateo/`. Les consonants b, v, c, k, q, d, f, g, l, p, r, s, t i z fan servir els clips catalans d'en Jordi, perquè les de Mateo no sonaven bé (decisió de Marc, 19/10/2026); la z fa servir la s d'en Jordi, perquè el català no té /θ/. La llista de fonemes i l'origen de cada clip són a `locucions/es.json`.
 
 Mètode: es va donar a ElevenLabs un fitxer de text (`locucions/fonemes-castella.txt`) amb el fonema més freqüent de cada lletra en AFI, un per línia i seguit d'un punt (`/a/.`, `/b/.`…), i se'n va obtenir una sola presa. Aquesta presa es parteix pels silencis i cada tram es passa per `scripts/locucions-normalitza.py`, que en conserva el primer tram de so, el normalitza a -1 dBFS i el desa en MP3 mono. La *ch*, la *ll* i la *r* simple no tenen clip perquè cap tecla no les produeix.
 
@@ -93,7 +93,7 @@ Cada carpeta de `src/assets/sons/es/` surt com una veu a triar a la compilació 
 
 ## Pendent de validar
 
-- Els sons en castellà de Mateo: cal confirmar a oïda que cada clip és el fonema que toca, sobretot b, d, k, t i s (poden portar una vocal enganxada).
+- Els sons en castellà de Mateo: cal confirmar a oïda que cada clip és el fonema que toca, i la z, que ara sona com una s.
 - Les taules de castellà: noms de les lletres (RAE i ASALE, 2010) i grafia → so (`src/letters.ts`, `src/phonemes-es.json`).
 - La taula de noms de les lletres i la taula grafia → so (`src/letters.ts`).
 - Les locucions de sons aïllats, que provenen de LECAA i no s'han revisat fonèticament.

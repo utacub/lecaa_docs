@@ -1,5 +1,5 @@
 {
- "_about": "Sonidos de las letras en castellano de España (opción «Sonido de la letra»). Un clip por fonema: src/assets/sons/es/<voz>/<file>.mp3. De momento hay una sola voz, masculina: Mateo («Mateo – Warm educator», ElevenLabs, RD7LAtIKlFefBwftz7lj, modelo eleven_v4). Método: se envió a ElevenLabs el archivo de texto locucions/fonemes-castella.txt, con el fonema más frecuente de cada letra en AFI, uno por línea y seguido de un punto (/a/. /b/. …), y se obtuvo una sola toma. La toma se partió por los silencios ('start'-'end', en segundos) y cada tramo se pasó por scripts/locucions-normalitza.py (primer tramo de sonido, -1 dBFS, MP3 mono). La ch, la ll y la r simple no se usan, porque ninguna tecla las produce (src/letters.ts, PHONEME_ES). Revisa cada clip a oído.",
+ "_about": "Sonidos de las letras en castellano de España (opción «Sonido de la letra»). Un clip por fonema: src/assets/sons/es/<voz>/<file>.mp3. De momento hay una sola voz, masculina: Mateo («Mateo – Warm educator», ElevenLabs, RD7LAtIKlFefBwftz7lj, modelo eleven_v4). Método: se envió a ElevenLabs el archivo de texto locucions/fonemes-castella.txt, con el fonema más frecuente de cada letra en AFI, uno por línea y seguido de un punto (/a/. /b/. …), y se obtuvo una sola toma. La toma se partió por los silencios ('start'-'end', en segundos) y cada tramo se pasó por scripts/locucions-normalitza.py (primer tramo de sonido, -1 dBFS, MP3 mono). La ch, la ll y la r simple no se usan, porque ninguna tecla las produce (src/letters.ts, PHONEME_ES). Revisa cada clip a oído. Desde el 19/10/2026, a petición de Marc, las consonantes b v c k q d f g l p r s t z usan los clips catalanes de Jordi (src/assets/sons/jordi), porque los de Mateo no sonaban bien; la z usa la s de Jordi (seseo), porque el catalán no tiene /θ/. Mateo queda en a e i o u j m n ñ w x y. 'source' indica el origen de cada clip.",
  "phonemes": [
   {
    "file": "a",
@@ -7,7 +7,8 @@
    "letters": "a á à",
    "example": "árbol",
    "start": 2.0,
-   "end": 2.28
+   "end": 2.28,
+   "source": "mateo"
   },
   {
    "file": "e",
@@ -15,7 +16,8 @@
    "letters": "e é è",
    "example": "elefante",
    "start": 5.61,
-   "end": 5.92
+   "end": 5.92,
+   "source": "mateo"
   },
   {
    "file": "i",
@@ -23,7 +25,8 @@
    "letters": "i í ï",
    "example": "isla",
    "start": 8.06,
-   "end": 8.32
+   "end": 8.32,
+   "source": "mateo"
   },
   {
    "file": "o",
@@ -31,7 +34,8 @@
    "letters": "o ó ò",
    "example": "oso",
    "start": 13.63,
-   "end": 13.85
+   "end": 13.85,
+   "source": "mateo"
   },
   {
    "file": "u",
@@ -39,79 +43,71 @@
    "letters": "u ú ü",
    "example": "uva",
    "start": 18.22,
-   "end": 18.49
+   "end": 18.49,
+   "source": "mateo"
   },
   {
    "file": "p",
    "ipa": "p",
    "letters": "p",
    "example": "pato",
-   "start": 14.45,
-   "end": 14.69
+   "source": "jordi/p.mp3"
   },
   {
    "file": "b",
    "ipa": "b",
    "letters": "b v",
    "example": "bota",
-   "start": 2.71,
-   "end": 3.04
+   "source": "jordi/b.mp3"
   },
   {
    "file": "t",
    "ipa": "t",
    "letters": "t",
    "example": "toro",
-   "start": 17.46,
-   "end": 17.71
+   "source": "jordi/t.mp3"
   },
   {
    "file": "d",
    "ipa": "d",
    "letters": "d",
    "example": "dedo",
-   "start": 4.61,
-   "end": 4.98
+   "source": "jordi/d.mp3"
   },
   {
    "file": "k",
    "ipa": "k",
    "letters": "c k q",
    "example": "casa",
-   "start": 3.7,
-   "end": 3.92
+   "source": "jordi/k.mp3"
   },
   {
    "file": "g",
    "ipa": "ɡ",
    "letters": "g",
    "example": "gato",
-   "start": 7.47,
-   "end": 7.59
+   "source": "jordi/g.mp3"
   },
   {
    "file": "f",
    "ipa": "f",
    "letters": "f",
    "example": "foca",
-   "start": 6.61,
-   "end": 6.76
+   "source": "jordi/f.mp3"
   },
   {
    "file": "z",
    "ipa": "θ",
    "letters": "z",
    "example": "zapato",
-   "start": 22.01,
-   "end": 22.22
+   "source": "jordi/s.mp3"
   },
   {
    "file": "s",
    "ipa": "s",
    "letters": "s ç",
    "example": "sol",
-   "start": 16.43,
-   "end": 16.58
+   "source": "jordi/s.mp3"
   },
   {
    "file": "j",
@@ -119,7 +115,8 @@
    "letters": "j",
    "example": "jirafa",
    "start": 8.82,
-   "end": 9.08
+   "end": 9.08,
+   "source": "mateo"
   },
   {
    "file": "y",
@@ -127,7 +124,8 @@
    "letters": "y",
    "example": "yate",
    "start": 20.97,
-   "end": 21.22
+   "end": 21.22,
+   "source": "mateo"
   },
   {
    "file": "m",
@@ -135,7 +133,8 @@
    "letters": "m",
    "example": "mano",
    "start": 10.7,
-   "end": 11.11
+   "end": 11.11,
+   "source": "mateo"
   },
   {
    "file": "n",
@@ -143,7 +142,8 @@
    "letters": "n",
    "example": "nube",
    "start": 11.59,
-   "end": 11.95
+   "end": 11.95,
+   "source": "mateo"
   },
   {
    "file": "ny",
@@ -151,23 +151,22 @@
    "letters": "ñ",
    "example": "ñu",
    "start": 12.48,
-   "end": 12.99
+   "end": 12.99,
+   "source": "mateo"
   },
   {
    "file": "l",
    "ipa": "l",
    "letters": "l",
    "example": "luna",
-   "start": 9.8,
-   "end": 10.19
+   "source": "jordi/l.mp3"
   },
   {
    "file": "rr",
    "ipa": "r",
    "letters": "r",
    "example": "ratón",
-   "start": 15.38,
-   "end": 15.8
+   "source": "jordi/rr.mp3"
   },
   {
    "file": "w",
@@ -175,7 +174,8 @@
    "letters": "w",
    "example": "web",
    "start": 19.19,
-   "end": 19.49
+   "end": 19.49,
+   "source": "mateo"
   },
   {
    "file": "ks",
@@ -183,7 +183,8 @@
    "letters": "x",
    "example": "taxi",
    "start": 20.0,
-   "end": 20.35
+   "end": 20.35,
+   "source": "mateo"
   }
  ]
 }

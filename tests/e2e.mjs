@@ -322,7 +322,8 @@ ok(neuralTitles.some(t => t.includes('Davefx')) && neuralTitles.some(t => t.incl
 const recVoices = await page.locator('input[name=recvoice]').count() + await page.locator('input[name=letter][value=sound]').count();
 await page.check('input[name=letter][value=sound]');
 const recLabels = await page.locator('label:has(input[name=recvoice])').allTextContents();
-ok(recLabels.length === 1 && recLabels[0].includes('Mateo'), 'sons de les lletres amb la veu de Mateo: ' + JSON.stringify(recLabels) + recVoices);
+const recHint = await page.locator('.subgroup .hint').allTextContents();
+ok(recLabels.length === 0 && !recHint.join().includes('Mateo'), 'una sola veu per als sons, sense nom: ' + JSON.stringify(recLabels) + recVoices);
 await page.screenshot({ path: 'test-results/es-settings.png' });
 await page.click('[aria-label="Cerrar"]');
 await clear();
