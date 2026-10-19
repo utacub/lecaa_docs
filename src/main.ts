@@ -20,7 +20,7 @@ import { lock } from './lock';
 import { loadDoc, storeDoc } from './storage';
 import { h, icon, toast } from './ui';
 import lecaaDocsLogo from './assets/marca/lecaa-docs.svg?raw';
-import utacLogo from './assets/marca/utac.svg?url';
+import utacLogo from './assets/marca/utac-negre.webp?url';
 
 neural.onNotice((message, preparing) => toast(message, preparing ? 5000 : 10000));
 
