@@ -47,7 +47,7 @@ let failures = 0;
 const ok = (cond, msg) => { console.log((cond ? 'OK   ' : 'FAIL ') + msg); if (!cond) failures++; };
 
 await page.goto(url);
-await page.waitForSelector('.ProseMirror');
+await page.waitForFunction(() => document.querySelector('.ProseMirror') && window.lecaa);
 await page.click('[aria-label="Configuració"], button:has-text("Configuració")');
 await page.waitForSelector('.neural');
 await page.evaluate(() => { document.querySelector('.neural').open = true; });
@@ -55,7 +55,7 @@ await page.click('[data-install="ona-medium"]');
 await page.waitForFunction(() => document.querySelector('.neural-ok'), null, { timeout: 60000 });
 ok(true, 'Ona descarregada');
 ok(hits.some(h => h.includes('rhasspy/piper-voices') && h.endsWith('ca_ES-upc_ona-medium.onnx')), 'model demanat a Hugging Face (rhasspy)');
-await page.waitForFunction(() => window.lecaa.settings.value.voice.id, null, { timeout: 5000 }).catch(() => null);
+await page.waitForFunction(() => window.lecaa?.settings.value.voice.id, null, { timeout: 5000 }).catch(() => null);
 const voice = await page.evaluate(() => window.lecaa.settings.value.voice.id);
 ok(voice === 'neural:ona-medium', 'la veu descarregada queda seleccionada: ' + voice);
 await page.waitForFunction(() => document.querySelector('#voice-select option[value="neural:ona-medium"]'), null, { timeout: 5000 }).catch(() => null);
@@ -92,7 +92,7 @@ ok(stopped < 200, `atura la veu a l’instant (${Math.round(stopped)} ms)`);
 // offline after reload: no network for the model
 hits.length = 0;
 await page.reload();
-await page.waitForSelector('.ProseMirror');
+await page.waitForFunction(() => document.querySelector('.ProseMirror') && window.lecaa);
 let offline = true;
 await ctx.route(/huggingface|jsdelivr/, r => offline ? r.abort('internetdisconnected') : r.fallback());
 await page.waitForFunction(() => window.lecaa?.speech.voices.some(v => v.id === 'neural:ona-medium'), null, { timeout: 10000 });
@@ -112,7 +112,7 @@ ok(!(await page.evaluate(() => window.lecaa.speech.voices.some(v => v.id === 'ne
 // Spanish: its own voices, Spanish phonemes, and the Catalan voice is not offered
 await page.evaluate(() => localStorage.setItem('lecaa-docs:lang', 'es'));
 await page.reload();
-await page.waitForSelector('.ProseMirror');
+await page.waitForFunction(() => document.querySelector('.ProseMirror') && window.lecaa);
 await page.waitForFunction(() => window.lecaa);
 await page.click('[aria-label="Configuración"]');
 await page.evaluate(() => { document.querySelector('.neural').open = true; });
