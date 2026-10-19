@@ -233,7 +233,7 @@ async function boot() {
   });
 
   const actions = h('div', { class: 'topbar-actions', role: 'toolbar', 'aria-label': T('Veu i pantalla', 'Voz y pantalla') },
-    warning, playBtn, stopBtn, kbBtn, fullBtn, aboutBtn, setBtn);
+    playBtn, stopBtn, kbBtn, fullBtn, aboutBtn, setBtn);
 
   // Language menu: the interface, the configuration and the voices all change with it.
   // Closed it shows the current language's code; open, every language in its own name.
@@ -276,7 +276,7 @@ async function boot() {
     h('img', { class: 'utac-logo', src: utacLogo, alt: 'UTAC' }),
     h('span', { class: 'lecaa-docs-logo', role: 'img', 'aria-label': 'LECAA Docs' }));
   (brand.lastChild as HTMLElement).innerHTML = lecaaDocsLogo;
-  const topbar = h('header', { class: 'topbar' }, brand, title, saveState, langSwitch, actions);
+  const topbar = h('header', { class: 'topbar' }, brand, title, saveState, langSwitch, warning, actions);
 
   document.getElementById('app')!.replaceWith(topbar, toolbar, workspace, osk.el);
   lock.install();

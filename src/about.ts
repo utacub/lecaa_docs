@@ -52,6 +52,12 @@ export function openAbout(onClose: () => void): void {
         h('p', {}, T(
           'És una eina germana de LECAA (Lectura i Escriptura per a usuaris de Comunicació Augmentativa i Alternativa), en comparteix la imatge i és gratuïta per a tothom.',
           'Es una herramienta hermana de LECAA (Lectura i Escriptura per a usuaris de Comunicació Augmentativa i Alternativa), comparte con ella la imagen y es gratuita para todo el mundo.'))),
+      // The online edition offers the portable one (published next to it as LECAA-Docs.html).
+      ...(__SINGLE_FILE__ ? [] : [h('section', {},
+        h('h3', {}, T('Versió portàtil', 'Versión portátil')),
+        h('p', {}, T('LECAA Docs també funciona com un sol fitxer HTML, per enviar-lo per correu o portar-lo en un llapis USB i obrir-lo sense connexió en qualsevol navegador. ',
+          'LECAA Docs también funciona como un solo archivo HTML, para enviarlo por correo o llevarlo en un lápiz USB y abrirlo sin conexión en cualquier navegador. '),
+          h('a', { href: './LECAA-Docs.html', download: 'LECAA-Docs.html' }, T('Descarrega LECAA-Docs.html', 'Descargar LECAA-Docs.html'))))]),
       h('section', {},
         h('h3', {}, T('Origen i institucions', 'Origen e instituciones')),
         h('p', {}, T(

@@ -58,7 +58,15 @@ node tests/e2e.mjs http://localhost:4173/   # proves (amb `npx vite preview --po
 PIPER_DIR=… node tests/neural.mjs http://localhost:4173/   # veus Piper reals (model x_low d'Ona a PIPER_DIR/ona, que fa de model mitjà)
 ```
 
-GitHub Actions (`.github/workflows/build.yml`) genera la versió web, el fitxer únic i els instal·ladors per a totes les plataformes d'escriptori.
+## Publicació
+
+La versió web es publica a GitHub Pages: **https://utacub.github.io/lecaa_docs/**. La versió portàtil (fitxer únic) és al costat, a **https://utacub.github.io/lecaa_docs/LECAA-Docs.html**, i també s'enllaça des de «Sobre LECAA Docs».
+
+GitHub Actions (`.github/workflows/build.yml`) fa la feina a cada canvi a `main`: genera la versió web i el fitxer únic, passa les proves al navegador (també amb les veus Piper reals) i, si tot és correcte, publica el lloc. Una sola vegada, cal triar **Settings > Pages > Build and deployment > Source: GitHub Actions** al repositori. Els instal·ladors d'escriptori només es generen amb una etiqueta de versió (`v0.4.0`, per exemple) o a mà des de la pestanya Actions.
+
+- La web funciona sense connexió un cop oberta: el service worker desa tots els fitxers de la versió i, quan se'n publica una de nova, la baixa sola i esborra l'anterior.
+- Es pot instal·lar com a app (Chrome, Edge, Chromebook, Android; a l'iPad i l'iPhone, Compartir > Afegeix a la pantalla d'inici).
+- Tot funciona amb rutes relatives, de manera que també es pot publicar en qualsevol altre servidor o subcarpeta copiant-hi `dist/`.
 
 ## Estructura
 

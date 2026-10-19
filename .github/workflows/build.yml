@@ -1,3 +1,6 @@
+# Web: builds the online edition and the single file, runs the browser tests and, on main,
+# publishes the online edition on GitHub Pages with the single file next to it (LECAA-Docs.html).
+# Desktop installers: only for version tags (v*) or when started by hand from the Actions tab.
 name: Build
 
 on:
@@ -38,8 +41,30 @@ jobs:
         run: cp dist-single/index.html LECAA-Docs.html
       - uses: actions/upload-artifact@v4
         with: { name: LECAA-Docs-fitxer-unic, path: LECAA-Docs.html }
+      - name: Site for GitHub Pages (online edition + single file)
+        run: cp dist-single/index.html dist/LECAA-Docs.html
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: dist }
+
+  pages:
+    needs: web
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: true
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
 
   desktop:
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
     strategy:
       fail-fast: false
       matrix:

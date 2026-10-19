@@ -116,11 +116,9 @@ button { touch-action: manipulation; }
   .save-state { display: none; }
   .brand { gap: 8px; }
   .brand .utac-logo, .brand .lecaa-docs-logo { height: 26px; }
-  /* Narrow screens: the logos and the title on one row, the controls on the next. */
-  .topbar { flex-wrap: wrap; row-gap: 8px; }
   .topbar .doc-title { flex-basis: 8rem; }
-  .topbar-actions { margin-left: auto; }
 }
+
 
 /* ---------- toolbars ---------- */
 .toolbar {
@@ -143,7 +141,7 @@ button { touch-action: manipulation; }
 .table-tools { display: inline-flex; gap: 2px; padding-left: 4px; border-left: 1px solid var(--line); }
 
 .topbar-actions { display: flex; align-items: center; gap: 8px; flex: none; }
-.topbar-actions .voice-warning { max-width: 16rem; }
+.topbar > .voice-warning { max-width: 16rem; flex: none; }
 .vbtn {
   display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 10px 16px;
   border-radius: var(--radius); border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink);
@@ -280,7 +278,7 @@ body.is-locked .key, body.is-calm .key { opacity: .45; }
 
 /* ----- full-screen writing mode ----- */
 .font-select { max-width: 13rem; }
-.is-kiosk .toolbar, .is-kiosk .kiosk-hide, .is-kiosk .topbar > :not(.topbar-actions) { display: none !important; }
+.is-kiosk .toolbar, .is-kiosk .kiosk-hide, .is-kiosk .topbar > :not(.topbar-actions):not(.voice-warning) { display: none !important; }
 .is-kiosk .topbar { justify-content: flex-end; }
 .lock-exit {
   position: fixed; right: 10px; bottom: 10px; z-index: 50; width: 36px; height: 36px; border-radius: 50%;
@@ -304,3 +302,12 @@ body.is-locked .key, body.is-calm .key { opacity: .45; }
 .shake { animation: shake .3s; }
 @keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
 @media print { .lock-exit, .lock-return { display: none; } }
+
+/* Tablets and phones: the bar wraps (logos and title first, then the language and the buttons) and
+   the "no voice" notice gets a row of its own, so it never pushes the buttons off the screen. */
+@media (max-width: 900px) {
+  .topbar { flex-wrap: wrap; row-gap: 8px; justify-content: flex-end; }
+  .topbar .doc-title { flex: 1 1 9rem; }
+  .topbar > .brand { margin-right: auto; }
+  .topbar > .voice-warning { order: 10; flex: 1 1 100%; max-width: none; text-align: center; }
+}
