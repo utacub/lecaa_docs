@@ -18,10 +18,11 @@ import { neural } from './speech/neural';
 import { lock } from './lock';
 import { loadDoc, storeDoc } from './storage';
 import { h, icon, toast } from './ui';
+import lecaaDocsLogo from './assets/marca/lecaa-docs.svg?raw';
+import utacLogo from './assets/marca/utac.svg?url';
 
 neural.onNotice((message, preparing) => toast(message, preparing ? 5000 : 10000));
 
-const LOGO = `<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="5" y="3" width="22" height="26" rx="4" fill="#17676b"/><path d="M10 10h12M10 15h12M10 20h7" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><path d="M21 19.5c1.6 1 1.6 3.9 0 5M23.5 17.5c2.8 2.2 2.8 6.8 0 9" stroke="#f0a400" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`;
 
 // Text sizes in points, as in a word processor. Unmarked text is BASE_PT (the size of the exported
 // .docx); a size is stored relative to it (em), so the screen-size setting still scales everything.
@@ -267,8 +268,11 @@ async function boot() {
     else if (e.key === 'Tab') closeLang();
   });
   document.addEventListener('pointerdown', e => { if (!langSwitch.contains(e.target as Node)) closeLang(); });
-  const topbar = h('header', { class: 'topbar' }, h('span', { class: 'brand' }), title, saveState, langSwitch, actions);
-  (topbar.firstChild as HTMLElement).innerHTML = LOGO + '<span>LECAA Docs</span>';
+  const brand = h('span', { class: 'brand' },
+    h('img', { class: 'utac-logo', src: utacLogo, alt: 'UTAC' }),
+    h('span', { class: 'lecaa-docs-logo', role: 'img', 'aria-label': 'LECAA Docs' }));
+  (brand.lastChild as HTMLElement).innerHTML = lecaaDocsLogo;
+  const topbar = h('header', { class: 'topbar' }, brand, title, saveState, langSwitch, actions);
 
   document.getElementById('app')!.replaceWith(topbar, toolbar, workspace, osk.el);
   lock.install();

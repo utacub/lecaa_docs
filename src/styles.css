@@ -49,8 +49,10 @@ button { touch-action: manipulation; }
   display: flex; align-items: center; gap: 12px;
   padding: 10px 16px; background: var(--surface); border-bottom: 1px solid var(--line);
 }
-.brand { display: flex; align-items: center; gap: 10px; font-weight: 800; color: var(--accent); white-space: nowrap; }
-.brand svg { width: 30px; height: 30px; }
+.brand { display: flex; align-items: center; gap: 14px; flex: none; }
+.brand .utac-logo { height: 38px; width: auto; display: block; }
+.brand .lecaa-docs-logo { display: block; height: 36px; }
+.brand .lecaa-docs-logo svg { height: 100%; width: auto; display: block; }
 .doc-title {
   flex: 1; min-width: 0; border: 1px solid transparent; border-radius: 8px; padding: 6px 10px;
   font-size: 17px; font-weight: 600; background: transparent;
@@ -87,7 +89,15 @@ button { touch-action: manipulation; }
 .lang-item[aria-checked="true"] { color: var(--accent); }
 .lang-item[aria-checked="true"] .lang-item-code { background: var(--accent); color: var(--accent-ink); }
 .lang-item[aria-checked="true"] svg { visibility: visible; }
-@media (max-width: 560px) { .save-state, .brand span { display: none; } }
+@media (max-width: 560px) {
+  .save-state { display: none; }
+  .brand { gap: 8px; }
+  .brand .utac-logo, .brand .lecaa-docs-logo { height: 26px; }
+  /* Narrow screens: the logos and the title on one row, the controls on the next. */
+  .topbar { flex-wrap: wrap; row-gap: 8px; }
+  .topbar .doc-title { flex-basis: 8rem; }
+  .topbar-actions { margin-left: auto; }
+}
 
 /* ---------- toolbars ---------- */
 .toolbar {

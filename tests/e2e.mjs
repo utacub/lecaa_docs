@@ -23,6 +23,14 @@ await wait(300);
 const ed = page.locator('.ProseMirror');
 await ed.click();
 
+// 0. brand: UTAC logo to the left of the LECAA Docs logo, both visible
+const brand = await page.evaluate(() => {
+  const u = document.querySelector('.brand .utac-logo'), l = document.querySelector('.brand .lecaa-docs-logo');
+  const ru = u.getBoundingClientRect(), rl = l.getBoundingClientRect();
+  return { loaded: u.complete && u.naturalWidth > 0, alt: u.alt, label: l.getAttribute('aria-label'), left: ru.right <= rl.left, w: rl.width, svg: !!l.querySelector('svg path') };
+});
+ok(brand.loaded && brand.alt === 'UTAC' && brand.label === 'LECAA Docs' && brand.left && brand.w > 80 && brand.svg, 'logos de la UTAC i de LECAA Docs a la barra: ' + JSON.stringify(brand));
+
 // 1. word on space, sentence on period
 await set(`s => { s.feedback = { sentence: true, word: true, wordOnPunct: true, letter: 'off', upperCaseWord: false }; s.lockWhileSpeaking = false; }`);
 await clear();
