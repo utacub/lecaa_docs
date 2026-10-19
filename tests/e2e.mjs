@@ -18,7 +18,7 @@ const clear = async () => { await page.evaluate(() => window.lecaa.editor.chain(
 const wait = ms => page.waitForTimeout(ms);
 
 await page.goto(url);
-await page.waitForSelector('.ProseMirror');
+await page.waitForFunction(() => document.querySelector('.ProseMirror') && window.lecaa);
 await wait(300);
 const ed = page.locator('.ProseMirror');
 await ed.click();
@@ -228,7 +228,7 @@ ok(html.includes('<strong>Negreta</strong>') && html.includes('<table') && html.
 // 13. autosave survives reload
 await wait(1200);
 await page.reload();
-await page.waitForSelector('.ProseMirror');
+await page.waitForFunction(() => document.querySelector('.ProseMirror') && window.lecaa);
 await wait(500);
 ok((await text()).includes('Negreta') && (await page.locator('.doc-title').inputValue()) === 'Prova', 'desat automàtic després de recarregar');
 
@@ -297,7 +297,7 @@ ok(await page.evaluate(() => document.body.classList.contains('is-kiosk')), 'ent
 ok(!(await page.locator('.toolbar').isVisible()) && !(await page.locator('[aria-label="Configuració"]').isVisible()), 'amaga la barra d’eines i la configuració');
 ok(await page.locator('[aria-label="Llegeix"]').isVisible() && await page.locator('[aria-label="Teclat"]').isVisible() && !(await page.locator('.doc-title').isVisible()), 'els botons de lectura i de teclat continuen visibles');
 await page.reload();
-await page.waitForSelector('.ProseMirror');
+await page.waitForFunction(() => document.querySelector('.ProseMirror') && window.lecaa);
 await wait(300);
 ok(await page.evaluate(() => document.body.classList.contains('is-kiosk')), 'continua bloquejat després de recarregar');
 await page.click('.lock-exit');
@@ -318,7 +318,7 @@ const caPassword = await page.evaluate(() => window.lecaa.settings.value.lockPas
 await page.click('.lang-btn');
 ok(await page.isVisible('.lang-menu') && (await page.textContent('.lang-btn')).includes('CA'), 'el desplegable d’idioma s’obre i mostra CA');
 await page.click('.lang-item[data-lang="es"]');
-await page.waitForFunction(() => document.documentElement.lang === 'es' && document.querySelector('.ProseMirror'));
+await page.waitForFunction(() => document.documentElement.lang === 'es' && document.querySelector('.ProseMirror') && window.lecaa);
 await wait(400);
 ok(await page.locator('[aria-label="Leer"]').isVisible() && await page.locator('[aria-label="Configuración"]').isVisible(), 'la interfície canvia al castellà');
 ok((await text()).includes('Texto que se conserva'), 'el document es conserva en canviar d’idioma');
@@ -358,7 +358,7 @@ await page.keyboard.press('Escape');
 ok(await page.isHidden('.lang-menu'), 'Esc tanca el desplegable');
 await page.keyboard.press('ArrowDown');
 await page.keyboard.press('Enter');
-await page.waitForFunction(() => document.documentElement.lang === 'ca' && document.querySelector('.ProseMirror'));
+await page.waitForFunction(() => document.documentElement.lang === 'ca' && document.querySelector('.ProseMirror') && window.lecaa);
 await wait(400);
 ok(await page.locator('[aria-label="Llegeix"]').isVisible() && (await page.evaluate(() => window.lecaa.settings.value.feedback.word)) === false, 'en tornar al català recupera la seva configuració');
 ok((await page.evaluate(() => window.lecaa.speech.currentVoice()?.lang)) === 'ca-ES', 'i la veu catalana');
