@@ -342,7 +342,7 @@ async function boot() {
   editor.commands.focus('end');
 
   if (!__SINGLE_FILE__ && 'serviceWorker' in navigator && location.protocol.startsWith('http') && !location.hostname.match(/^(localhost|127\.)/)) {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
+    navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(() => {});
   }
   (window as unknown as { lecaa: object }).lecaa = { editor, speech, settings, reader };
 }
