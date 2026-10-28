@@ -427,11 +427,20 @@ await page.screenshot({ path: 'test-results/ca-again.png' });
   const p2 = await c2.newPage();
   await p2.goto(url);
   await p2.waitForFunction(() => window.lecaa);
+  // Where things are, to explain a failure.
+  const trace = [];
+  const where = step => p2.evaluate(step => {
+    const w = document.querySelector('.workspace'), r = window.getSelection().getRangeAt(0).getBoundingClientRect();
+    return { step, focus: window.lecaa.editor.isFocused, pictos: document.querySelector('.ProseMirror').classList.contains('pictos-on'), scroll: [w.scrollTop, w.scrollHeight, w.clientHeight], caret: r.bottom };
+  }, step).then(x => trace.push(x));
   await p2.evaluate(() => { const ed = window.lecaa.editor; ed.commands.setContent(Array.from({ length: 40 }, (_, i) => `<p>Línia ${i}</p>`).join('')); ed.commands.focus('end'); });
+  await where('focus');
   await p2.evaluate(() => { window.__vv.height = 420; window.__vv.dispatchEvent(new Event('resize')); });
   await p2.waitForTimeout(300);
+  await where('keyboard');
   const fit = await p2.evaluate(() => ({ body: document.body.getBoundingClientRect().height, caret: window.getSelection().getRangeAt(0).getBoundingClientRect().bottom, toolbar: document.querySelector('.toolbar').getBoundingClientRect().top }));
-  ok(fit.body === 420 && fit.caret <= 420 && fit.toolbar >= 0, 'amb el teclat del sistema obert, el cursor i les barres es veuen: ' + JSON.stringify(fit));
+  const good = fit.body === 420 && fit.caret <= 420 && fit.toolbar >= 0;
+  ok(good, 'amb el teclat del sistema obert, el cursor i les barres es veuen: ' + JSON.stringify(fit) + (good ? '' : ' ' + JSON.stringify(trace)));
   await c2.close();
 }
 ok(errors.length === 0, 'sense errors a la consola: ' + JSON.stringify(errors));
