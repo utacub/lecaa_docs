@@ -1,4 +1,4 @@
-// Pictograms above the words (Catalan prototype). Needs the "pictos" folder next to the app.
+// Pictograms above the words (prototype, Catalan and Spanish). Needs the "pictos" folder next to the app.
 import { chromium } from '@playwright/test';
 const url = process.argv[2] || 'http://localhost:4173/';
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium' });
@@ -114,15 +114,33 @@ await page.keyboard.type('Demà anirem a la platja', { delay: 10 });
 await wait(400);
 await page.screenshot({ path: 'test-results/pictos.png' });
 
-// 8. Spanish: no pictograms yet, no button, nothing loaded
+// 8. Spanish: its own index, the same pictograms and toolbar button
 const requested = [];
-page.on('request', r => { if (r.url().includes('/pictos/')) requested.push(r.url()); });
+page.on('request', r => { if (r.url().includes('/pictos/index-')) requested.push(new URL(r.url()).pathname.split('/').pop()); });
 await page.evaluate(() => localStorage.setItem('lecaa-pictos-proto:lang', 'es'));
 await page.reload();
-await page.waitForFunction(() => document.querySelector('.ProseMirror') && window.lecaa);
-await wait(500);
-const es = await page.evaluate(() => ({ btn: !!document.querySelector('.toolbar button[aria-label="Pictogramas encima de las palabras"]'), on: document.querySelector('.ProseMirror').classList.contains('pictos-on') }));
-ok(!es.btn && !es.on && requested.length === 0, 'en castellà no hi ha pictogrames: ' + JSON.stringify({ ...es, requested: requested.length }));
+await page.waitForFunction(() => document.querySelector('.ProseMirror.pictos-on') && window.lecaa);
+await page.evaluate(() => window.lecaa.settings.update(s => { s.guard.enabled = false; }));
+await ed.click();
+await clear();
+await page.keyboard.type('Los perros comen pan con tomate. Yo como ', { delay: 30 });
+await wait(200);
+const esPictos = await pictos();
+const has = w => esPictos.some(p => p.startsWith(w + ':'));
+ok(await page.isVisible('.toolbar button[aria-label="Pictogramas encima de las palabras"]')
+  && has('perros') && esPictos.includes('comen:2349') && has('pan con tomate') && has('Yo') && esPictos.includes('como:12313') && !has('Los'),
+  'en castellà: «perros», «comen» (comer), «pan con tomate», «como»; «los» no: ' + JSON.stringify(esPictos));
+ok(JSON.stringify(requested) === '["index-es.js"]', 'en castellà només es carrega l’índex castellà: ' + JSON.stringify(requested));
+// «como» is a keyword and also a form of «comer»: the chooser offers both
+const como = await page.evaluate(() => { const r = document.querySelector('.ProseMirror .pw[data-word="como"]').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top - 15 }; });
+await page.mouse.click(como.x, como.y);
+await page.waitForSelector('.picto-chooser');
+const comoIds = await page.evaluate(() => [...document.querySelectorAll('.picto-chooser .picto-option img')].map(i => i.getAttribute('src').match(/(\d+)\.png/)[1]));
+ok(comoIds[0] === '12313' && comoIds.includes('2349'), 'el selector de «como» també ofereix «comer»: ' + JSON.stringify(comoIds.slice(0, 5)));
+await page.click('.picto-chooser .picto-option img[src$="/2349.png"]');
+await wait(150);
+ok((await pictos()).includes('como:2349') && await page.evaluate(() => JSON.parse(localStorage.getItem('lecaa-pictos-proto:pictos:es')).como === 2349 && !JSON.parse(localStorage.getItem('lecaa-pictos-proto:pictos:ca') || '{}').como),
+  'la tria en castellà es desa a part de la catalana');
 await page.evaluate(() => localStorage.setItem('lecaa-pictos-proto:lang', 'ca'));
 
 ok(errors.length === 0, 'cap error a la consola: ' + JSON.stringify(errors));

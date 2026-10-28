@@ -2,7 +2,7 @@
 // text as the credits of LECAA.
 
 import { X } from 'lucide';
-import { T } from './i18n';
+import { LANG, T } from './i18n';
 import { pictosAvailable } from './pictos';
 import { h, icon } from './ui';
 import { version as VERSION } from '../package.json';
@@ -30,8 +30,10 @@ const TOOLS: [string, string, string, string][] = [
   [T('Tipografies', 'Tipografías'), 'Andika, Atkinson Hyperlegible, Lexend, OpenDyslexic, Playwrite', 'SIL OFL 1.1', 'https://openfontlicense.org/'],
   [T('Icones', 'Iconos'), 'Lucide', 'Lucide Contributors', 'https://lucide.dev/'],
   ...(pictosAvailable ? [
-    ['Pictogrames', 'ARASAAC (autor: Sergio Palao)', 'Govern d’Aragó · CC BY-NC-SA 4.0', 'https://arasaac.org/'],
-    ['Formes de les paraules', 'catalan-dict-tools', 'Softcatalà · GPL 2.0 / LGPL 2.1', 'https://github.com/Softcatala/catalan-dict-tools'],
+    [T('Pictogrames', 'Pictogramas'), 'ARASAAC (autor: Sergio Palao)', T('Govern d’Aragó · CC BY-NC-SA 4.0', 'Gobierno de Aragón · CC BY-NC-SA 4.0'), 'https://arasaac.org/'],
+    LANG === 'es'
+      ? ['Formas de las palabras', 'spanish-dict-tools', 'Jaume Ortolà · LGPL 2.1', 'https://github.com/jaumeortola/spanish-dict-tools']
+      : ['Formes de les paraules', 'catalan-dict-tools', 'Softcatalà · GPL 2.0 / LGPL 2.1', 'https://github.com/Softcatala/catalan-dict-tools'],
   ] as [string, string, string, string][] : []),
 ];
 

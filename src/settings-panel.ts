@@ -76,26 +76,29 @@ function pictosOfflineBox() {
     const total = allPictoIds().length;
     const have = await offlineCount();
     const status = h('p', { class: 'hint' }, total
-      ? `Sense connexió: ${thousands(have)} de ${thousands(total)} pictogrames desats en aquest dispositiu. Els que es fan servir es desen sols.`
-      : 'No s’han trobat els pictogrames.');
+      ? T(`Sense connexió: ${thousands(have)} de ${thousands(total)} pictogrames desats en aquest dispositiu. Els que es fan servir es desen sols.`,
+        `Sin conexión: ${thousands(have)} de ${thousands(total)} pictogramas guardados en este dispositivo. Los que se usan se guardan solos.`)
+      : T('No s’han trobat els pictogrames.', 'No se han encontrado los pictogramas.'));
     const buttons = h('div', { class: 'row' });
-    if (total && have < total) buttons.append(h('button', { class: 'small-btn', type: 'button', onclick: () => void download() }, have ? 'Desa la resta' : 'Desa’ls tots (70 MB)'));
+    if (total && have < total) buttons.append(h('button', { class: 'small-btn', type: 'button', onclick: () => void download() }, have ? T('Desa la resta', 'Guardar el resto') : T('Desa’ls tots (70 MB)', 'Guardarlos todos (70 MB)')));
     if (have) buttons.append(h('button', { class: 'small-btn', type: 'button', onclick: async () => {
-      if (!confirm('Vols esborrar els pictogrames desats en aquest dispositiu? Es tornaran a baixar quan es facin servir.')) return;
+      if (!confirm(T('Vols esborrar els pictogrames desats en aquest dispositiu? Es tornaran a baixar quan es facin servir.', '¿Quieres borrar los pictogramas guardados en este dispositivo? Se volverán a descargar cuando se usen.'))) return;
       await deleteOffline(); void render();
-    } }, 'Esborra’ls'));
-    box.replaceChildren(h('div', { class: 'neural-title' }, 'Pictogrames sense connexió'), status, buttons);
+    } }, T('Esborra’ls', 'Borrarlos')));
+    box.replaceChildren(h('div', { class: 'neural-title' }, T('Pictogrames sense connexió', 'Pictogramas sin conexión')), status, buttons);
   };
   const download = async () => {
-    if (!navigator.onLine) { toast('Cal connexió a internet per desar els pictogrames'); return; }
+    if (!navigator.onLine) { toast(T('Cal connexió a internet per desar els pictogrames', 'Hace falta conexión a internet para guardar los pictogramas')); return; }
     abort = new AbortController();
-    const bar = h('progress', { max: 1, value: 0, 'aria-label': 'Desant els pictogrames' }) as HTMLProgressElement;
+    const bar = h('progress', { max: 1, value: 0, 'aria-label': T('Desant els pictogrames', 'Guardando los pictogramas') }) as HTMLProgressElement;
     const label = h('span', {});
-    box.replaceChildren(h('div', { class: 'neural-title' }, 'Pictogrames sense connexió'),
+    box.replaceChildren(h('div', { class: 'neural-title' }, T('Pictogrames sense connexió', 'Pictogramas sin conexión')),
       h('div', { class: 'neural-progress' }, bar, label),
-      h('button', { class: 'small-btn', type: 'button', onclick: () => abort?.abort() }, 'Atura'));
-    const { failed } = await downloadAll((done, total) => { bar.max = total; bar.value = done; label.textContent = `${thousands(done)} de ${thousands(total)}`; }, abort.signal);
-    if (!abort.signal.aborted) toast(failed ? `S’han desat els pictogrames, però ${failed} no s’han pogut baixar.` : 'Tots els pictogrames ja són en aquest dispositiu');
+      h('button', { class: 'small-btn', type: 'button', onclick: () => abort?.abort() }, T('Atura', 'Detener')));
+    const { failed } = await downloadAll((done, total) => { bar.max = total; bar.value = done; label.textContent = `${thousands(done)} ${T('de', 'de')} ${thousands(total)}`; }, abort.signal);
+    if (!abort.signal.aborted) toast(failed
+      ? T(`S’han desat els pictogrames, però ${failed} no s’han pogut baixar.`, `Se han guardado los pictogramas, pero ${failed} no se han podido descargar.`)
+      : T('Tots els pictogrames ja són en aquest dispositiu', 'Todos los pictogramas ya están en este dispositivo'));
     abort = null;
     if (box.isConnected) void render();
   };
@@ -292,12 +295,12 @@ export function openSettings(onClose: () => void) {
       h('fieldset', {}, h('legend', {}, T('Ajust motriu', 'Ajuste motor')),
         h('div', { class: 'field' }, h('label', {}, T('Ignora la mateixa tecla repetida en menys de', 'Ignorar la misma tecla repetida en menos de')), debounce),
         h('p', { class: 'hint' }, T('Útil si hi ha tremolor o rebots: evita lletres duplicades sense voler.', 'Útil si hay temblor o rebotes: evita letras duplicadas sin querer.'))),
-      pictosAvailable ? h('fieldset', {}, h('legend', {}, 'Pictogrames ARASAAC (prova)'),
-        check('Mostra el pictograma damunt de cada paraula acabada', 'Apareix en prémer l’espai o un signe de puntuació. També es pot activar i desactivar amb el botó de la barra d’eines.', x => x.pictos.enabled, (x, v) => { x.pictos.enabled = v; }),
+      pictosAvailable ? h('fieldset', {}, h('legend', {}, T('Pictogrames ARASAAC (prova)', 'Pictogramas ARASAAC (prueba)')),
+        check(T('Mostra el pictograma damunt de cada paraula acabada', 'Mostrar el pictograma encima de cada palabra terminada'), T('Apareix en prémer l’espai o un signe de puntuació. També es pot activar i desactivar amb el botó de la barra d’eines.', 'Aparece al pulsar el espacio o un signo de puntuación. También se puede activar y desactivar con el botón de la barra de herramientas.'), x => x.pictos.enabled, (x, v) => { x.pictos.enabled = v; }),
         h('div', { class: 'subgroup' },
-          range('Mida del pictograma', 1.4, 3, 0.2, x => x.pictos.size, (x, v) => { x.pictos.size = v; }, v => `${Math.round(v * 10) / 10} vegades la lletra`),
-          check('Només paraules amb contingut', 'Sense pictograma per als articles, preposicions, conjuncions i pronoms febles (el, de, i, que, es…).', x => x.pictos.contentOnly, (x, v) => { x.pictos.contentOnly = v; })),
-        h('p', { class: 'hint' }, 'Toca un pictograma per triar-ne un altre per a aquella paraula, o cap. L’app recorda la tria en aquest dispositiu. Els pictogrames només es veuen a la pantalla: no es desen al .docx ni al PDF.'),
+          range(T('Mida del pictograma', 'Tamaño del pictograma'), 1.4, 3, 0.2, x => x.pictos.size, (x, v) => { x.pictos.size = v; }, v => T(`${Math.round(v * 10) / 10} vegades la lletra`, `${Math.round(v * 10) / 10} veces la letra`)),
+          check(T('Només paraules amb contingut', 'Solo palabras con contenido'), T('Sense pictograma per als articles, preposicions, conjuncions i pronoms febles (el, de, i, que, es…).', 'Sin pictograma para los artículos, preposiciones, conjunciones y pronombres átonos (el, de, y, que, se…).'), x => x.pictos.contentOnly, (x, v) => { x.pictos.contentOnly = v; })),
+        h('p', { class: 'hint' }, T('Toca un pictograma per triar-ne un altre per a aquella paraula, o cap. L’app recorda la tria en aquest dispositiu. Quan es veuen, els pictogrames també es desen al .docx i al PDF.', 'Toca un pictograma para elegir otro para esa palabra, o ninguno. La app recuerda la elección en este dispositivo. Cuando se ven, los pictogramas también se guardan en el .docx y en el PDF.')),
         offlineSupported ? pictosOfflineBox() : null) : null,
       h('fieldset', {}, h('legend', {}, T('Lectura i document', 'Lectura y documento')),
         check(T('Ressalta el que s’està llegint', 'Resaltar lo que se está leyendo'), null, x => x.highlight, (x, v) => { x.highlight = v; }),

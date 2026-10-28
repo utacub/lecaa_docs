@@ -17,8 +17,8 @@ self.addEventListener('install', e => {
     await c.addAll(SHELL);
     // The rest one by one, so a single failed file doesn't leave the app without offline support.
     await Promise.allSettled(FILES.map(f => c.add(f)));
-    // The word index, so that the pictograms already seen also work offline after the first visit.
-    await caches.open(PICTOS).then(p => p.add('./pictos/index-ca.js')).catch(() => {});
+    // The word indexes, so that the pictograms already seen also work offline after the first visit.
+    await caches.open(PICTOS).then(p => Promise.allSettled(['./pictos/index-ca.js', './pictos/index-es.js'].map(f => p.add(f)))).catch(() => {});
   }).then(() => self.skipWaiting()));
 });
 

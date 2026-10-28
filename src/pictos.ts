@@ -1,12 +1,13 @@
-// ARASAAC pictograms above the words (prototype, Catalan only). When a word is finished (a space,
-// a punctuation mark, Enter, or the caret leaves it), the pictogram of that word appears above it.
-// Pictograms are only shown on screen: they are decorations, not part of the document, so the
-// .docx and PDF files stay as they were.
+// ARASAAC pictograms above the words (prototype, Catalan and Spanish). When a word is finished (a
+// space, a punctuation mark, Enter, or the caret leaves it), the pictogram of that word appears
+// above it. On screen they are decorations, not part of the document; the .docx and PDF files get
+// them when they are shown (pictos-export.ts).
 //
-// The pictograms travel apart from the app, as a "pictos" folder next to it (pictos/index-ca.js
-// and pictos/img/<id>.png), because their licence (CC BY-NC-SA 4.0) is not the app's (GPL).
-// The index is a script, not JSON, so it also loads when the app is opened as a file (file://).
-// It is built by scripts/pictos-index.py from the ARASAAC catalogue and the Softcatalà forms.
+// The pictograms travel apart from the app, as a "pictos" folder next to it (pictos/index-ca.js,
+// pictos/index-es.js and pictos/img/<id>.png, the same images for both languages), because their
+// licence (CC BY-NC-SA 4.0) is not the app's (GPL). The index is a script, not JSON, so it also
+// loads when the app is opened as a file (file://). scripts/pictos-index.py builds it from the
+// ARASAAC catalogue and the inflected forms of each language (Softcatalà, spanish-dict-tools).
 
 import { Extension } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
@@ -40,22 +41,23 @@ interface Index {
   stop: string[];                // function words
 }
 
-// Pictograms are only offered in Catalan for now.
-export const pictosAvailable = LANG === 'ca';
+// Languages with an index in the pictogram pack.
+export const pictosAvailable = LANG === 'ca' || LANG === 'es';
 
 let index: Index | null = null;
 let stop = new Set<string>();
 let loading: Promise<boolean> | null = null;
 const listeners = new Set<() => void>();
 
-// Loads pictos/index-ca.js once. Resolves to false when the folder is not next to the app.
+// Loads the index of the language (pictos/index-ca.js) once. Resolves to false when the folder is
+// not next to the app.
 export function loadPictos(): Promise<boolean> {
   if (!pictosAvailable) return Promise.resolve(false);
   loading ??= new Promise(resolve => {
     const s = document.createElement('script');
-    s.src = PICTOS_BASE + 'index-ca.js';
+    s.src = `${PICTOS_BASE}index-${LANG}.js`;
     s.onload = () => {
-      index = (window as unknown as { LECAA_PICTOS_CA?: Index }).LECAA_PICTOS_CA ?? null;
+      index = (window as unknown as Record<string, Index | undefined>)[`LECAA_PICTOS_${LANG.toUpperCase()}`] ?? null;
       stop = new Set(index?.stop ?? []);
       resolve(!!index);
       for (const l of listeners) l();
@@ -70,7 +72,7 @@ export const pictosLoaded = () => !!index;
 export const onPictosLoaded = (l: () => void) => listeners.add(l);
 
 // ----- the student's own choices: word -> pictogram id (0 = no pictogram) -----
-const CHOICES_KEY = `${STORAGE}:pictos:ca`;
+const CHOICES_KEY = `${STORAGE}:pictos:${LANG}`;
 let choices: Record<string, number> = {};
 try { choices = JSON.parse(localStorage.getItem(CHOICES_KEY) || '{}') ?? {}; } catch { /* private mode */ }
 function choose(word: string, id: number | null) {
@@ -90,7 +92,8 @@ function idsOf(flat: number[], preferType = 0): number[] {
 
 // Every pictogram that fits the word, best first: the word itself as a keyword (or plural),
 // then without an elided article or a pronoun attached ("l'aigua", "rentar-se"), then its lemma
-// ("menjo" -> "menjar").
+// ("menjo" -> "menjar"). A word that is a keyword and also a form of another one ("como", of
+// "comer") keeps its own pictograms first and offers the others after them.
 export function candidates(word: string): number[] {
   if (!index) return [];
   const n = norm(word);
@@ -100,22 +103,26 @@ export function candidates(word: string): number[] {
   if (core !== n) tries.push(core);
   const head = core.split(/['-]/)[0];
   if (head && head !== core) tries.push(head);
-  for (const w of tries) {
-    const flat = index.kw[w];
-    if (flat) return idsOf(flat);
+  const out: number[] = [];
+  const add = (ids: number[]) => { for (const id of ids) if (!out.includes(id)) out.push(id); };
+  const lemmas = (w: string) => {
+    for (const entry of index!.lem[w]?.split(';') ?? []) {
+      const [lemma, pos] = entry.split('|');
+      const flat = index!.kw[lemma];
+      if (flat) add(idsOf(flat, TYPE_OF_POS[pos] ?? 0));
+    }
+  };
+  const exact = tries.find(w => index!.kw[w]);
+  if (exact) {
+    add(idsOf(index.kw[exact]));
+    lemmas(exact);
+    return out;
   }
   for (const w of tries) {
-    const lem = index.lem[w];
-    if (!lem) continue;
-    const out: number[] = [];
-    for (const entry of lem.split(';')) {
-      const [lemma, pos] = entry.split('|');
-      const flat = index.kw[lemma];
-      if (flat) for (const id of idsOf(flat, TYPE_OF_POS[pos] ?? 0)) if (!out.includes(id)) out.push(id);
-    }
+    lemmas(w);
     if (out.length) return out;
   }
-  return [];
+  return out;
 }
 
 // The pictogram shown for a word, or 0.
@@ -130,11 +137,38 @@ export function pictoFor(word: string): number {
 const WORD = /[\p{L}\p{N}·]+(?:['’-][\p{L}\p{N}·]+)*['’]?/gu;
 const key = new PluginKey<DecorationSet>('lecaa-pictos');
 
-// Words of a textblock with their document positions. `cut` is where the text node of the first
-// letter ends: a word in two styles (half bold) gets its pictogram on the first part only.
-interface Word { text: string; from: number; to: number; cut: number }
+// The pictograms of a text: one per word, or one for an expression of two or three words that
+// ARASAAC has as a single pictogram ("pa amb tomàquet"). `from` and `to` are offsets in the text.
+// `finished(to)` says whether the word that ends at `to` is finished; unfinished words wait.
+export interface PictoSpan { from: number; to: number; id: number; word: string }
 
-function wordsOf(block: PMNode, start: number): { words: Word[]; text: string; pos: number[] } {
+export function pictosIn(text: string, finished: (to: number) => boolean = () => true): PictoSpan[] {
+  const words = [...text.matchAll(WORD)].map(m => ({ text: m[0], from: m.index!, to: m.index! + m[0].length }));
+  const out: PictoSpan[] = [];
+  for (let i = 0; i < words.length; i++) {
+    if (!finished(words[i].to)) continue;
+    let joined = 0;
+    for (let n = 3; n >= 2 && !joined; n--) {
+      const group = words.slice(i, i + n);
+      if (group.length < n || !finished(group[n - 1].to)) continue;
+      const phrase = text.slice(group[0].from, group[n - 1].to);
+      if (!/^[^\s]+(?: [^\s]+)+$/.test(phrase)) continue;
+      const id = pictoFor(phrase);
+      if (id) { out.push({ from: group[0].from, to: group[n - 1].to, id, word: phrase }); joined = n; }
+    }
+    if (joined) { i += joined - 1; continue; }
+    const id = pictoFor(words[i].text);
+    if (id) out.push({ from: words[i].from, to: words[i].to, id, word: words[i].text });
+  }
+  return out;
+}
+
+// Whether the pictograms are on screen now (and so go into the saved documents).
+export const pictosShown = () => !!index && settings.value.pictos.enabled && pictosAvailable;
+
+// The text of a textblock with the document position of each character, and where the text node
+// of each character ends: a word in two styles (half bold) gets its pictogram on the first part.
+function textOf(block: PMNode, start: number): { text: string; pos: number[]; nodeEnd: number[] } {
   let text = '';
   const pos: number[] = [];
   const nodeEnd: number[] = [];
@@ -145,46 +179,23 @@ function wordsOf(block: PMNode, start: number): { words: Word[]; text: string; p
       for (let i = 0; i < t.length; i++) { text += t[i]; pos.push(p + i); nodeEnd.push(p + t.length); }
     } else { text += ' '; pos.push(p); nodeEnd.push(p + 1); }
   });
-  const words: Word[] = [];
-  for (const m of text.matchAll(WORD)) {
-    const i = m.index!;
-    const to = pos[i + m[0].length - 1] + 1;
-    words.push({ text: m[0], from: pos[i], to, cut: nodeEnd[i] });
-  }
-  return { words, text, pos };
+  return { text, pos, nodeEnd };
 }
 
 function build(state: EditorState): DecorationSet {
-  if (!index || !settings.value.pictos.enabled || !pictosAvailable) return DecorationSet.empty;
+  if (!pictosShown()) return DecorationSet.empty;
   const decos: Decoration[] = [];
-  let cuts = new Map<number, number>();
-  const cutOf = (from: number) => cuts.get(from) ?? Infinity;
   const caret = state.selection.empty ? state.selection.head : -1;
-  const deco = (from: number, to: number, word: string, id: number) => decos.push(Decoration.inline(from, Math.min(to, cutOf(from)),
-    { class: 'pw', 'data-picto': String(id), 'data-word': norm(word), style: `--picto: url("${absUrl(id)}")` }));
   state.doc.descendants((node, pos) => {
     if (!node.isTextblock) return true;
-    const { words, text, pos: map } = wordsOf(node, pos + 1);
-    cuts = new Map(words.map(w => [w.from, w.cut]));
+    const { text, pos: map, nodeEnd } = textOf(node, pos + 1);
     const end = pos + 1 + node.content.size;
     // A word is finished when something follows it, or when the caret is elsewhere.
-    const done = (w: Word) => w.to < end || caret !== w.to;
-    for (let i = 0; i < words.length; i++) {
-      if (!done(words[i])) continue;
-      // Expressions of two or three words that ARASAAC has as one pictogram ("pa amb tomàquet").
-      let joined = 0;
-      for (let n = 3; n >= 2 && !joined; n--) {
-        const group = words.slice(i, i + n);
-        if (group.length < n || !done(group[n - 1])) continue;
-        const from = map.indexOf(group[0].from), to = map.indexOf(group[n - 1].to - 1) + 1;
-        const phrase = text.slice(from, to);
-        if (!/^[^\s]+(?: [^\s]+)+$/.test(phrase)) continue;
-        const id = pictoFor(phrase);
-        if (id) { deco(group[0].from, group[n - 1].to, phrase, id); joined = n; }
-      }
-      if (joined) { i += joined - 1; continue; }
-      const id = pictoFor(words[i].text);
-      if (id) deco(words[i].from, words[i].to, words[i].text, id);
+    const docTo = (to: number) => map[to - 1] + 1;
+    for (const p of pictosIn(text, to => docTo(to) < end || caret !== docTo(to))) {
+      const from = map[p.from];
+      decos.push(Decoration.inline(from, Math.min(docTo(p.to), nodeEnd[p.from]),
+        { class: 'pw', 'data-picto': String(p.id), 'data-word': norm(p.word), style: `--picto: url("${absUrl(p.id)}")` }));
     }
     return false;
   });
@@ -194,7 +205,7 @@ function build(state: EditorState): DecorationSet {
 const REFRESH = 'lecaa-pictos-refresh';
 
 export function refreshPictos(view: EditorView) {
-  view.dom.classList.toggle('pictos-on', !!index && settings.value.pictos.enabled && pictosAvailable);
+  view.dom.classList.toggle('pictos-on', pictosShown());
   const tr = view.state.tr.setMeta(REFRESH, true).setMeta('lecaa-system', true).setMeta('addToHistory', false);
   // Lines are taller with pictograms (and shorter without): the caret must stay in sight.
   if (view.hasFocus()) tr.scrollIntoView();
@@ -293,13 +304,18 @@ async function cachedIds(): Promise<Set<number>> {
   return ids;
 }
 
+// How many pictograms of this language are on the device (both languages share the images).
 export async function offlineCount(): Promise<number> {
-  try { return (await cachedIds()).size; } catch { return 0; }
+  try {
+    const have = await cachedIds();
+    return allPictoIds().filter(id => have.has(id)).length;
+  } catch { return 0; }
 }
 
-// Downloads the pictograms that are not on the device yet. They come joined in about ten large
-// files (pictos/paquets, made by scripts/pictos-paquets.py) that are split here into one image per
-// pictogram, the same entries that the service worker keeps when a pictogram is shown.
+// Downloads the pictograms that are not on the device yet, those of every language. They come
+// joined in about ten large files (pictos/paquets, made by scripts/pictos-paquets.py) that are split
+// here into one image per pictogram, the same entries that the service worker keeps when a
+// pictogram is shown.
 interface Packs { v: number; files: string[]; parts: number[][] }
 
 export async function downloadAll(onProgress: (done: number, total: number) => void, signal: AbortSignal): Promise<{ saved: number; failed: number }> {

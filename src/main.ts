@@ -174,8 +174,8 @@ async function boot() {
     tb(T('Esborra la columna', 'Borrar la columna'), TextCursorInput, run(c => c.deleteColumn())),
     tb(T('Esborra la taula', 'Borrar la tabla'), Trash2, run(c => c.deleteTable())));
 
-  // ----- pictograms above the words (Catalan prototype) -----
-  const pictosMissing = () => toast(T('No s’han trobat els pictogrames. Posa la carpeta «pictos» al costat de LECAA Docs i torna a obrir l’app.', 'No se han encontrado los pictogramas.'), 8000);
+  // ----- pictograms above the words (prototype) -----
+  const pictosMissing = () => toast(T('No s’han trobat els pictogrames. Posa la carpeta «pictos» al costat de LECAA Docs i torna a obrir l’app.', 'No se han encontrado los pictogramas. Pon la carpeta «pictos» junto a LECAA Docs y vuelve a abrir la app.'), 8000);
   const pictoBtn = tb(T('Pictogrames damunt de les paraules', 'Pictogramas encima de las palabras'), PictoIcon, () => {
     const on = !settings.value.pictos.enabled;
     settings.update(x => { x.pictos.enabled = on; });

@@ -35,7 +35,7 @@ export interface Settings {
   recordedVoice: RecordedVoice;
   highlight: boolean;
   pictos: {
-    enabled: boolean;       // ARASAAC pictograms above the finished words (Catalan prototype)
+    enabled: boolean;       // ARASAAC pictograms above the finished words (prototype)
     contentOnly: boolean;   // none for articles, prepositions, conjunctions and weak pronouns
     size: number;           // height of the pictogram, in times the height of the letters (em)
   };
