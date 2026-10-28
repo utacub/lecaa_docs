@@ -169,7 +169,7 @@ export function openSettings(onClose: () => void) {
     }));
 
   // ----- letter sub-options -----
-  const voiceName = (id: string) => ({ anna: 'Veu de l’Anna', jordi: 'Veu d’en Jordi', mateo: 'Voz de Mateo' } as Record<string, string>)[id]
+  const voiceName = (id: string) => ({ anna: 'Veu de l’Anna', jordi: 'Veu d’en Jordi' } as Record<string, string>)[id]
     ?? T('Veu', 'Voz') + ' ' + id.charAt(0).toUpperCase() + id.slice(1).replace(/[-_]/g, ' ');
   const letterBox = h('div', { class: 'subgroup' });
   const renderLetter = () => {

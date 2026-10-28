@@ -51,10 +51,12 @@ const PHONEME_CA: Record<string, string | null> = {
   h: null, '·': null,
 };
 
+// Spanish: the same letter sounds as Blanco sobre negro in LECAA Tecla (Marc, 24/10/2026): c = /k/,
+// g = /g/ and r = /r/ (the sound of the letter on its own); x = /ʃ/ and w = /w/ with the same voice.
 const PHONEME_ES: Record<string, string | null> = {
   a: 'a', 'á': 'a', 'à': 'a', e: 'e', 'é': 'e', 'è': 'e', i: 'i', 'í': 'i', 'ï': 'i', o: 'o', 'ó': 'o', 'ò': 'o',
   u: 'u', 'ú': 'u', 'ü': 'u', b: 'b', v: 'b', c: 'k', k: 'k', q: 'k', 'ç': 's', d: 'd', f: 'f', g: 'ɡ',
-  j: 'x', l: 'l', m: 'm', n: 'n', 'ñ': 'ɲ', p: 'p', r: 'r', s: 's', t: 't', x: 'ks', z: 'θ', w: 'w', y: 'ʝ',
+  j: 'x', l: 'l', m: 'm', n: 'n', 'ñ': 'ɲ', p: 'p', r: 'r', s: 's', t: 't', x: 'ʃ', z: 'θ', w: 'w', y: 'ʝ',
   h: null, '·': null,
 };
 

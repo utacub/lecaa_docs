@@ -1,190 +1,212 @@
 {
- "_about": "Sonidos de las letras en castellano de España (opción «Sonido de la letra»). Un clip por fonema: src/assets/sons/es/<voz>/<file>.mp3. De momento hay una sola voz, masculina: Mateo («Mateo – Warm educator», ElevenLabs, RD7LAtIKlFefBwftz7lj, modelo eleven_v4). Método: se envió a ElevenLabs el archivo de texto locucions/fonemes-castella.txt, con el fonema más frecuente de cada letra en AFI, uno por línea y seguido de un punto (/a/. /b/. …), y se obtuvo una sola toma. La toma se partió por los silencios ('start'-'end', en segundos) y cada tramo se pasó por scripts/locucions-normalitza.py (primer tramo de sonido, -1 dBFS, MP3 mono). La ch, la ll y la r simple no se usan, porque ninguna tecla las produce (src/letters.ts, PHONEME_ES). Revisa cada clip a oído. Desde el 19/10/2026, a petición de Marc, las consonantes b v c k q d f g l p r s t z usan los clips catalanes de Jordi (src/assets/sons/jordi), porque los de Mateo no sonaban bien; la z usa la s de Jordi (seseo), porque el catalán no tiene /θ/. Mateo queda en a e i o u j m n ñ w x y. 'source' indica el origen de cada clip.",
+ "_about": "Sonidos de las letras en castellano de España (opción «Sonido de la letra»), con la voz de Anna (ElevenLabs). Desde el 28/10/2026, a petición de Marc, son los mismos sonidos de la actividad «Blanco sobre negro» de LECAA Tecla (repositorio utacub/lecaa_tecla, commit be0ecd7, assets/sons/phonemes/manifest.json, banco castellano «female» de LECAA Cast) y la misma correspondencia letra → sonido (src/tts.js, LETTER_PHON_ES, revisada por Marc el 24/10/2026): c, k y q = /k/; g = /g/; r = /r/; v = /b/; z = /θ/; j = /x/; y = /ʝ/; ñ = /ɲ/; x = /ʃ/ y w = /w/ del banco catalán de Anna; la h no suena. Los MP3 se copian sin cambios; los tres WAV (/θ/, /x/, /ʝ/) se convierten a MP3 mono de 24 kHz sin cambiar el volumen. Sustituyen a los de Mateo y Jordi.",
  "phonemes": [
   {
    "file": "a",
    "ipa": "a",
    "letters": "a á à",
-   "example": "árbol",
-   "start": 2.0,
-   "end": 2.28,
-   "source": "mateo"
+   "from": "utacub/lecaa_tecla assets/sons/phonemes/eb5d11961933ed10b401094f44aca7b961651571b25fdace345dfc5e558da619.mp3",
+   "bank": "es (female)",
+   "origin": "LECAA català 45.1",
+   "converted": false
   },
   {
    "file": "e",
    "ipa": "e",
    "letters": "e é è",
-   "example": "elefante",
-   "start": 5.61,
-   "end": 5.92,
-   "source": "mateo"
+   "from": "utacub/lecaa_tecla assets/sons/phonemes/6ab21b511794a228f07aeffa7050f4814b46893748432373d72610d4e0e1be72.mp3",
+   "bank": "es (female)",
+   "origin": "LECAA català 45.1",
+   "converted": false
   },
   {
    "file": "i",
    "ipa": "i",
    "letters": "i í ï",
-   "example": "isla",
-   "start": 8.06,
-   "end": 8.32,
-   "source": "mateo"
+   "from": "utacub/lecaa_tecla assets/sons/phonemes/896baed6303d6064eab2b086c746c5a11298a5b8174534bf2cc14c6a03174a2e.mp3",
+   "bank": "es (female)",
+   "origin": "LECAA català 45.1",
+   "converted": false
   },
   {
    "file": "o",
    "ipa": "o",
    "letters": "o ó ò",
-   "example": "oso",
-   "start": 13.63,
-   "end": 13.85,
-   "source": "mateo"
+   "from": "utacub/lecaa_tecla assets/sons/phonemes/4cc618b3ea8cc7b877a81cc338e6a5a3274fdfb602b84d02800289f365656de3.mp3",
+   "bank": "es (female)",
+   "origin": "LECAA català 45.1",
+   "converted": false
   },
   {
    "file": "u",
    "ipa": "u",
    "letters": "u ú ü",
-   "example": "uva",
-   "start": 18.22,
-   "end": 18.49,
-   "source": "mateo"
+   "from": "utacub/lecaa_tecla assets/sons/phonemes/78bd1d3edd18ece61f5bcf00450503477fdb606b77f919c08ff4c908e5173b04.mp3",
+   "bank": "es (female)",
+   "origin": "LECAA català 45.1",
+   "converted": false
   },
   {
    "file": "p",
    "ipa": "p",
    "letters": "p",
-   "example": "pato",
-   "source": "jordi/p.mp3"
+   "from": "utacub/lecaa_tecla assets/sons/phonemes/8bfa4e633f08146708e104234f0d4aeff3c4fd1373c0bcac9103184c8f48868f.mp3",
+   "bank": "es (female)",
+   "origin": "LECAA català 45.1",
+   "converted": false
   },
   {
    "file": "b",
    "ipa": "b",
    "letters": "b v",
-   "example": "bota",
-   "source": "jordi/b.mp3"
+   "from": "utacub/lecaa_tecla assets/sons/phonemes/cf45626f14cecd4be6691ee43661a2ad2eec7882de6c453e6c7f893b8610c226.mp3",
+   "bank": "es (female)",
+   "origin": "LECAA català 45.1",
+   "converted": false
   },
   {
    "file": "t",
    "ipa": "t",
    "letters": "t",
-   "example": "toro",
-   "source": "jordi/t.mp3"
+   "from": "utacub/lecaa_tecla assets/sons/phonemes/17f5a170df7edf0cab49378bcbe0ade9cc8913b5f2d17ae3b3d611c7db42736c.mp3",
+   "bank": "es (female)",
+   "origin": "LECAA català 45.1",
+   "converted": false
   },
   {
    "file": "d",
    "ipa": "d",
    "letters": "d",
-   "example": "dedo",
-   "source": "jordi/d.mp3"
+   "from": "utacub/lecaa_tecla assets/sons/phonemes/25a05de26e711114419024d6d570bd7b283f5a93a502106c67265ce8ba91910f.mp3",
+   "bank": "es (female)",
+   "origin": "LECAA català 45.1",
+   "converted": false
   },
   {
    "file": "k",
    "ipa": "k",
    "letters": "c k q",
-   "example": "casa",
-   "source": "jordi/k.mp3"
+   "from": "utacub/lecaa_tecla assets/sons/phonemes/963730d82225f6e1996ad73f4b81706aa20c5141388aa38a7ca7a041b9b838a2.mp3",
+   "bank": "es (female)",
+   "origin": "LECAA català 45.1",
+   "converted": false
   },
   {
    "file": "g",
-   "ipa": "ɡ",
+   "ipa": "g",
    "letters": "g",
-   "example": "gato",
-   "source": "jordi/g.mp3"
+   "from": "utacub/lecaa_tecla assets/sons/phonemes/60ded9aad272dea7c71c12dfa4f5964be3d05e45778ff67cc49578d526e810ad.mp3",
+   "bank": "es (female)",
+   "origin": "LECAA català 45.1",
+   "converted": false
   },
   {
    "file": "f",
    "ipa": "f",
    "letters": "f",
-   "example": "foca",
-   "source": "jordi/f.mp3"
+   "from": "utacub/lecaa_tecla assets/sons/phonemes/9ac2a0f641807727f4f093c3deefa2d2668278c4f9931b4fa16cb8e08a63bfec.mp3",
+   "bank": "es (female)",
+   "origin": "LECAA català 45.1",
+   "converted": false
   },
   {
    "file": "z",
    "ipa": "θ",
    "letters": "z",
-   "example": "zapato",
-   "source": "jordi/s.mp3"
+   "from": "utacub/lecaa_tecla assets/sons/phonemes/7d21226b59155d71eabbba233a047308cc74505a10093a8bc7eb53de5156c2db.wav",
+   "bank": "es (female)",
+   "origin": "ElevenLabs_Locuciones_fonemas_faltantes.mp3",
+   "converted": true
   },
   {
    "file": "s",
    "ipa": "s",
    "letters": "s ç",
-   "example": "sol",
-   "source": "jordi/s.mp3"
+   "from": "utacub/lecaa_tecla assets/sons/phonemes/5a4c8cb8ebd659d65b660143a8399d84c76d6d000be37039f37f568eddf87464.mp3",
+   "bank": "es (female)",
+   "origin": "LECAA català 45.1",
+   "converted": false
   },
   {
    "file": "j",
    "ipa": "x",
    "letters": "j",
-   "example": "jirafa",
-   "start": 8.82,
-   "end": 9.08,
-   "source": "mateo"
+   "from": "utacub/lecaa_tecla assets/sons/phonemes/3a1350eba192b73acd8ce8f92e472c771b9c9fb63b52fa0ee2cb9c7b6251910a.wav",
+   "bank": "es (female)",
+   "origin": "ElevenLabs_Locuciones_fonemas_faltantes.mp3",
+   "converted": true
   },
   {
    "file": "y",
    "ipa": "ʝ",
    "letters": "y",
-   "example": "yate",
-   "start": 20.97,
-   "end": 21.22,
-   "source": "mateo"
+   "from": "utacub/lecaa_tecla assets/sons/phonemes/eae35d153d1eede0d1f23f247f05898a97c60b35e06282c2574175520717615e.wav",
+   "bank": "es (female)",
+   "origin": "ElevenLabs_Locuciones_fonemas_faltantes.mp3",
+   "converted": true
   },
   {
    "file": "m",
    "ipa": "m",
    "letters": "m",
-   "example": "mano",
-   "start": 10.7,
-   "end": 11.11,
-   "source": "mateo"
+   "from": "utacub/lecaa_tecla assets/sons/phonemes/c8f3409ff5b5e8c1eff86cc409d0d062928c64329eddab807d669f3320333d59.mp3",
+   "bank": "es (female)",
+   "origin": "LECAA català 45.1",
+   "converted": false
   },
   {
    "file": "n",
    "ipa": "n",
    "letters": "n",
-   "example": "nube",
-   "start": 11.59,
-   "end": 11.95,
-   "source": "mateo"
+   "from": "utacub/lecaa_tecla assets/sons/phonemes/e1d30e0742a0792a2d5a09dc4222c0dbc09323fa67ff8493aabaa7f3550ef6f8.mp3",
+   "bank": "es (female)",
+   "origin": "LECAA català 45.1",
+   "converted": false
   },
   {
    "file": "ny",
    "ipa": "ɲ",
    "letters": "ñ",
-   "example": "ñu",
-   "start": 12.48,
-   "end": 12.99,
-   "source": "mateo"
+   "from": "utacub/lecaa_tecla assets/sons/phonemes/feeae8cbe8828c6fc940bb01e72712a61e2b9df8f08011008b1197372c60cdc2.mp3",
+   "bank": "es (female)",
+   "origin": "LECAA català 45.1",
+   "converted": false
   },
   {
    "file": "l",
    "ipa": "l",
    "letters": "l",
-   "example": "luna",
-   "source": "jordi/l.mp3"
+   "from": "utacub/lecaa_tecla assets/sons/phonemes/e56ac32f6fadc15c7cce1f03c24430beb67e44a2209a86f81794593d60e86d9f.mp3",
+   "bank": "es (female)",
+   "origin": "LECAA català 45.1",
+   "converted": false
   },
   {
    "file": "rr",
    "ipa": "r",
    "letters": "r",
-   "example": "ratón",
-   "source": "jordi/rr.mp3"
+   "from": "utacub/lecaa_tecla assets/sons/phonemes/04233b80424a0ee49dd58946e54f729dcb2ef717a03d7848720d2105c8c0c5bb.mp3",
+   "bank": "es (female)",
+   "origin": "LECAA català 45.1",
+   "converted": false
   },
   {
    "file": "w",
    "ipa": "w",
    "letters": "w",
-   "example": "web",
-   "start": 19.19,
-   "end": 19.49,
-   "source": "mateo"
+   "from": "utacub/lecaa_tecla assets/sons/phonemes/dfce8601b5abcc451acc4735716d6344559d4e7da30978e1b0d4d938ae28e237.mp3",
+   "bank": "ca (anna)",
+   "origin": "recursos/dfce8601b5abcc451acc.mp3",
+   "converted": false
   },
   {
-   "file": "ks",
-   "ipa": "ks",
+   "file": "x",
+   "ipa": "ʃ",
    "letters": "x",
-   "example": "taxi",
-   "start": 20.0,
-   "end": 20.35,
-   "source": "mateo"
+   "from": "utacub/lecaa_tecla assets/sons/phonemes/e5fa758a54d08e16a625eccb6faa7526f3e715b35a360d11b8bda48af82a393b.mp3",
+   "bank": "ca (anna)",
+   "origin": "recursos/e5fa758a54d08e16a625.mp3",
+   "converted": false
   }
  ]
 }

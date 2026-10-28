@@ -85,26 +85,18 @@ src/
   speech/neural/     veus dins l'app: catàleg, descàrregues, worker Piper
   docio.ts           .docx (mammoth / docx), fitxers del dispositiu
   settings*.ts       configuració i panell
-  assets/sons/       sons aïllats d'Anna i Jordi (de LECAA)
+  assets/sons/       sons aïllats d'Anna i Jordi (de LECAA); es/anna: castellà (de LECAA Tecla)
 src-tauri/           app d'escriptori i pont natiu de veu (src/tts)
 ```
 
 ## Locucions en castellà (sons de les lletres)
 
-En castellà, de moment, hi ha una sola veu per als sons de les lletres: **Mateo** («Mateo – Warm educator», veu masculina d'ElevenLabs, `RD7LAtIKlFefBwftz7lj`, model eleven_v4), a `src/assets/sons/es/mateo/`. Les consonants b, v, c, k, q, d, f, g, l, p, r, s, t i z fan servir els clips catalans d'en Jordi, perquè les de Mateo no sonaven bé (decisió de Marc, 19/10/2026); la z fa servir la s d'en Jordi, perquè el català no té /θ/. La llista de fonemes i l'origen de cada clip són a `locucions/es.json`.
+En castellà, els sons de les lletres són de la veu de l'Anna (ElevenLabs), a `src/assets/sons/es/anna/`. Des del 28/10/2026, per decisió de Marc, són els mateixos sons de l'activitat «Blanco sobre negro» de LECAA Tecla (`utacub/lecaa_tecla`, `assets/sons/phonemes/`, banc castellà de LECAA Cast) i segueixen la mateixa correspondència entre lletra i so, revisada per Marc el 24/10/2026: c, k i q = /k/; g = /g/; r = /r/; v = /b/; z = /θ/; j = /x/; y = /ʝ/; ñ = /ɲ/; la x (/ʃ/) i la w (/w/) són de l'Anna del banc català, i la h no sona. Substitueixen els de Mateo i Jordi. Els MP3 s'han copiat sense canvis; els tres WAV (/θ/, /x/, /ʝ/) s'han passat a MP3 mono sense canviar-ne el volum. L'origen de cada clip és a `locucions/es.json`.
 
-Mètode: es va donar a ElevenLabs un fitxer de text (`locucions/fonemes-castella.txt`) amb el fonema més freqüent de cada lletra en AFI, un per línia i seguit d'un punt (`/a/.`, `/b/.`…), i se'n va obtenir una sola presa. Aquesta presa es parteix pels silencis i cada tram es passa per `scripts/locucions-normalitza.py`, que en conserva el primer tram de so, el normalitza a -1 dBFS i el desa en MP3 mono. La *ch*, la *ll* i la *r* simple no tenen clip perquè cap tecla no les produeix.
-
-```
-ffmpeg -ss 2.00 -to 2.28 -i presa.mp3 tros.wav
-python3 scripts/locucions-normalitza.py tros.wav src/assets/sons/es/mateo/a.mp3 --max 1.0
-```
-
-Cada carpeta de `src/assets/sons/es/` surt com una veu a triar a la compilació següent. Cal escoltar cada clip, perquè una veu sintètica no sempre fa bé una consonant aïllada.
+Cada carpeta de `src/assets/sons/es/` surt com una veu a triar a la compilació següent.
 
 ## Pendent de validar
 
-- Els sons en castellà de Mateo: cal confirmar a oïda que cada clip és el fonema que toca, i la z, que ara sona com una s.
 - Les taules de castellà: noms de les lletres (RAE i ASALE, 2010) i grafia → so (`src/letters.ts`, `src/phonemes-es.json`).
 - La taula de noms de les lletres i la taula grafia → so (`src/letters.ts`).
 - Les locucions de sons aïllats, que provenen de LECAA i no s'han revisat fonèticament.
@@ -118,4 +110,4 @@ La llicència cobreix el codi. **No** cobreix els logotips de la UTAC, de LECAA,
 
 ## Llicències de tercers
 
-Andika, Manrope, Atkinson Hyperlegible, Lexend, OpenDyslexic, Playwrite ES i Playwrite FR Moderne (via Fontsource): SIL Open Font License 1.1. Tiptap, docx, Tauri, ONNX Runtime Web, piper-wasm i vits-web (Diffusion Studio): MIT. El fonemitzador inclou espeak-ng (GPL-3.0), de manera que les versions que el distribueixen s'han de publicar sota una llicència compatible amb la GPL-3.0. Veu Piper Ona: dades de la UPC (Festcat), CC BY-SA 3.0 ES. Veu Piper Davefx: dades d'OHF-Voice, CC0. Veu Piper Sharvard: corpus Sharvard (Universitat d'Edimburg), CC BY 3.0. Mammoth: BSD-2-Clause. pdfmake (exportació a PDF): MIT. OpenDyslexic per al PDF (paquet open-dyslexic 1.0.3, en OTF): Bitstream Vera i CC BY 3.0 (Abelardo Gonzalez). DOMPurify: MPL-2.0 o Apache-2.0. Lucide: ISC. Les locucions d'Anna i Jordi s'han creat per a LECAA. Els logos de la UTAC (`src/assets/marca/utac-negre.webp` per a fons clars i `utac-blanc.webp` per a fons foscos, facilitats per la UTAC) i de LECAA són marques de la UTAC; el de LECAA Docs és el de LECAA amb «Docs» en Lexend.
+Andika, Manrope, Atkinson Hyperlegible, Lexend, OpenDyslexic, Playwrite ES i Playwrite FR Moderne (via Fontsource): SIL Open Font License 1.1. Tiptap, docx, Tauri, ONNX Runtime Web, piper-wasm i vits-web (Diffusion Studio): MIT. El fonemitzador inclou espeak-ng (GPL-3.0), de manera que les versions que el distribueixen s'han de publicar sota una llicència compatible amb la GPL-3.0. Veu Piper Ona: dades de la UPC (Festcat), CC BY-SA 3.0 ES. Veu Piper Davefx: dades d'OHF-Voice, CC0. Veu Piper Sharvard: corpus Sharvard (Universitat d'Edimburg), CC BY 3.0. Mammoth: BSD-2-Clause. pdfmake (exportació a PDF): MIT. OpenDyslexic per al PDF (paquet open-dyslexic 1.0.3, en OTF): Bitstream Vera i CC BY 3.0 (Abelardo Gonzalez). DOMPurify: MPL-2.0 o Apache-2.0. Lucide: ISC. Les locucions d'Anna i Jordi s'han creat per a LECAA; les castellanes de l'Anna provenen de LECAA Cast i LECAA Tecla. Els logos de la UTAC (`src/assets/marca/utac-negre.webp` per a fons clars i `utac-blanc.webp` per a fons foscos, facilitats per la UTAC) i de LECAA són marques de la UTAC; el de LECAA Docs és el de LECAA amb «Docs» en Lexend.
