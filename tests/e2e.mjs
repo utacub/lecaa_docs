@@ -16,6 +16,22 @@ const set = fn => page.evaluate(`window.lecaa.settings.update(${fn})`);
 const text = () => page.evaluate(() => window.lecaa.editor.getText());
 const clear = async () => { await page.evaluate(() => window.lecaa.editor.chain().command(({ tr }) => { tr.setMeta('lecaa-system', true); return true; }).setContent('').focus().run()); await reset(); };
 const wait = ms => page.waitForTimeout(ms);
+// System on-screen keyboards (Android, and others with suggestions): no usable key, only text.
+const cdp = await ctx.newCDPSession(page);
+const vkey = async (ch, delay = 200) => {
+  await cdp.send('Input.dispatchKeyEvent', { type: 'rawKeyDown', key: 'Unidentified', windowsVirtualKeyCode: 229 });
+  await cdp.send('Input.insertText', { text: ch });
+  await cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Unidentified', windowsVirtualKeyCode: 229 });
+  await wait(delay);
+};
+const vtype = async (str, delay) => { for (const c of str) await vkey(c, delay); };
+// Keyboards that compose each word (Gboard): the text grows with every key.
+const compose = async (word, delay = 250) => {
+  let t = '';
+  for (const c of word) { t += c; await cdp.send('Input.imeSetComposition', { text: t, selectionStart: t.length, selectionEnd: t.length }); await wait(delay); }
+  await cdp.send('Input.insertText', { text: t });
+  await wait(100);
+};
 
 await page.goto(url);
 await page.waitForFunction(() => document.querySelector('.ProseMirror') && window.lecaa);
@@ -82,7 +98,7 @@ await clear();
 await page.keyboard.type('mx', { delay: 250 });
 await wait(400);
 const clips = await page.evaluate(() => window.__clips.slice());
-ok(clips.length === 2 && (await spoken()).length === 0, 'so de la lletra amb locució: ' + JSON.stringify(clips));
+ok(clips.length === 2 && clips.every(c => c.startsWith('webaudio:')) && (await spoken()).length === 0, 'so de la lletra amb locució, ja descodificada (Web Audio): ' + JSON.stringify(clips));
 
 // 5. no feedback
 await set(`s => { s.feedback = { sentence: false, word: false, wordOnPunct: false, letter: 'off', upperCaseWord: false }; }`);
@@ -107,7 +123,7 @@ await page.evaluate(() => window.lecaa.editor.commands.setTextSelection({ from: 
 await page.click('[aria-label="Llegeix"]');
 await wait(1500);
 ok(JSON.stringify(await spoken()).includes('Primera') && !(await spoken()).join(' ').includes('Segona'), 'amb selecció llegeix només la selecció: ' + JSON.stringify(await spoken()));
-ok((await page.locator('.toolbar').count()) === 1 && await page.locator('.topbar [aria-label="Configuració"]').isVisible() && await page.locator('.topbar [aria-label="Teclat"]').isVisible(), 'tot en dues franges: els botons de veu a la barra superior');
+ok((await page.locator('.toolbar').count()) === 1 && await page.locator('.topbar [aria-label="Configuració"]').isVisible() && (await page.locator('[aria-label="Teclat"], .osk').count()) === 0, 'tot en dues franges i sense teclat en pantalla propi');
 
 // 6. triple letter → calm overlay, letter rejected, everything blocked
 await clear();
@@ -162,19 +178,22 @@ await page.evaluate(async () => {
 ok(await page.locator('.calm').isVisible(), 'mantenir una lletra continua sent un mal ús');
 await wait(3200);
 
-// 8c. holding the on-screen "esborra" key keeps deleting
-await set(`s => { s.keyboard.visible = true; }`);
+// 8c. a held delete key on a system on-screen keyboard repeats without telling: 4 per second
 await clear();
-await page.evaluate(() => window.lecaa.editor.chain().command(({ tr }) => { tr.setMeta('lecaa-system', true); return true; }).insertContent('abcdefghij').focus('end').run());
-const back = page.locator('.osk .key[data-a="back"]');
-const box = await back.boundingBox();
-await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-await page.mouse.down();
-await wait(1600);
-await page.mouse.up();
-const left = await text();
-ok(left.length >= 4 && left.length <= 6, 'mantenir “esborra” en pantalla: ' + JSON.stringify(left));
-await set(`s => { s.keyboard.visible = false; }`);
+const vheld = await page.evaluate(async () => {
+  const el = document.querySelector('.ProseMirror');
+  let accepted = 0;
+  const t0 = performance.now();
+  while (performance.now() - t0 < 1500) {
+    const e = new InputEvent('beforeinput', { inputType: 'deleteContentBackward', bubbles: true, cancelable: true });
+    el.dispatchEvent(e);
+    if (!e.defaultPrevented) accepted++;
+    await new Promise(r => setTimeout(r, 50));
+  }
+  return accepted;
+});
+ok(vheld >= 5 && vheld <= 7, `esborrar mantingut al teclat del sistema: ${vheld} en 1,5 s`);
+ok(!(await page.locator('.calm').isVisible()), 'esborrar mantingut no mostra l’avís de calma');
 
 // 9. lock while speaking
 await set(`s => { s.feedback = { sentence: false, word: true, wordOnPunct: true, letter: 'off', upperCaseWord: false }; s.lockWhileSpeaking = true; }`);
@@ -188,26 +207,61 @@ await page.keyboard.type('x', { delay: 10 });
 ok((await text()) === 'Casa x', 'protecció: tecla acceptada quan acaba');
 await set(`s => { s.lockWhileSpeaking = false; }`);
 
-// 10. on-screen keyboard: shift, space, delete and enter (only the full QWERTY exists)
+// 10. system on-screen keyboards (no usable key, only the inserted text)
+await set(`s => { s.feedback = { sentence: true, word: true, wordOnPunct: true, letter: 'name', upperCaseWord: false }; s.motor.debounceMs = 300; }`);
 await clear();
-await set(`s => { s.keyboard.visible = true; s.feedback.word = false; }`);
-await page.locator('.osk .key[data-a="shift"]').click(); await wait(150);
-for (const k of ['S', 'o', 'l']) { await page.locator(`.osk .key[data-k="${k}"]`).click(); await wait(150); }
-await page.locator('.osk .key[data-a="space"]').click(); await wait(150);
-await page.locator('.osk .key[data-k="x"]').click(); await wait(150);
-await page.locator('.osk .key[data-a="back"]').click(); await wait(150);
-await page.locator('.osk .key[data-a="enter"]').click(); await wait(150);
-ok((await page.evaluate(() => window.lecaa.editor.getHTML())) === '<p>Sol </p><p></p>', 'teclat en pantalla: ' + await page.evaluate(() => window.lecaa.editor.getHTML()));
-ok((await page.locator('.osk .key').count()) > 45 && (await page.locator('.osk .key[data-k="·"]').count()) === 0, 'només hi ha el teclat QWERTY complet');
-ok((await page.locator('.ProseMirror').getAttribute('inputmode')) === 'none', 'teclat del sistema desactivat amb el teclat propi');
-await page.screenshot({ path: 'test-results/osk.png' });
+await vtype('casa ', 200);
+await wait(300);
+ok((await text()) === 'casa ' && JSON.stringify(await spoken()) === JSON.stringify(['ce', 'a', 'essa', 'a', 'casa']), 'teclat del sistema: lletres i paraula, també amb l’ajust motriu: ' + JSON.stringify([await text(), await spoken()]));
+await set(`s => { s.motor.debounceMs = 0; }`);
+await clear();
+await compose('gat');
+await vkey(' ', 400);
+ok((await text()) === 'gat ' && JSON.stringify(await spoken()) === JSON.stringify(['ge', 'a', 'te', 'gat']), 'teclat que compon paraules: ' + JSON.stringify([await text(), await spoken()]));
+await clear();
+await vtype('El gat', 120);
+await wait(300);
+await reset();
+await cdp.send('Input.dispatchKeyEvent', { type: 'rawKeyDown', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13 });
+await cdp.send('Input.dispatchKeyEvent', { type: 'char', text: '\r', key: 'Enter' });
+await cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Enter', windowsVirtualKeyCode: 13 });
+await wait(400);
+ok(JSON.stringify(await spoken()) === JSON.stringify(['El gat']), 'intro del teclat del sistema llegeix la frase un cop: ' + JSON.stringify(await spoken()));
+await clear();
+const burst = await page.evaluate(() => {
+  const el = document.querySelector('.ProseMirror');
+  return [...'qwe'].map(ch => { const e = new InputEvent('beforeinput', { inputType: 'insertText', data: ch, bubbles: true, cancelable: true }); el.dispatchEvent(e); return e.defaultPrevented; });
+});
+ok(await page.locator('.calm').isVisible() && JSON.stringify(burst) === '[false,false,true]', 'teclat del sistema: tecles molt seguides → calma: ' + JSON.stringify(burst));
+await wait(3300);
+await clear();
+let comp = '';
+for (const c of 'aaa') { comp += c; await cdp.send('Input.imeSetComposition', { text: comp, selectionStart: comp.length, selectionEnd: comp.length }); await wait(250); }
+ok(await page.locator('.calm').isVisible() && (await text()) === 'aa', 'teclat que compon: la mateixa lletra 3 vegades → calma: ' + JSON.stringify(await text()));
+await wait(3300);
+await cdp.send('Input.insertText', { text: '' });
+await set(`s => { s.feedback = { sentence: false, word: true, wordOnPunct: true, letter: 'off', upperCaseWord: false }; s.lockWhileSpeaking = true; }`);
+await clear();
+await vtype('Casa ', 150);
+await wait(40);
+await vkey('x', 10);
+ok((await text()) === 'Casa ', 'protecció també amb el teclat del sistema: ' + JSON.stringify(await text()));
+await set(`s => { s.lockWhileSpeaking = false; }`);
+const edAttrs = await page.evaluate(() => { const e = document.querySelector('.ProseMirror'); return { im: e.getAttribute('inputmode'), ce: e.contentEditable }; });
+ok(edAttrs.im !== 'none' && edAttrs.ce === 'true', 'el teclat del sistema es pot obrir: ' + JSON.stringify(edAttrs));
 
-// 11. full keyboard dead key
+// 11. physical keyboard connected to a tablet: dead key + vowel arrive as a composition
 await clear();
-await page.locator('.osk .key[data-a="dead"][data-k="grave"]').click(); await wait(150);
-await page.locator('.osk .key[data-k="e"]').click(); await wait(150);
-ok((await text()) === 'è', 'teclat complet: accent amb tecla morta');
-await set(`s => { s.keyboard.visible = false; }`);
+await set(`s => { s.feedback.word = false; }`);
+await cdp.send('Input.dispatchKeyEvent', { type: 'rawKeyDown', key: 'Dead', code: 'BracketLeft', windowsVirtualKeyCode: 186 });
+await cdp.send('Input.imeSetComposition', { text: '`', selectionStart: 1, selectionEnd: 1 });
+await cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Dead', code: 'BracketLeft', windowsVirtualKeyCode: 186 });
+await wait(100);
+await cdp.send('Input.dispatchKeyEvent', { type: 'rawKeyDown', key: 'è', code: 'KeyE', windowsVirtualKeyCode: 69 });
+await cdp.send('Input.insertText', { text: 'è' });
+await cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'e', code: 'KeyE', windowsVirtualKeyCode: 69 });
+await wait(300);
+ok((await text()) === 'è', 'teclat físic: accent amb tecla morta: ' + JSON.stringify(await text()));
 
 // 12. docx export / import round trip
 await clear();
@@ -295,7 +349,7 @@ await page.click('.lock-card button[type=submit]');
 await wait(300);
 ok(await page.evaluate(() => document.body.classList.contains('is-kiosk')), 'entra en pantalla completa després de posar la contrasenya');
 ok(!(await page.locator('.toolbar').isVisible()) && !(await page.locator('[aria-label="Configuració"]').isVisible()), 'amaga la barra d’eines i la configuració');
-ok(await page.locator('[aria-label="Llegeix"]').isVisible() && await page.locator('[aria-label="Teclat"]').isVisible() && !(await page.locator('.doc-title').isVisible()), 'els botons de lectura i de teclat continuen visibles');
+ok(await page.locator('[aria-label="Llegeix"]').isVisible() && !(await page.locator('.doc-title').isVisible()), 'els botons de lectura continuen visibles');
 await page.reload();
 await page.waitForFunction(() => document.querySelector('.ProseMirror') && window.lecaa);
 await wait(300);
@@ -327,12 +381,10 @@ ok(esCfg.word === true && esCfg.message === 'Piensa bien cada letra que escribes
 ok(esCfg.pw === caPassword && !!caPassword, 'la contrasenya de pantalla completa és la mateixa en els dos idiomes');
 ok((await page.evaluate(() => window.lecaa.speech.currentVoice()?.lang)) === 'es-ES', 'fa servir una veu de castellà d’Espanya');
 await ed.click();
-await set(`s => { s.feedback = { sentence: true, word: true, wordOnPunct: true, letter: 'name', upperCaseWord: false }; s.keyboard.visible = true; }`);
+await set(`s => { s.feedback = { sentence: true, word: true, wordOnPunct: true, letter: 'name', upperCaseWord: false }; }`);
 await clear();
-for (const k of ['ñ', 'u', 'v']) { await page.locator(`.osk .key[data-k="${k}"]`).click(); await wait(250); }
+await vtype('ñuv', 250);
 ok(JSON.stringify(await spoken()) === JSON.stringify(['eñe', 'u', 'uve']), 'noms de les lletres en castellà: ' + JSON.stringify(await spoken()));
-const oskKeys = await page.locator('.osk .key').allTextContents();
-ok(oskKeys.includes('¡') && oskKeys.includes('ñ') && oskKeys.includes('borrar') && oskKeys.includes('⇧ Mayús'), 'teclat en pantalla en castellà: ' + JSON.stringify(oskKeys));
 await clear();
 await page.keyboard.type('Hola amigo ', { delay: 120 });
 await wait(400);
@@ -351,7 +403,7 @@ ok(recLabels.length === 0 && !recHint.join().includes('Mateo'), 'una sola veu pe
 await page.screenshot({ path: 'test-results/es-settings.png' });
 await page.click('[aria-label="Cerrar"]');
 await clear();
-for (const k of ['m', 'a']) { await page.locator(`.osk .key[data-k="${k}"]`).click(); await wait(300); }
+await vtype('ma', 300);
 ok((await page.evaluate(() => window.__clips.length)) === 2, 'el so de la lletra sona en castellà: ' + JSON.stringify(await page.evaluate(() => window.__clips)));
 await page.click('.lang-btn');
 await page.keyboard.press('Escape');
@@ -363,6 +415,25 @@ await wait(400);
 ok(await page.locator('[aria-label="Llegeix"]').isVisible() && (await page.evaluate(() => window.lecaa.settings.value.feedback.word)) === false, 'en tornar al català recupera la seva configuració');
 ok((await page.evaluate(() => window.lecaa.speech.currentVoice()?.lang)) === 'ca-ES', 'i la veu catalana');
 await page.screenshot({ path: 'test-results/ca-again.png' });
+// 17. a system on-screen keyboard covers the bottom (iPad, Windows touch): the app fits above it
+{
+  const c2 = await browser.newContext({ viewport: { width: 1024, height: 768 }, hasTouch: true });
+  await c2.addInitScript({ path: 'tests/mock-speech.js' });
+  await c2.addInitScript(() => {
+    const vv = new EventTarget(); vv.height = 768; vv.width = 1024; vv.scale = 1; vv.offsetTop = 0;
+    Object.defineProperty(window, 'visualViewport', { value: vv, configurable: true });
+    window.__vv = vv;
+  });
+  const p2 = await c2.newPage();
+  await p2.goto(url);
+  await p2.waitForFunction(() => window.lecaa);
+  await p2.evaluate(() => { const ed = window.lecaa.editor; ed.commands.setContent(Array.from({ length: 40 }, (_, i) => `<p>Línia ${i}</p>`).join('')); ed.commands.focus('end'); });
+  await p2.evaluate(() => { window.__vv.height = 420; window.__vv.dispatchEvent(new Event('resize')); });
+  await p2.waitForTimeout(300);
+  const fit = await p2.evaluate(() => ({ body: document.body.getBoundingClientRect().height, caret: window.getSelection().getRangeAt(0).getBoundingClientRect().bottom, toolbar: document.querySelector('.toolbar').getBoundingClientRect().top }));
+  ok(fit.body === 420 && fit.caret <= 420 && fit.toolbar >= 0, 'amb el teclat del sistema obert, el cursor i les barres es veuen: ' + JSON.stringify(fit));
+  await c2.close();
+}
 ok(errors.length === 0, 'sense errors a la consola: ' + JSON.stringify(errors));
 await browser.close();
 console.log(failures ? `${failures} FAILED` : 'ALL OK');

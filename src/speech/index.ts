@@ -3,6 +3,7 @@
 // as a whole, and `busy` tells the input guard whether audio feedback is still playing.
 
 import { isLangVoice, LANG } from '../i18n';
+import { decodeClip, ready } from './audio';
 import { settings } from '../settings';
 import { NativeEngine } from './native';
 import { neural } from './neural';
@@ -33,6 +34,7 @@ class SpeechHub {
   voices: VoiceInfo[] = [];
   private token = 0;
   private audio: HTMLAudioElement | null = null;
+  private source: AudioBufferSourceNode | null = null;
   private busyCount = 0;
   private busyListeners = new Set<BusyListener>();
   private voiceListeners = new Set<() => void>();
@@ -88,6 +90,12 @@ class SpeechHub {
     this.token++;
     for (const e of this.engines) if (e.available()) e.stop();
     if (this.audio) { this.audio.pause(); this.audio = null; }
+    if (this.source) { const src = this.source; this.source = null; try { src.stop(); } catch { /* not started */ } }
+  }
+
+  // Decodes the letter sounds of the chosen voice in advance, so that each starts at once.
+  preloadClips() {
+    for (const [k, url] of Object.entries(clipUrls)) if (k.startsWith(this.clipPrefix())) void decodeClip(url);
   }
 
   // Plays the items one after another. A new call (or stop) cancels the previous sequence.
@@ -123,15 +131,45 @@ class SpeechHub {
   }
 
   // Recorded letter sounds: Catalan in sons/<voice>, Spanish in sons/es/<voice>.
-  clipUrl(file: string) {
+  private clipPrefix() {
     const rv = settings.value.recordedVoice;
     const voice = recordedVoices.includes(rv) ? rv : recordedVoices[0];
-    return voice ? clipUrls[`${CLIP_DIR}${voice}/${file}.mp3`] ?? null : null;
+    return `${CLIP_DIR}${voice}/`;
   }
 
-  private clip(file: string) {
+  clipUrl(file: string) {
+    return recordedVoices.length ? clipUrls[`${this.clipPrefix()}${file}.mp3`] ?? null : null;
+  }
+
+  // Web Audio when the sound is unlocked (see audio.ts); an audio element otherwise.
+  private async clip(file: string) {
     const url = this.clipUrl(file);
-    if (!url) return Promise.resolve();
+    if (!url) return;
+    const my = this.token;
+    const buf = await decodeClip(url);
+    const c = buf ? await ready() : null;
+    if (my !== this.token) return;
+    if (buf && c?.state === 'running') return this.playBuffer(c, buf);
+    return this.playElement(url);
+  }
+
+  private playBuffer(c: AudioContext, buf: AudioBuffer) {
+    return new Promise<void>(resolve => {
+      const src = c.createBufferSource();
+      const gain = c.createGain();
+      gain.gain.value = settings.value.voice.volume;
+      src.buffer = buf;
+      src.connect(gain).connect(c.destination);
+      this.source = src;
+      let done = false;
+      const end = () => { if (done) return; done = true; if (this.source === src) this.source = null; resolve(); };
+      src.onended = end;
+      setTimeout(end, buf.duration * 1000 + 1000);
+      src.start();
+    });
+  }
+
+  private playElement(url: string) {
     return new Promise<void>(resolve => {
       const a = new Audio(url);
       a.volume = settings.value.voice.volume;

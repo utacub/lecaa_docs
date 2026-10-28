@@ -23,7 +23,6 @@
   --font-ui: 'Manrope', Verdana, sans-serif;
   --font-learn: 'Andika', Verdana, sans-serif;
   --radius: 14px;
-  --key: 3.4rem;
   --doc-size: 22px;
 }
 
@@ -38,6 +37,8 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  /* The part of the screen not covered by the system keyboard (viewport.ts). */
+  height: var(--app-height, 100%);
 }
 button, input, select, textarea { font: inherit; color: inherit; }
 button { touch-action: manipulation; }
@@ -181,29 +182,7 @@ body.is-locked .page { border-color: var(--focus); box-shadow: 0 0 0 6px var(--f
 .read-sentence { background: var(--mint); border-radius: 3px; }
 .read-word { background: var(--focus-soft); box-shadow: 0 0 0 2px var(--focus-soft); border-radius: 3px; }
 
-/* ---------- on-screen keyboard ---------- */
-.osk {
-  background: var(--surface); border-top: 1px solid var(--line); padding: 10px 8px 12px;
-  display: grid; gap: 8px; justify-items: center; user-select: none; -webkit-user-select: none;
-}
-.osk-row { display: flex; gap: 6px; justify-content: center; flex-wrap: nowrap; width: min(100%, calc(var(--key) * 16)); }
-.key {
-  min-width: var(--key); height: var(--key); padding: 0 6px; border-radius: 12px;
-  border: 1px solid var(--line); background: var(--bg); font-family: var(--font-learn);
-  font-size: calc(var(--key) * .45); cursor: pointer; box-shadow: 0 3px 0 #123c3f15; color: var(--ink);
-  flex: 1 1 0; min-width: 0; max-width: calc(var(--key) * 1.2);
-}
-.key:active { transform: translateY(2px); box-shadow: none; }
-.key.wide { flex-grow: 2; max-width: calc(var(--key) * 2.4); font-family: var(--font-ui); font-size: 15px; font-weight: 700; }
-.key.space { flex-grow: 5; max-width: calc(var(--key) * 6); }
-.key.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-.key.dead { color: var(--accent); font-weight: 700; }
-body.is-locked .key, body.is-calm .key { opacity: .45; }
 @media (max-width: 700px) {
-  .osk { padding: 6px 4px 8px; gap: 5px; }
-  .osk-row { gap: 3px; width: 100%; }
-  .key { max-width: none; height: min(var(--key), 12vw); font-size: min(calc(var(--key) * .45), 6vw); padding: 0 2px; border-radius: 8px; }
-  .key.wide { font-size: 12px; }
   .vbtn.icon-only { width: 42px; height: 42px; }
   .topbar-actions { gap: 4px; }
   .topbar .doc-title { min-width: 4rem; }
@@ -259,7 +238,7 @@ body.is-locked .key, body.is-calm .key { opacity: .45; }
 
 @media print {
   body { display: block; overflow: visible; background: #fff; }
-  .topbar, .toolbar, .osk, .drawer, .drawer-backdrop, .calm, .toast { display: none !important; }
+  .topbar, .toolbar, .drawer, .drawer-backdrop, .calm, .toast { display: none !important; }
   .workspace { padding: 0; overflow: visible; }
   .page { box-shadow: none; border: 0; padding: 0; max-width: none; }
 }

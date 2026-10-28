@@ -1,7 +1,7 @@
 import './styles.css';
 import type { Editor } from '@tiptap/core';
 import {
-  AArrowDown, AArrowUp, Bold, Check, ChevronDown, Columns3, Maximize, FileDown, FilePlus, FileType, FolderOpen, Globe, Image as ImageIcon, Info, Italic, Keyboard, List, ListOrdered, Pause, Play,
+  AArrowDown, AArrowUp, Bold, Check, ChevronDown, Columns3, Maximize, FileDown, FilePlus, FileType, FolderOpen, Globe, Image as ImageIcon, Info, Italic, List, ListOrdered, Pause, Play,
   Printer, Redo2, Rows3, Settings as SettingsIcon, Square, SquareMinus, Table as TableIcon, TextAlignCenter, TextAlignEnd,
   TextAlignStart, TextCursorInput, Trash2, Underline, Undo2,
 } from 'lucide';
@@ -10,14 +10,15 @@ import { FONTS, fontByFamily, fontById, loadFonts } from './fonts';
 import { LANG, LANGS, switchLang, T } from './i18n';
 import { BASE_PT, docxFromEditor, htmlFromFile, openFile, safeName, saveFile } from './docio';
 import { createEditor, installKeyboardGuard } from './editor';
-import { OnScreenKeyboard } from './keyboard';
 import { reader } from './reader';
 import { anyTypingFeedback, settings } from './settings';
 import { openSettings } from './settings-panel';
 import { speech } from './speech';
+import { installAudioUnlock } from './speech/audio';
 import { neural } from './speech/neural';
 import { lock } from './lock';
 import { loadDoc, storeDoc } from './storage';
+import { fitToVisibleArea } from './viewport';
 import { h, icon, toast } from './ui';
 import lecaaDocsLogo from './assets/marca/lecaa-docs.svg?raw';
 import utacLogo from './assets/marca/utac-negre.webp?url';
@@ -50,7 +51,8 @@ async function boot() {
   const workspace = h('main', { class: 'workspace' }, page);
   const editor = createEditor(page, saved?.content ?? null);
   installKeyboardGuard(editor);
-  const osk = new OnScreenKeyboard(editor);
+  installAudioUnlock();
+  fitToVisibleArea(editor);
 
   // ----- autosave -----
   let timer = 0;
@@ -186,7 +188,6 @@ async function boot() {
   const readLabel = T('Llegeix', 'Leer');
   const playBtn = h('button', { class: 'vbtn icon-only', type: 'button', title: T('Llegeix la selecció o des del cursor', 'Leer la selección o desde el cursor'), 'aria-label': readLabel }, icon(Play));
   const stopBtn = h('button', { class: 'vbtn ghost icon-only', type: 'button', title: T('Atura', 'Detener'), 'aria-label': T('Atura', 'Detener'), hidden: true }, icon(Square));
-  const kbBtn = h('button', { class: 'vbtn ghost icon-only', type: 'button', title: T('Teclat en pantalla', 'Teclado en pantalla'), 'aria-label': T('Teclat', 'Teclado'), 'aria-pressed': 'false' }, icon(Keyboard));
   const setBtn = h('button', { class: 'vbtn ghost icon-only kiosk-hide', type: 'button', 'aria-label': T('Configuració', 'Configuración') }, icon(SettingsIcon));
   const fullBtn = h('button', { class: 'vbtn ghost icon-only kiosk-hide', type: 'button', title: T('Pantalla completa', 'Pantalla completa'), 'aria-label': T('Pantalla completa', 'Pantalla completa') }, icon(Maximize));
   fullBtn.addEventListener('click', () => void lock.enter());
@@ -206,8 +207,6 @@ async function boot() {
   stopBtn.addEventListener('click', () => { reader.stop(); speech.stop(); });
   // Reading buttons must keep the editor selection.
   for (const b of [playBtn, stopBtn]) b.addEventListener('mousedown', e => e.preventDefault());
-  kbBtn.addEventListener('mousedown', e => e.preventDefault());
-  kbBtn.addEventListener('click', () => settings.update(s => { s.keyboard.visible = !s.keyboard.visible; }));
 
   reader.onState = () => {
     stopBtn.hidden = !reader.reading && !reader.paused;
@@ -233,7 +232,7 @@ async function boot() {
   });
 
   const actions = h('div', { class: 'topbar-actions', role: 'toolbar', 'aria-label': T('Veu i pantalla', 'Voz y pantalla') },
-    playBtn, stopBtn, kbBtn, fullBtn, aboutBtn, setBtn);
+    playBtn, stopBtn, fullBtn, aboutBtn, setBtn);
 
   // Language menu: the interface, the configuration and the voices all change with it.
   // Closed it shows the current language's code; open, every language in its own name.
@@ -278,7 +277,7 @@ async function boot() {
   (brand.lastChild as HTMLElement).innerHTML = lecaaDocsLogo;
   const topbar = h('header', { class: 'topbar' }, brand, title, saveState, langSwitch, warning, actions);
 
-  document.getElementById('app')!.replaceWith(topbar, toolbar, workspace, osk.el);
+  document.getElementById('app')!.replaceWith(topbar, toolbar, workspace);
   lock.install();
 
   // ----- state refresh -----
@@ -316,7 +315,6 @@ async function boot() {
     const s = settings.value;
     document.documentElement.style.setProperty('--doc-size', `${s.docFontSize}px`);
     document.documentElement.style.setProperty('--doc-font', fontById(s.docFont).css);
-    kbBtn.setAttribute('aria-pressed', String(s.keyboard.visible));
     const parts: string[] = [];
     if (s.feedback.sentence) parts.push('frase');
     if (s.feedback.word) parts.push(T('paraula', 'palabra'));
@@ -328,6 +326,8 @@ async function boot() {
     setBtn.title = `${T('Configuració', 'Configuración')} (${summary})`;
   };
   settings.subscribe(refreshSettings);
+  settings.subscribe(s => { if (s.feedback.letter === 'sound') speech.preloadClips(); });
+  if (settings.value.feedback.letter === 'sound') speech.preloadClips();
   refreshSettings();
 
   const refreshVoices = () => {

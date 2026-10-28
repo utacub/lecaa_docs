@@ -75,7 +75,8 @@ export class WebSpeechEngine implements SpeechEngine {
     const f = this.finish;
     this.current = null;
     this.finish = null;
-    try { speechSynthesis.cancel(); } catch { /* ignore */ }
+    // Cancelling an idle synthesizer can make Safari drop the next utterance.
+    try { if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel(); } catch { /* ignore */ }
     f?.();
   }
 }

@@ -1,4 +1,4 @@
-// Input guard: decides whether a keystroke (physical or on-screen) is accepted.
+// Input guard: decides whether a keystroke (physical keyboard or the system's on-screen one) is accepted.
 // - Typing protection: while enabled audio feedback is playing, new keystrokes are discarded.
 // - Misuse detection: signs of playing with the keyboard instead of writing trigger a
 //   calm, friendly 3-second pause that blocks all activity.
@@ -38,7 +38,7 @@ class InputGuard {
 
   private refreshLock() { document.body.classList.toggle('is-locked', this.locked()); }
 
-  // A held Backspace (physical auto-repeat or held on-screen key): accepted at a limited pace.
+  // A held Backspace (auto-repeat of a physical or on-screen key): accepted at a limited pace.
   heldDelete(): boolean {
     if (this.blocked()) return false;
     const now = performance.now();
@@ -47,7 +47,7 @@ class InputGuard {
     return true;
   }
 
-  // Timing checks shared by both keyboards. Returns false when the press must be discarded.
+  // Timing checks for keys and for text typed without a usable key. Returns false when the press must be discarded.
   press(key: string, opts: { repeat?: boolean; simultaneous?: number } = {}): boolean {
     if (this.blocked()) return false;
     const g = settings.value.guard;
@@ -59,7 +59,7 @@ class InputGuard {
       return false;
     }
     this.repeats = 0;
-    if (key.endsWith('Backspace') || key === 'osk:esborra') this.lastHeldDelete = now;
+    if (key.endsWith('Backspace')) this.lastHeldDelete = now;
 
     const deb = settings.value.motor.debounceMs;
     if (deb > 0 && key === this.lastKey.key && now - this.lastKey.t < deb) return false;

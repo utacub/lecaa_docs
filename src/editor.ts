@@ -26,32 +26,85 @@ function insertedText(tr: Transaction): string {
   return out;
 }
 
+// Keys that the window-level keydown listener has already checked. System on-screen keyboards
+// (Android, and iPad, ChromeOS or Windows with suggestions or IME) often send no usable key
+// ("Unidentified", keyCode 229, or a composition), so their input is checked from the text
+// they insert instead (beforeinput), and nothing is checked twice.
+let checkedKeyAt = 0;
+const takeCheckedKey = () => { const fresh = performance.now() - checkedKeyAt < 1000; checkedKeyAt = 0; return fresh; };
+const unidentified = (e: KeyboardEvent) => e.key === 'Unidentified' || e.key === 'Process' || e.keyCode === 229 || e.isComposing;
+
+// Text being composed (Android keyboards compose each word): the newly typed character is
+// the difference between two updates.
+let composing = '';
+
+// Enter feedback can arrive both as a key and as an inserted paragraph; it is played once.
+let enterAt = 0;
+function enterFeedback(state: EditorState) {
+  if (performance.now() - enterAt < 300) return;
+  enterAt = performance.now();
+  const before = textBefore(state);
+  setTimeout(() => playFeedback(itemsForEnter(before)), 0);
+}
+
+// Checks text that arrives without a checked key. Returns false when it must be discarded.
+function checkInput(state: EditorState, ev: InputEvent): boolean {
+  const t = ev.inputType;
+  if (t.startsWith('delete')) {
+    if (t === 'deleteByCut' || t === 'deleteByDrag') return !guard.blocked();
+    // A held delete key repeats without telling: deleting is accepted at the held pace.
+    return guard.heldDelete();
+  }
+  if (t === 'insertParagraph' || t === 'insertLineBreak') return guard.press('text:Enter');
+  let ch = '';
+  if (t === 'insertCompositionText') {
+    const data = ev.data ?? '';
+    if (data.length > composing.length && data.startsWith(composing)) ch = data.slice(composing.length);
+    else if (data.length < composing.length && composing.startsWith(data)) { composing = data; return guard.heldDelete(); }
+    // A dead key followed by its letter (´ + e = é) replaces the composed text.
+    else if ([...data].length === 1) ch = data;
+    composing = data;
+  } else if (t === 'insertText' || t === 'insertReplacementText') {
+    // The end of a composition commits text that was already checked.
+    if (composing && ev.data === composing) { composing = ''; return !guard.blocked(); }
+    ch = ev.data ?? '';
+  } else return !guard.blocked();
+  if ([...ch].length !== 1) return !guard.blocked();
+  if (!guard.press('text:' + ch.toLowerCase())) return false;
+  return guard.content(textBefore(state), ch);
+}
+
 // Connects the editor to the input guard (typing protection, misuse detection) and to the
-// audio feedback. Every way of entering text goes through here: physical keys, the
-// on-screen keyboard (which dispatches transactions), and IME/beforeinput on touch devices.
+// audio feedback. Every way of entering text goes through here: physical keyboards (also
+// those connected to a tablet) and the on-screen keyboard of each operating system.
 const LecaaInput = Extension.create({
   name: 'lecaaInput',
   addProseMirrorPlugins() {
     return [new Plugin({
-      // Backstop for input paths that bypass keydown (IME, autocorrect, drag & drop).
+      // Backstop for input paths that cannot be cancelled (composition, drag & drop).
       filterTransaction(tr) {
         if (!tr.docChanged || tr.getMeta('lecaa-system')) return true;
         return !guard.blocked();
       },
       props: {
         handleKeyDown(view, e) {
-          if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
-            const before = textBefore(view.state);
-            setTimeout(() => playFeedback(itemsForEnter(before)), 0);
-          }
+          if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) enterFeedback(view.state);
           return false;
         },
         handleDOMEvents: {
+          compositionstart() { composing = ''; return false; },
+          compositionend() { composing = ''; return false; },
           beforeinput(view, e) {
             const ev = e as InputEvent;
-            if (ev.inputType === 'insertText' && ev.data && ev.data.length === 1) {
-              if (!guard.content(textBefore(view.state), ev.data)) { ev.preventDefault(); return true; }
-            }
+            const fromKey = takeCheckedKey();
+            if (ev.inputType === 'historyUndo' || ev.inputType === 'historyRedo') return false;
+            // A single character after a checked key still needs the content checks.
+            let ok = fromKey
+              ? !(ev.inputType === 'insertText' && ev.data && [...ev.data].length === 1) || guard.content(textBefore(view.state), ev.data)
+              : checkInput(view.state, ev);
+            if (ok && guard.blocked()) ok = false;
+            if (!ok) { if (ev.cancelable) ev.preventDefault(); return ev.cancelable; }
+            if (!fromKey && (ev.inputType === 'insertParagraph' || ev.inputType === 'insertLineBreak')) enterFeedback(view.state);
             return false;
           },
         },
@@ -102,10 +155,11 @@ export function installKeyboardGuard(editor: Editor) {
   window.addEventListener('keydown', e => {
     if (guard.calming()) { e.preventDefault(); e.stopImmediatePropagation(); return; }
     if (!editor.view.dom.contains(e.target as Node)) return;
+    // Left to beforeinput: the key is not known yet.
+    if (unidentified(e)) return;
     if (!guard.keydown(e)) { e.preventDefault(); e.stopImmediatePropagation(); return; }
-    if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-      if (!guard.content(textBefore(editor.state), e.key)) { e.preventDefault(); e.stopImmediatePropagation(); }
-    }
+    if ((e.key.length === 1 && !e.ctrlKey && !e.metaKey) || e.key === 'Backspace' || e.key === 'Delete' || e.key === 'Enter') checkedKeyAt = performance.now();
   }, true);
-  window.addEventListener('keyup', e => guard.keyup(e), true);
+  // Keys handled without inserting anything (Enter in the editor's keymap) leave no mark behind.
+  window.addEventListener('keyup', e => { checkedKeyAt = 0; guard.keyup(e); }, true);
 }

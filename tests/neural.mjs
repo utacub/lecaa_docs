@@ -37,7 +37,7 @@ await ctx.addInitScript(() => {
   // Record what the app plays through Web Audio.
   window.__played = [];
   const start = AudioBufferSourceNode.prototype.start;
-  AudioBufferSourceNode.prototype.start = function (...a) { window.__played.push(this.buffer.duration); return start.apply(this, a); };
+  AudioBufferSourceNode.prototype.start = function (...a) { if (this.buffer.length > 1) window.__played.push(this.buffer.duration); return start.apply(this, a); };
 });
 const page = await ctx.newPage();
 const errors = [];

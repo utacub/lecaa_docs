@@ -4,6 +4,7 @@
 import { LETTER_NAMES } from '../../letters';
 import { LANG, T } from '../../i18n';
 import { settings } from '../../settings';
+import { audioContext, ready } from '../audio';
 import type { SpeakOptions, SpeechEngine, VoiceInfo } from '../types';
 import { MODELS, modelOf, type NeuralModel } from './catalog';
 import { cached, fileStore, type Progress } from './store';
@@ -269,7 +270,8 @@ export class NeuralEngine implements SpeechEngine {
     if (!r.ok) throw new Error(r.error);
     if (!low) console.info(`[neural] ${voiceId}: ${r.audio?.length ?? 0} samples in ${Math.round(performance.now() - t0)} ms`);
     if (!r.audio?.length) return null;
-    this.ctx ??= new AudioContext();
+    this.ctx ??= audioContext();
+    if (!this.ctx) return null;
     const buf = this.ctx.createBuffer(1, r.audio.length, r.sampleRate!);
     buf.copyToChannel(r.audio as Float32Array<ArrayBuffer>, 0);
     if (text.length <= 30) {
@@ -291,8 +293,7 @@ export class NeuralEngine implements SpeechEngine {
       return;
     }
     if (!buf || my !== this.token) return;
-    const ctx = this.ctx!;
-    if (ctx.state === 'suspended') await ctx.resume().catch(() => undefined);
+    const ctx = (await ready())!;
     return new Promise<void>(resolve => {
       const src = ctx.createBufferSource();
       const gain = ctx.createGain();

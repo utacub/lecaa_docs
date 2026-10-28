@@ -6,7 +6,7 @@ Versió 0.3.0. L'app és gratuïta per a tothom. La planificació completa és a
 
 ## Què fa
 
-- **Català i castellà**: el botó *Català | Castellano* de la barra superior canvia tota l'app d'idioma: la interfície, els noms de les lletres, els teclats en pantalla, els missatges i la veu. Cada idioma té la seva pròpia configuració (la contrasenya de pantalla completa és comuna). En cada idioma només es mostren les veus d'aquell idioma; en castellà, només les de castellà d'Espanya (`es-ES`). El document obert es conserva en canviar d'idioma.
+- **Català i castellà**: el botó *Català | Castellano* de la barra superior canvia tota l'app d'idioma: la interfície, els noms de les lletres, els missatges i la veu. Cada idioma té la seva pròpia configuració (la contrasenya de pantalla completa és comuna). En cada idioma només es mostren les veus d'aquell idioma; en castellà, només les de castellà d'Espanya (`es-ES`). El document obert es conserva en canviar d'idioma.
 - **Sis tipus de lletra**, totes incloses a l'app i amb llicència lliure (SIL OFL): Andika, Atkinson Hyperlegible, Lexend, OpenDyslexic i dues de **lletra lligada**, Playwrite ES (model escolar) i Playwrite FR Moderne. Es poden aplicar a una part del text o com a lletra de tot el document, i es conserven en desar en .docx (a l'altre ordinador, cal que la lletra hi sigui instal·lada; si no, se'n mostra una de semblant).
 - **Sobre LECAA Docs**: el botó ⓘ de la barra superior obre una explicació de l'app i els crèdits, amb els logos de la UTAC, la UB, la Fundació Bosch i Gimpera i els dos departaments de la Generalitat (els mateixos de LECAA).
 - **Pantalla completa amb contrasenya**: un botó amaga la barra d'eines i la configuració i posa l'app en pantalla completa. Només se'n surt amb una contrasenya configurada abans (botó 🔒 a la cantonada). Si es prem Esc, el navegador surt de la pantalla completa, però les barres continuen amagades i apareix un botó per tornar-hi. Es manté després de recarregar. És una protecció pensada per a l'aula, no una barrera de seguretat.
@@ -18,9 +18,10 @@ Versió 0.3.0. L'app és gratuïta per a tothom. La planificació completa és a
   - lletra: **nom** ("be", "ce trencada"…, amb veu sintètica) **o so** (locució enregistrada d'Anna o Jordi). Són excloents.
   - "Cap feedback": només sonen els botons de lectura.
 - **Protecció del tecleig**: no accepta cap tecla, física o en pantalla, mentre sona el feedback.
-- **Usos indeguts del teclat**: 3 o més tecles alhora, 3 tecles en menys de 60 ms, la mateixa lletra 3 vegades, 6 consonants seguides o una tecla mantinguda. Mantenir premuda la tecla d'esborrar (física o en pantalla) no és un mal ús: va esborrant, com a màxim 4 caràcters per segon. Mostra un avís amable de calma durant 3 segons ("Pensa bé cada lletra que escrius") i bloqueja tota l'activitat. Cada senyal es pot desactivar i el missatge i la durada es poden canviar.
+- **Usos indeguts del teclat**: 3 o més tecles alhora, 3 tecles en menys de 60 ms, la mateixa lletra 3 vegades, 6 consonants seguides o una tecla mantinguda. Mantenir premuda la tecla d'esborrar (física o del teclat en pantalla) no és un mal ús: va esborrant, com a màxim 4 caràcters per segon. Mostra un avís amable de calma durant 3 segons ("Pensa bé cada lletra que escrius") i bloqueja tota l'activitat. Cada senyal es pot desactivar i el missatge i la durada es poden canviar.
 - **Ajust motriu**: ignora la mateixa tecla repetida en menys d'un temps configurable.
-- **Teclat en pantalla**: QWERTY complet amb majúscules, números i accents (tecles mortes).
+- **Teclats**: l'app no té teclat en pantalla propi. Funciona amb el teclat físic (també connectat a una tauleta) i amb el teclat en pantalla de cada sistema: Windows, iPadOS, Android, ChromeOS i Linux. El feedback i les proteccions es calculen a partir del text que entra, perquè molts teclats en pantalla no diuen quina tecla s'ha premut (Android) o componen la paraula. Quan el teclat del sistema tapa la part de baix de la pantalla, l'app s'ajusta a la part visible i el cursor no queda amagat.
+- **So a l'iPad i l'iPhone**: el primer toc o la primera tecla desbloqueja el so; els sons de les lletres es descodifiquen per endavant i sonen amb Web Audio, i l'app declara que reprodueix so (Safari 16.4 o posterior) perquè l'interruptor de silenci no els apagui.
 - **Veus**: detecta les veus catalanes instal·lades al dispositiu i deixa triar-ne una, amb velocitat, to i volum.
 - **Veus catalanes gratuïtes dins l'app** (Configuració > Veu sintètica > Veus catalanes gratuïtes per descarregar). Es descarreguen una vegada, es guarden al dispositiu (IndexedDB) i després funcionen sense connexió a totes les versions, fins i tot al fitxer únic:
   - **Piper**: Ona (63 MB, català central). El motor (fonemitzador espeak-ng i ONNX Runtime en WebAssembly, uns 29 MB) es descarrega amb la veu. Les versions lleugeres d'Ona i Pau s'han retirat per decisió de Marc; si algú les tenia descarregades, l'app n'allibera l'espai.
@@ -77,9 +78,10 @@ src/
   feedback.ts        regles de feedback (frase, paraula, lletra)
   letters.ts         noms de les lletres, taula grafia → so, regles de text
   guard.ts           protecció del tecleig, usos indeguts, avís de calma
-  keyboard.ts        teclats en pantalla
   reader.ts          lectura a demanda i ressaltat
+  viewport.ts        ajust a la part visible quan s'obre el teclat del sistema
   speech/            motors de veu (navegador i natiu) i locucions
+  speech/audio.ts    so amb Web Audio i desbloqueig a l'iPad i l'iPhone
   speech/neural/     veus dins l'app: catàleg, descàrregues, worker Piper
   docio.ts           .docx (mammoth / docx), fitxers del dispositiu
   settings*.ts       configuració i panell

@@ -31,4 +31,10 @@
     setTimeout(() => this.onended && this.onended(), 100);
     return Promise.resolve();
   };
+  // Letter sounds played through Web Audio (speech/audio.ts).
+  const start = AudioBufferSourceNode.prototype.start;
+  AudioBufferSourceNode.prototype.start = function (...args) {
+    if (this.buffer && this.buffer.length > 1) window.__clips.push('webaudio:' + this.buffer.duration.toFixed(2));
+    return start.apply(this, args);
+  };
 })();

@@ -33,7 +33,6 @@ export interface Settings {
   voice: { id: string | null; rate: number; pitch: number; volume: number; showAll: boolean };
   recordedVoice: RecordedVoice;
   highlight: boolean;
-  keyboard: { visible: boolean; keySize: number };
   docFontSize: number;
   docFont: string;        // id from fonts.ts
   protectSettings: boolean;
@@ -58,7 +57,6 @@ export const DEFAULTS: Settings = {
   voice: { id: null, rate: 1, pitch: 1, volume: 1, showAll: false },
   recordedVoice: LANG === 'es' ? 'mateo' : 'anna',
   highlight: true,
-  keyboard: { visible: false, keySize: 3.4 },
   docFontSize: 22,
   docFont: 'andika',
   protectSettings: false,
