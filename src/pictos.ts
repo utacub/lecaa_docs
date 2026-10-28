@@ -194,7 +194,10 @@ const REFRESH = 'lecaa-pictos-refresh';
 
 export function refreshPictos(view: EditorView) {
   view.dom.classList.toggle('pictos-on', !!index && settings.value.pictos.enabled && pictosAvailable);
-  view.dispatch(view.state.tr.setMeta(REFRESH, true).setMeta('lecaa-system', true).setMeta('addToHistory', false));
+  const tr = view.state.tr.setMeta(REFRESH, true).setMeta('lecaa-system', true).setMeta('addToHistory', false);
+  // Lines are taller with pictograms (and shorter without): the caret must stay in sight.
+  if (view.hasFocus()) tr.scrollIntoView();
+  view.dispatch(tr);
 }
 
 // The picture of a word sits above its text box: a press there opens the chooser.
