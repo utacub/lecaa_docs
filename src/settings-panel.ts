@@ -7,6 +7,7 @@ import { inTauri } from './speech/native';
 import { settings, type LetterMode, type Settings } from './settings';
 import { recordedVoices, speech, type VoiceInfo } from './speech';
 import { neural } from './speech/neural';
+import { pictosAvailable } from './pictos';
 import { MODELS } from './speech/neural/catalog';
 import { h, icon, toast } from './ui';
 
@@ -254,6 +255,12 @@ export function openSettings(onClose: () => void) {
       h('fieldset', {}, h('legend', {}, T('Ajust motriu', 'Ajuste motor')),
         h('div', { class: 'field' }, h('label', {}, T('Ignora la mateixa tecla repetida en menys de', 'Ignorar la misma tecla repetida en menos de')), debounce),
         h('p', { class: 'hint' }, T('Útil si hi ha tremolor o rebots: evita lletres duplicades sense voler.', 'Útil si hay temblor o rebotes: evita letras duplicadas sin querer.'))),
+      pictosAvailable ? h('fieldset', {}, h('legend', {}, 'Pictogrames ARASAAC (prova)'),
+        check('Mostra el pictograma damunt de cada paraula acabada', 'Apareix en prémer l’espai o un signe de puntuació. També es pot activar i desactivar amb el botó de la barra d’eines.', x => x.pictos.enabled, (x, v) => { x.pictos.enabled = v; }),
+        h('div', { class: 'subgroup' },
+          range('Mida del pictograma', 1.4, 3, 0.2, x => x.pictos.size, (x, v) => { x.pictos.size = v; }, v => `${Math.round(v * 10) / 10} vegades la lletra`),
+          check('Només paraules amb contingut', 'Sense pictograma per als articles, preposicions, conjuncions i pronoms febles (el, de, i, que, es…).', x => x.pictos.contentOnly, (x, v) => { x.pictos.contentOnly = v; })),
+        h('p', { class: 'hint' }, 'Toca un pictograma per triar-ne un altre per a aquella paraula, o cap. L’app recorda la tria en aquest dispositiu. Els pictogrames només es veuen a la pantalla: no es desen al .docx ni al PDF.')) : null,
       h('fieldset', {}, h('legend', {}, T('Lectura i document', 'Lectura y documento')),
         check(T('Ressalta el que s’està llegint', 'Resaltar lo que se está leyendo'), null, x => x.highlight, (x, v) => { x.highlight = v; }),
         range(T('Mida del text a la pantalla', 'Tamaño del texto en la pantalla'), 16, 40, 1, x => x.docFontSize, (x, v) => { x.docFontSize = v; }, v => `${v} px`),

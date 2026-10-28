@@ -1,7 +1,7 @@
 import './styles.css';
 import type { Editor } from '@tiptap/core';
 import {
-  AArrowDown, AArrowUp, Bold, Check, ChevronDown, Columns3, Maximize, FileDown, FilePlus, FileType, FolderOpen, Globe, Image as ImageIcon, Info, Italic, List, ListOrdered, Pause, Play,
+  AArrowDown, AArrowUp, Bold, BookImage, Check, ChevronDown, Columns3, Maximize, FileDown, FilePlus, FileType, FolderOpen, Globe, Image as ImageIcon, Info, Italic, List, ListOrdered, Pause, Play,
   Printer, Redo2, Rows3, Settings as SettingsIcon, Square, SquareMinus, Table as TableIcon, TextAlignCenter, TextAlignEnd,
   TextAlignStart, TextCursorInput, Trash2, Underline, Undo2,
 } from 'lucide';
@@ -13,6 +13,7 @@ import { createEditor, installKeyboardGuard } from './editor';
 import { reader } from './reader';
 import { anyTypingFeedback, settings } from './settings';
 import { openSettings } from './settings-panel';
+import { loadPictos, pictosAvailable, refreshPictos } from './pictos';
 import { speech } from './speech';
 import { installAudioUnlock } from './speech/audio';
 import { neural } from './speech/neural';
@@ -173,6 +174,16 @@ async function boot() {
     tb(T('Esborra la columna', 'Borrar la columna'), TextCursorInput, run(c => c.deleteColumn())),
     tb(T('Esborra la taula', 'Borrar la tabla'), Trash2, run(c => c.deleteTable())));
 
+  // ----- pictograms above the words (Catalan prototype) -----
+  const pictosMissing = () => toast(T('No s’han trobat els pictogrames. Posa la carpeta «pictos» al costat de LECAA Docs i torna a obrir l’app.', 'No se han encontrado los pictogramas.'), 8000);
+  const pictoBtn = tb(T('Pictogrames damunt de les paraules', 'Pictogramas encima de las palabras'), BookImage, () => {
+    const on = !settings.value.pictos.enabled;
+    settings.update(x => { x.pictos.enabled = on; });
+    if (on) void loadPictos().then(ok => { if (!ok) pictosMissing(); });
+    editor.commands.focus();
+  });
+  pictoBtn.hidden = !pictosAvailable;
+
   const toolbar = h('div', { class: 'toolbar', role: 'toolbar', 'aria-label': T('Format', 'Formato') },
     tb(T('Document nou', 'Documento nuevo'), FilePlus, newDoc), tb(T('Obre un document', 'Abrir un documento'), FolderOpen, open), tb(T('Desa com a .docx', 'Guardar como .docx'), FileDown, save), tb(T('Desa com a PDF', 'Guardar como PDF'), FileType, savePdf), tb(T('Imprimeix', 'Imprimir'), Printer, () => window.print()),
     h('span', { class: 'sep' }), undo, redo,
@@ -180,7 +191,8 @@ async function boot() {
     h('span', { class: 'sep' }), fmt.bold, fmt.italic, fmt.underline,
     h('span', { class: 'sep' }), fmt.left, fmt.center, fmt.right,
     h('span', { class: 'sep' }), fmt.bullet, fmt.ordered,
-    h('span', { class: 'sep' }), tb(T('Insereix una taula', 'Insertar una tabla'), TableIcon, run(c => c.insertTable({ rows: 3, cols: 3, withHeaderRow: false }))), tb(T('Insereix una imatge', 'Insertar una imagen'), ImageIcon, insertImage), tableTools);
+    h('span', { class: 'sep' }), tb(T('Insereix una taula', 'Insertar una tabla'), TableIcon, run(c => c.insertTable({ rows: 3, cols: 3, withHeaderRow: false }))), tb(T('Insereix una imatge', 'Insertar una imagen'), ImageIcon, insertImage),
+    ...(pictosAvailable ? [pictoBtn] : []), tableTools);
 
   // ----- voice bar (the main controls) -----
   // One reading button: reads the selection if there is one, otherwise from the cursor (or the
@@ -315,6 +327,7 @@ async function boot() {
     const s = settings.value;
     document.documentElement.style.setProperty('--doc-size', `${s.docFontSize}px`);
     document.documentElement.style.setProperty('--doc-font', fontById(s.docFont).css);
+    document.documentElement.style.setProperty('--picto-size', `${s.pictos.size}em`);
     const parts: string[] = [];
     if (s.feedback.sentence) parts.push('frase');
     if (s.feedback.word) parts.push(T('paraula', 'palabra'));
@@ -326,6 +339,12 @@ async function boot() {
     setBtn.title = `${T('Configuració', 'Configuración')} (${summary})`;
   };
   settings.subscribe(refreshSettings);
+  const refreshPictoBtn = () => pictoBtn.setAttribute('aria-pressed', String(settings.value.pictos.enabled));
+  settings.subscribe(() => { refreshPictoBtn(); refreshPictos(editor.view); });
+  refreshPictoBtn();
+  if (pictosAvailable && settings.value.pictos.enabled) {
+    void loadPictos().then(ok => { refreshPictos(editor.view); if (!ok) pictosMissing(); });
+  }
   settings.subscribe(s => { if (s.feedback.letter === 'sound') speech.preloadClips(); });
   if (settings.value.feedback.letter === 'sound') speech.preloadClips();
   refreshSettings();

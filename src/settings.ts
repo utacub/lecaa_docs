@@ -33,6 +33,11 @@ export interface Settings {
   voice: { id: string | null; rate: number; pitch: number; volume: number; showAll: boolean };
   recordedVoice: RecordedVoice;
   highlight: boolean;
+  pictos: {
+    enabled: boolean;       // ARASAAC pictograms above the finished words (Catalan prototype)
+    contentOnly: boolean;   // none for articles, prepositions, conjunctions and weak pronouns
+    size: number;           // height of the pictogram, in times the height of the letters (em)
+  };
   docFontSize: number;
   docFont: string;        // id from fonts.ts
   protectSettings: boolean;
@@ -57,6 +62,7 @@ export const DEFAULTS: Settings = {
   voice: { id: null, rate: 1, pitch: 1, volume: 1, showAll: false },
   recordedVoice: 'anna',
   highlight: true,
+  pictos: { enabled: true, contentOnly: true, size: 2 },
   docFontSize: 22,
   docFont: 'andika',
   protectSettings: false,

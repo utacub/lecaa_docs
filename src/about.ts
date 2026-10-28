@@ -3,6 +3,7 @@
 
 import { X } from 'lucide';
 import { T } from './i18n';
+import { pictosAvailable } from './pictos';
 import { h, icon } from './ui';
 import { version as VERSION } from '../package.json';
 import lecaaDocsLogo from './assets/marca/lecaa-docs.svg?raw';
@@ -28,6 +29,10 @@ const TOOLS: [string, string, string, string][] = [
   [T('Veus per descarregar', 'Voces para descargar'), 'Piper (Ona, Davefx, Sharvard)', 'Rhasspy · Open Home Foundation', 'https://github.com/rhasspy/piper'],
   [T('Tipografies', 'Tipografías'), 'Andika, Atkinson Hyperlegible, Lexend, OpenDyslexic, Playwrite', 'SIL OFL 1.1', 'https://openfontlicense.org/'],
   [T('Icones', 'Iconos'), 'Lucide', 'Lucide Contributors', 'https://lucide.dev/'],
+  ...(pictosAvailable ? [
+    ['Pictogrames', 'ARASAAC (autor: Sergio Palao)', 'Govern d’Aragó · CC BY-NC-SA 4.0', 'https://arasaac.org/'],
+    ['Formes de les paraules', 'catalan-dict-tools', 'Softcatalà · GPL 2.0 / LGPL 2.1', 'https://github.com/Softcatala/catalan-dict-tools'],
+  ] as [string, string, string, string][] : []),
 ];
 
 const link = (label: string | Node, url: string, attrs: Record<string, string> = {}) =>

@@ -10,6 +10,7 @@ import StarterKit from '@tiptap/starter-kit';
 import { itemsForChar, itemsForEnter, playFeedback } from './feedback';
 import { guard } from './guard';
 import { LANG, T } from './i18n';
+import { PictoLayer } from './pictos';
 import { reader, ReaderHighlight } from './reader';
 
 // Text of the current block up to the caret (images and breaks count as a space).
@@ -139,6 +140,7 @@ export function createEditor(el: HTMLElement, content: object | string | null) {
       TableKit.configure({ table: { resizable: true } }),
       Image.configure({ allowBase64: true, resize: { enabled: true, alwaysPreserveAspectRatio: true, minWidth: 40, minHeight: 40 } }),
       ReaderHighlight,
+      PictoLayer,
       LecaaInput,
     ],
     content: content ?? '',

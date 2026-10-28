@@ -256,7 +256,7 @@ body.is-locked .page { border-color: var(--focus); box-shadow: 0 0 0 6px var(--f
 .tag { font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; background: var(--mint); color: var(--accent); border: 1px solid var(--line); }
 
 /* ----- full-screen writing mode ----- */
-.font-select { max-width: 13rem; }
+.font-select { max-width: 12rem; }
 .is-kiosk .toolbar, .is-kiosk .kiosk-hide, .is-kiosk .topbar > :not(.topbar-actions):not(.voice-warning) { display: none !important; }
 .is-kiosk .topbar { justify-content: flex-end; }
 .lock-exit {
@@ -290,3 +290,31 @@ body.is-locked .page { border-color: var(--focus); box-shadow: 0 0 0 6px var(--f
   .topbar > .brand { margin-right: auto; }
   .topbar > .voice-warning { order: 10; flex: 1 1 100%; max-width: none; text-align: center; }
 }
+
+/* ARASAAC pictograms above the finished words (Catalan prototype). Every line keeps room for a
+   pictogram above its text, so the text does not jump when one appears. */
+.ProseMirror.pictos-on { --picto-gap: .08em; }
+.ProseMirror.pictos-on :is(p, h1, h2) { line-height: calc(1.35em + 2 * (var(--picto-size, 2em) + var(--picto-gap))); }
+.ProseMirror.pictos-on .pw {
+  display: inline-block; position: relative; min-width: var(--picto-size, 2em); text-align: center;
+  line-height: 1.35; text-indent: 0;
+}
+.ProseMirror.pictos-on .pw::before {
+  content: ''; position: absolute; left: 50%; bottom: calc(100% + var(--picto-gap)); transform: translateX(-50%);
+  width: var(--picto-size, 2em); height: var(--picto-size, 2em); background: var(--picto) center / contain no-repeat;
+  cursor: pointer; animation: picto-in .25s ease-out;
+}
+@keyframes picto-in { from { opacity: 0; transform: translateX(-50%) scale(.85); } }
+@media (prefers-reduced-motion: reduce) { .ProseMirror.pictos-on .pw::before { animation: none; } }
+@media print { .ProseMirror.pictos-on .pw::before { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+
+.picto-chooser {
+  position: fixed; z-index: 60; max-width: min(92vw, 440px); background: var(--surface); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); padding: 12px;
+}
+.picto-chooser-title { font-weight: 600; margin-bottom: 8px; }
+.picto-chooser-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 8px; max-height: 50vh; overflow: auto; margin-bottom: 10px; padding: 6px; }
+.picto-option { background: #fff; border: 2px solid var(--line); border-radius: 10px; padding: 4px; cursor: pointer; aspect-ratio: 1; }
+.picto-option img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.picto-option[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 3px var(--focus-soft); }
+.picto-option:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
