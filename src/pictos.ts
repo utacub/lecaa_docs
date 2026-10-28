@@ -12,9 +12,20 @@ import { Extension } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { Plugin, PluginKey, type EditorState } from '@tiptap/pm/state';
 import { Decoration, DecorationSet, type EditorView } from '@tiptap/pm/view';
+import type { IconNode } from 'lucide';
 import { LANG, T } from './i18n';
 import { settings } from './settings';
 import { h } from './ui';
+
+// Toolbar icon, in Lucide's style: a pictogram (a face in a square) above a line of text.
+export const PictoIcon: IconNode = [
+  ['rect', { x: '6', y: '1', width: '12', height: '12', rx: '2' }],
+  ['path', { d: 'M9.5 8.5a3 3 0 0 0 5 0' }],
+  ['path', { d: 'M10 5h.01' }],
+  ['path', { d: 'M14 5h.01' }],
+  ['path', { d: 'M3 17.5h18' }],
+  ['path', { d: 'M3 22h12' }],
+];
 
 export const PICTOS_BASE = './pictos/';
 export const pictoUrl = (id: number) => `${PICTOS_BASE}img/${id}.png`;
@@ -254,4 +265,69 @@ function openChooser(view: EditorView, el: HTMLElement) {
   box.style.top = `${top}px`;
   document.addEventListener('pointerdown', outside, true);
   (box.querySelector('button[aria-pressed="true"]') as HTMLButtonElement ?? box.querySelector('button'))?.focus();
+}
+
+// ----- offline: all the pictograms on the device (online edition / PWA) -----
+// Same cache as the service worker (src/sw.js). The single file cannot keep them: it needs the
+// "pictos" folder next to it.
+const PICTOS_CACHE = 'lecaa-pictos-proto-pictogrames';
+export const offlineSupported = pictosAvailable && !__SINGLE_FILE__ && location.protocol.startsWith('http') && 'caches' in window;
+
+export function allPictoIds(): number[] {
+  const ids = new Set<number>();
+  if (index) for (const flat of Object.values(index.kw)) for (let i = 0; i < flat.length; i += 2) ids.add(flat[i]);
+  return [...ids].sort((a, b) => a - b);
+}
+
+async function cachedIds(): Promise<Set<number>> {
+  const c = await caches.open(PICTOS_CACHE);
+  const ids = new Set<number>();
+  for (const r of await c.keys()) {
+    const m = new URL(r.url).pathname.match(/\/pictos\/img\/(\d+)\.png$/);
+    if (m) ids.add(Number(m[1]));
+  }
+  return ids;
+}
+
+export async function offlineCount(): Promise<number> {
+  try { return (await cachedIds()).size; } catch { return 0; }
+}
+
+// Downloads the pictograms that are not on the device yet. They come joined in about ten large
+// files (pictos/paquets, made by scripts/pictos-paquets.py) that are split here into one image per
+// pictogram, the same entries that the service worker keeps when a pictogram is shown.
+interface Packs { v: number; files: string[]; parts: number[][] }
+
+export async function downloadAll(onProgress: (done: number, total: number) => void, signal: AbortSignal): Promise<{ saved: number; failed: number }> {
+  await navigator.storage?.persist?.().catch(() => false);
+  const c = await caches.open(PICTOS_CACHE);
+  const packs = await (await fetch(PICTOS_BASE + 'paquets/index.json', { signal, cache: 'no-cache' })).json() as Packs;
+  const have = await cachedIds();
+  const total = packs.parts.reduce((n, p) => n + p.length / 3, 0);
+  let done = 0, failed = 0;
+  for (let f = 0; f < packs.files.length && !signal.aborted; f++) {
+    const part = packs.parts[f];
+    const todo: number[] = [];
+    for (let i = 0; i < part.length; i += 3) if (have.has(part[i])) done++; else todo.push(i);
+    onProgress(done, total);
+    if (!todo.length) continue;
+    let data: ArrayBuffer;
+    try { data = await (await fetch(PICTOS_BASE + 'paquets/' + packs.files[f], { signal })).arrayBuffer(); }
+    catch { if (!signal.aborted) { failed += todo.length; done += todo.length; } continue; }
+    for (let k = 0; k < todo.length && !signal.aborted; k += 50) {
+      await Promise.all(todo.slice(k, k + 50).map(i => {
+        const [id, off, len] = [part[i], part[i + 1], part[i + 2]];
+        const body = new Blob([data.slice(off, off + len)], { type: 'image/png' });
+        return c.put(absUrl(id), new Response(body, { headers: { 'Content-Type': 'image/png' } }));
+      }));
+      done += Math.min(50, todo.length - k);
+      onProgress(done, total);
+    }
+  }
+  return { saved: done - failed, failed };
+}
+
+export async function deleteOffline() {
+  const c = await caches.open(PICTOS_CACHE);
+  await Promise.all((await c.keys()).filter(r => r.url.includes('/pictos/img/')).map(r => c.delete(r)));
 }

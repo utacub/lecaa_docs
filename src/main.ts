@@ -1,7 +1,7 @@
 import './styles.css';
 import type { Editor } from '@tiptap/core';
 import {
-  AArrowDown, AArrowUp, Bold, BookImage, Check, ChevronDown, Columns3, Maximize, FileDown, FilePlus, FileType, FolderOpen, Globe, Image as ImageIcon, Info, Italic, List, ListOrdered, Pause, Play,
+  AArrowDown, AArrowUp, Bold, Check, ChevronDown, Columns3, Maximize, FileDown, FilePlus, FileType, FolderOpen, Globe, Image as ImageIcon, Info, Italic, List, ListOrdered, Pause, Play,
   Printer, Redo2, Rows3, Settings as SettingsIcon, Square, SquareMinus, Table as TableIcon, TextAlignCenter, TextAlignEnd,
   TextAlignStart, TextCursorInput, Trash2, Underline, Undo2,
 } from 'lucide';
@@ -13,7 +13,7 @@ import { createEditor, installKeyboardGuard } from './editor';
 import { reader } from './reader';
 import { anyTypingFeedback, settings } from './settings';
 import { openSettings } from './settings-panel';
-import { loadPictos, pictosAvailable, refreshPictos } from './pictos';
+import { loadPictos, PictoIcon, pictosAvailable, refreshPictos } from './pictos';
 import { speech } from './speech';
 import { installAudioUnlock } from './speech/audio';
 import { neural } from './speech/neural';
@@ -176,7 +176,7 @@ async function boot() {
 
   // ----- pictograms above the words (Catalan prototype) -----
   const pictosMissing = () => toast(T('No s’han trobat els pictogrames. Posa la carpeta «pictos» al costat de LECAA Docs i torna a obrir l’app.', 'No se han encontrado los pictogramas.'), 8000);
-  const pictoBtn = tb(T('Pictogrames damunt de les paraules', 'Pictogramas encima de las palabras'), BookImage, () => {
+  const pictoBtn = tb(T('Pictogrames damunt de les paraules', 'Pictogramas encima de las palabras'), PictoIcon, () => {
     const on = !settings.value.pictos.enabled;
     settings.update(x => { x.pictos.enabled = on; });
     if (on) void loadPictos().then(ok => { if (!ok) pictosMissing(); });

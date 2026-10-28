@@ -1,18 +1,22 @@
 #!/usr/bin/env python3
 """Builds the Catalan word -> ARASAAC pictogram index of the pictogram pack (prototype).
 
-Usage: python3 -I scripts/pictos-index.py CATALOG_CA.json DICCIONARI.txt OUT_DIR
+Usage: python3 -I scripts/pictos-index.py CATALOG_CA.json DICCIONARI.txt OUT_DIR [IMG_DIR]
 
 CATALOG_CA.json: https://api.arasaac.org/api/pictograms/all/ca
 DICCIONARI.txt:  https://github.com/Softcatala/catalan-dict-tools (resultats/lt/diccionari.txt),
                  one "form lemma tag" per line (GPL-2.0-or-later / LGPL-2.1-or-later).
+IMG_DIR:         when given, pictograms without an image there are left out (ARASAAC lists a
+                 few whose image does not exist).
 Writes OUT_DIR/index-ca.js, loaded by the app with a <script> tag so that it also works when
 the app is opened as a file (file://), where fetch() is not allowed.
 """
-import json, re, sys, unicodedata
+import json, os, re, sys, unicodedata
 from collections import defaultdict
 
 catalog_path, dict_path, out_dir = sys.argv[1:4]
+img_dir = sys.argv[4] if len(sys.argv) > 4 else None
+with_image = {int(f[:-4]) for f in os.listdir(img_dir) if f.endswith('.png')} if img_dir else None
 
 def norm(s):
     return unicodedata.normalize('NFC', s).replace('’', "'").strip().lower()
@@ -20,7 +24,7 @@ def norm(s):
 # ---- keyword -> pictograms, best first ----
 cands = defaultdict(list)  # keyword -> [(rank, id, type)]
 for p in json.load(open(catalog_path, encoding='utf-8')):
-    if p.get('sex') or p.get('violence'):
+    if p.get('sex') or p.get('violence') or (with_image is not None and p['_id'] not in with_image):
         continue
     for i, k in enumerate(p.get('keywords', [])):
         t = k.get('type') or 0

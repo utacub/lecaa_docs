@@ -7,7 +7,7 @@ import { inTauri } from './speech/native';
 import { settings, type LetterMode, type Settings } from './settings';
 import { recordedVoices, speech, type VoiceInfo } from './speech';
 import { neural } from './speech/neural';
-import { pictosAvailable } from './pictos';
+import { allPictoIds, deleteOffline, downloadAll, loadPictos, offlineCount, offlineSupported, pictosAvailable } from './pictos';
 import { MODELS } from './speech/neural/catalog';
 import { h, icon, toast } from './ui';
 
@@ -65,6 +65,43 @@ function noVoicesHelp() {
 }
 
 const mb = (bytes: number) => `${Math.round(bytes / 1_000_000)} MB`;
+const thousands = (n: number) => n.toLocaleString('ca-ES');
+
+// All the pictograms on this device, to use them without a connection (about 70 MB).
+function pictosOfflineBox() {
+  const box = h('div', { class: 'neural-item' });
+  let abort: AbortController | null = null;
+  const render = async () => {
+    await loadPictos();
+    const total = allPictoIds().length;
+    const have = await offlineCount();
+    const status = h('p', { class: 'hint' }, total
+      ? `Sense connexió: ${thousands(have)} de ${thousands(total)} pictogrames desats en aquest dispositiu. Els que es fan servir es desen sols.`
+      : 'No s’han trobat els pictogrames.');
+    const buttons = h('div', { class: 'row' });
+    if (total && have < total) buttons.append(h('button', { class: 'small-btn', type: 'button', onclick: () => void download() }, have ? 'Desa la resta' : 'Desa’ls tots (70 MB)'));
+    if (have) buttons.append(h('button', { class: 'small-btn', type: 'button', onclick: async () => {
+      if (!confirm('Vols esborrar els pictogrames desats en aquest dispositiu? Es tornaran a baixar quan es facin servir.')) return;
+      await deleteOffline(); void render();
+    } }, 'Esborra’ls'));
+    box.replaceChildren(h('div', { class: 'neural-title' }, 'Pictogrames sense connexió'), status, buttons);
+  };
+  const download = async () => {
+    if (!navigator.onLine) { toast('Cal connexió a internet per desar els pictogrames'); return; }
+    abort = new AbortController();
+    const bar = h('progress', { max: 1, value: 0, 'aria-label': 'Desant els pictogrames' }) as HTMLProgressElement;
+    const label = h('span', {});
+    box.replaceChildren(h('div', { class: 'neural-title' }, 'Pictogrames sense connexió'),
+      h('div', { class: 'neural-progress' }, bar, label),
+      h('button', { class: 'small-btn', type: 'button', onclick: () => abort?.abort() }, 'Atura'));
+    const { failed } = await downloadAll((done, total) => { bar.max = total; bar.value = done; label.textContent = `${thousands(done)} de ${thousands(total)}`; }, abort.signal);
+    if (!abort.signal.aborted) toast(failed ? `S’han desat els pictogrames, però ${failed} no s’han pogut baixar.` : 'Tots els pictogrames ja són en aquest dispositiu');
+    abort = null;
+    if (box.isConnected) void render();
+  };
+  void render();
+  return box;
+}
 
 // Free Catalan voices that run inside the app: download once, then they work offline.
 function neuralVoicesBox(onInstalled: (voiceId: string) => void) {
@@ -260,7 +297,8 @@ export function openSettings(onClose: () => void) {
         h('div', { class: 'subgroup' },
           range('Mida del pictograma', 1.4, 3, 0.2, x => x.pictos.size, (x, v) => { x.pictos.size = v; }, v => `${Math.round(v * 10) / 10} vegades la lletra`),
           check('Només paraules amb contingut', 'Sense pictograma per als articles, preposicions, conjuncions i pronoms febles (el, de, i, que, es…).', x => x.pictos.contentOnly, (x, v) => { x.pictos.contentOnly = v; })),
-        h('p', { class: 'hint' }, 'Toca un pictograma per triar-ne un altre per a aquella paraula, o cap. L’app recorda la tria en aquest dispositiu. Els pictogrames només es veuen a la pantalla: no es desen al .docx ni al PDF.')) : null,
+        h('p', { class: 'hint' }, 'Toca un pictograma per triar-ne un altre per a aquella paraula, o cap. L’app recorda la tria en aquest dispositiu. Els pictogrames només es veuen a la pantalla: no es desen al .docx ni al PDF.'),
+        offlineSupported ? pictosOfflineBox() : null) : null,
       h('fieldset', {}, h('legend', {}, T('Lectura i document', 'Lectura y documento')),
         check(T('Ressalta el que s’està llegint', 'Resaltar lo que se está leyendo'), null, x => x.highlight, (x, v) => { x.highlight = v; }),
         range(T('Mida del text a la pantalla', 'Tamaño del texto en la pantalla'), 16, 40, 1, x => x.docFontSize, (x, v) => { x.docFontSize = v; }, v => `${v} px`),
