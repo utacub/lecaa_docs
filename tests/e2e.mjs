@@ -38,6 +38,8 @@ await page.waitForFunction(() => document.querySelector('.ProseMirror') && windo
 await wait(300);
 const ed = page.locator('.ProseMirror');
 await ed.click();
+// Pictogram test edition: these checks are those of the app without pictograms (tests/pictos.mjs has theirs).
+await page.evaluate(() => window.lecaa.settings.update(s => { if (s.pictos) s.pictos.enabled = false; }));
 
 // 0. brand: UTAC logo to the left of the LECAA Docs logo, both visible
 const brand = await page.evaluate(() => {

@@ -1,8 +1,10 @@
 // Pictograms above the words (prototype, Catalan and Spanish). Needs the "pictos" folder next to the app.
 import { chromium } from '@playwright/test';
+import { execSync } from 'node:child_process';
+import fs from 'node:fs';
 const url = process.argv[2] || 'http://localhost:4173/';
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium' });
-const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, acceptDownloads: true });
 await ctx.addInitScript({ path: 'tests/mock-speech.js' });
 const page = await ctx.newPage();
 const errors = [];
@@ -113,6 +115,51 @@ await page.keyboard.type('Avui he anat a l’escola amb la mare. He jugat a pilo
 await page.keyboard.type('Demà anirem a la platja', { delay: 10 });
 await wait(400);
 await page.screenshot({ path: 'test-results/pictos.png' });
+
+// 9. the saved documents get the pictograms above the words, as on screen
+await clear();
+await page.evaluate(() => window.lecaa.editor.commands.setContent(
+  '<h1>El meu dia</h1><p>Avui he menjat <strong>pa amb tomàquet</strong> a casa, amb la mare.</p>'
+  + '<ul><li><p>gat</p></li><li><p>gos</p></li></ul><p style="text-align: center">Bona nit</p>'));
+await page.evaluate(() => { window.lecaa.editor.commands.focus('end'); });
+await wait(200);
+const shown = (await pictos()).map(x => x.split(':')[1]);
+fs.mkdirSync('test-results', { recursive: true });
+const [dlDocx] = await Promise.all([page.waitForEvent('download'), page.click('[aria-label="Desa com a .docx"]')]);
+await dlDocx.saveAs('test-results/pictos.docx');
+const docXml = execSync('unzip -p test-results/pictos.docx word/document.xml').toString();
+const media = execSync('unzip -l test-results/pictos.docx').toString().split('\n').filter(l => /word\/media\/.+\.png/.test(l)).length;
+const words = [...docXml.matchAll(/<w:t(?: [^>]*)?>([^<]*)<\/w:t>/g)].map(m => m[1]).join(' ');
+// On screen the last word waits for the caret to leave it; the saved document has all of them.
+// Each line is two paragraphs, pictograms and words, with a centred tab stop per word.
+// The single file opened from the disk cannot read the pictures: it saves the text alone and says so.
+const fromFile = url.startsWith('file:');
+const stops = (docXml.match(/<w:tab w:val="center"/g) || []).length;
+const hasWords = list => list.every(w => words.includes(w));
+if (fromFile) {
+  ok(media === 0 && !stops && hasWords(['El meu dia', 'casa, amb la mare.', 'gat', 'Bona nit']) && (await page.textContent('.toast')).includes('Sense pictogrames'),
+    'des del fitxer obert al disc, el .docx es desa sense pictogrames i ho diu');
+} else {
+  ok(media >= shown.length && stops >= 20 && hasWords(['El', 'meu', 'dia', 'pa amb tomàquet', 'casa,', '•', 'gat', 'Bona', 'nit'])
+    && docXml.includes('<w:b/>') && !docXml.includes('<w:tbl>'),
+    `el .docx porta els pictogrames damunt de les paraules: ${media} imatges, ${stops} tabuladors centrats, ` + JSON.stringify(words.slice(0, 80)));
+}
+const [dlPdf] = await Promise.all([page.waitForEvent('download'), page.click('[aria-label="Desa com a PDF"]')]);
+await dlPdf.saveAs('test-results/pictos.pdf');
+// pdfimages -list: page, num, type, width, height… (the 1×1 ones are the room of words without a pictogram)
+const pdfImages = execSync('pdfimages -list test-results/pictos.pdf').toString().trim().split('\n').slice(2)
+  .map(l => l.trim().split(/\s+/)).filter(c => c[2] === 'image' && c[3] !== '1').length;
+const pdfText = execSync('pdftotext test-results/pictos.pdf -').toString().replace(/\s+/g, ' ');
+ok((fromFile ? pdfImages === 0 : pdfImages >= shown.length) && ['El', 'meu', 'dia', 'pa amb tomàquet', 'casa,', 'gat', 'gos', 'Bona', 'nit'].every(w => pdfText.includes(w)),
+  `el PDF porta ${fromFile ? 'només el text' : 'els pictogrames damunt de les paraules'} (${pdfImages} imatges) i el text seleccionable: ` + JSON.stringify(pdfText.trim().slice(0, 80)));
+// without pictograms on screen, the documents have none
+await btn.click();
+const [dlPlain] = await Promise.all([page.waitForEvent('download'), page.click('[aria-label="Desa com a .docx"]')]);
+await dlPlain.saveAs('test-results/sense-pictos.docx');
+const plainXml = execSync('unzip -p test-results/sense-pictos.docx word/document.xml').toString();
+ok(!plainXml.includes('<w:tabs>') && !/word\/media/.test(execSync('unzip -l test-results/sense-pictos.docx').toString()) && plainXml.includes('<w:numPr>'), 'amb els pictogrames desactivats, el .docx és el de sempre');
+await btn.click();
+await wait(150);
 
 // 8. Spanish: its own index, the same pictograms and toolbar button
 const requested = [];

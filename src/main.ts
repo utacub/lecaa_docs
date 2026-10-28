@@ -14,6 +14,7 @@ import { reader } from './reader';
 import { anyTypingFeedback, settings } from './settings';
 import { openSettings } from './settings-panel';
 import { loadPictos, PictoIcon, pictosAvailable, refreshPictos } from './pictos';
+import { pictosForExport } from './pictos-export';
 import { speech } from './speech';
 import { installAudioUnlock } from './speech/audio';
 import { neural } from './speech/neural';
@@ -95,12 +96,16 @@ async function boot() {
       toast(T('No s’ha pogut obrir aquest fitxer', 'No se ha podido abrir este archivo'));
     }
   };
+  // With the pictograms on screen, the documents get them too. The single file opened from the
+  // disk cannot read their pictures: it saves the text alone and says so.
+  const unreadablePictos = () => T(' Sense pictogrames: des del fitxer obert al disc no es poden desar. Per desar-los, fes servir l’app web.', ' Sin pictogramas: desde el archivo abierto en el disco no se pueden guardar. Para guardarlos, usa la app web.');
   const savePdf = async () => {
     try {
       toast(T('Preparant el PDF…', 'Preparando el PDF…'));
+      const pictos = await pictosForExport(editor.getJSON());
       const { pdfFromEditor } = await import('./pdf');
-      const blob = await pdfFromEditor(editor, title.value);
-      if (await saveFile(blob, safeName(title.value) + '.pdf', 'pdf')) toast(T('Desat com a PDF', 'Guardado como PDF'));
+      const blob = await pdfFromEditor(editor, title.value, pictos);
+      if (await saveFile(blob, safeName(title.value) + '.pdf', 'pdf')) toast(T('Desat com a PDF.', 'Guardado como PDF.') + (pictos === 'unreadable' ? unreadablePictos() : ''), pictos === 'unreadable' ? 8000 : undefined);
     } catch (e) {
       console.error(e);
       toast(T('No s’ha pogut desar el PDF', 'No se ha podido guardar el PDF'));
@@ -108,8 +113,9 @@ async function boot() {
   };
   const save = async () => {
     try {
-      const blob = await docxFromEditor(editor, title.value);
-      if (await saveFile(blob, safeName(title.value) + '.docx')) toast(T('Desat com a .docx (es pot obrir amb Google Docs)', 'Guardado como .docx (se puede abrir con Google Docs)'));
+      const pictos = await pictosForExport(editor.getJSON());
+      const blob = await docxFromEditor(editor, title.value, pictos);
+      if (await saveFile(blob, safeName(title.value) + '.docx')) toast(T('Desat com a .docx (es pot obrir amb Google Docs).', 'Guardado como .docx (se puede abrir con Google Docs).') + (pictos === 'unreadable' ? unreadablePictos() : ''), pictos === 'unreadable' ? 8000 : undefined);
     } catch (e) {
       console.error(e);
       toast(T('No s’ha pogut desar el document', 'No se ha podido guardar el documento'));

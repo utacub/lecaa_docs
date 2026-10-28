@@ -1,5 +1,6 @@
 // PDF export, loaded only when used. pdfmake lays out the document with the same fonts as the
-// screen (embedded, so the PDF looks the same everywhere and the text stays selectable).
+// screen (embedded, so the PDF looks the same everywhere and the text stays selectable). When the
+// pictograms are shown, they go above the words, as on screen (pictos-export.ts).
 // Fonts are the WOFF files of the bundled fonts: pdfmake cannot read WOFF2. OpenDyslexic comes
 // from the open-dyslexic package (OTF), because pdfmake cannot subset the CFF of the WOFF one.
 
@@ -24,6 +25,7 @@ import pwFr from '@fontsource/playwrite-fr-moderne/files/playwrite-fr-moderne-la
 import { BASE_PT } from './docio';
 import { fontByFamily, fontById } from './fonts';
 import { BCP47 } from './i18n';
+import { layout, pictoDataUrl, pictosForExport, type PictoExport } from './pictos-export';
 import { settings } from './settings';
 
 // [normal, bold, italics, bolditalics] per font id; a missing style uses the closest one.
@@ -63,8 +65,17 @@ async function image(attrs: Record<string, unknown> = {}): Promise<Node | null> 
   return { image: src, width: Math.min(w, PAGE_WIDTH), margin: [0, 4, 0, 4] };
 }
 
+// A transparent picture: the room of the pictogram above a word that has none.
+let blank = '';
+const blankPng = () => {
+  if (!blank) { const c = document.createElement('canvas'); c.width = c.height = 1; blank = c.toDataURL('image/png'); }
+  return blank;
+};
+
 class Builder {
   fonts = new Set<string>();
+  pictos = false;     // each word with its pictogram above it (pictos-export.ts)
+  width = PAGE_WIDTH; // width for the text, in points
 
   font(family?: unknown): string | undefined {
     if (!family) return undefined;
@@ -74,18 +85,22 @@ class Builder {
     return f.id;
   }
 
+  run(n: JSONContent, text = n.text ?? ''): Node {
+    const marks = n.marks ?? [];
+    const has = (t: string) => marks.some(m => m.type === t);
+    const style = marks.find(m => m.type === 'textStyle')?.attrs ?? {};
+    return {
+      text, bold: has('bold') || undefined, italics: has('italic') || undefined,
+      decoration: has('underline') ? 'underline' : undefined, fontSize: pt(style.fontSize), font: this.font(style.fontFamily),
+    };
+  }
+
   // Text runs of a paragraph; images inside a paragraph become their own blocks after it.
   async inlines(nodes: JSONContent[] = []): Promise<{ runs: Node[]; images: Node[] }> {
     const runs: Node[] = [], images: Node[] = [];
     for (const n of nodes) {
       if (n.type === 'text') {
-        const marks = n.marks ?? [];
-        const has = (t: string) => marks.some(m => m.type === t);
-        const style = marks.find(m => m.type === 'textStyle')?.attrs ?? {};
-        runs.push({
-          text: n.text ?? '', bold: has('bold') || undefined, italics: has('italic') || undefined,
-          decoration: has('underline') ? 'underline' : undefined, fontSize: pt(style.fontSize), font: this.font(style.fontFamily),
-        });
+        runs.push(this.run(n));
       } else if (n.type === 'hardBreak') {
         runs.push({ text: '\n' });
       } else if (n.type === 'image') {
@@ -96,12 +111,55 @@ class Builder {
     return { runs, images };
   }
 
+  // A paragraph as lines of columns, each with the pictogram above the word.
+  async pictoBlocks(n: JSONContent): Promise<Node[]> {
+    const heading = n.type === 'heading' ? (n.attrs?.level === 1 ? 2 : 1.5) : 0;
+    const base = BASE_PT * (heading || 1);
+    const laid = await layout(n.content, { base, bold: !!heading, width: this.width });
+    const out: Node[] = [];
+    if (!laid.lines.length) out.push({ text: ' ', margin: [0, laid.picto, 0, 6] });
+    for (const [i, line] of laid.lines.entries()) {
+      const area = Math.max(...line.map(u => u.picto));
+      const cols: Node[] = [];
+      for (const u of line) {
+        const src = u.id ? await pictoDataUrl(u.id) : null;
+        cols.push({
+          width: u.width,
+          stack: [
+            src ? { image: src, width: u.picto, height: u.picto, alignment: 'center', margin: [0, area - u.picto, 0, 1] } : { image: blankPng(), width: 1, height: area, margin: [0, 0, 0, 1] },
+            { text: u.pieces.map(p => { const r = this.run(p.node, p.text); return { ...r, fontSize: r.fontSize ?? base, bold: r.bold ?? (heading ? true : undefined) }; }), alignment: 'center' },
+          ],
+        });
+      }
+      const fill = { width: '*', text: '' };
+      const align = n.attrs?.textAlign;
+      out.push({
+        columns: align === 'center' ? [fill, ...cols, fill] : align === 'right' ? [fill, ...cols] : cols,
+        columnGap: laid.gap, unbreakable: true,
+        margin: [0, i ? base * 0.3 : 0, 0, i === laid.lines.length - 1 ? 6 : 0],
+      });
+    }
+    for (const img of laid.images) {
+      const node = await image(img.attrs);
+      if (node) out.push(node);
+    }
+    return out;
+  }
+
+  // Runs `fn` with less width for the text (inside a list or a table cell).
+  async narrower<R>(by: number, fn: () => Promise<R>): Promise<R> {
+    const w = this.width;
+    this.width = Math.max(40, w - by);
+    try { return await fn(); } finally { this.width = w; }
+  }
+
   async blocks(nodes: JSONContent[] = []): Promise<Node[]> {
     const out: Node[] = [];
     for (const n of nodes) {
       switch (n.type) {
         case 'paragraph':
         case 'heading': {
+          if (this.pictos) { out.push(...await this.pictoBlocks(n)); break; }
           const { runs, images } = await this.inlines(n.content);
           const heading = n.type === 'heading' ? (n.attrs?.level === 1 ? 2 : 1.5) : 0;
           if (runs.length || !images.length) {
@@ -116,7 +174,7 @@ class Builder {
         case 'bulletList':
         case 'orderedList': {
           const items: Node[] = [];
-          for (const item of n.content ?? []) items.push({ stack: await this.blocks(item.content) });
+          for (const item of n.content ?? []) items.push({ stack: await this.narrower(16, () => this.blocks(item.content)) });
           out.push({ [n.type === 'bulletList' ? 'ul' : 'ol']: items, margin: [0, 0, 0, 6] });
           break;
         }
@@ -137,13 +195,16 @@ class Builder {
   async table(n: JSONContent): Promise<Node> {
     const rows = n.content ?? [];
     const grid: Node[][] = rows.map(() => []);
+    const cols0 = Math.max(1, ...rows.map(r => (r.content ?? []).reduce((k, c) => k + (Number(c.attrs?.colspan) || 1), 0)));
     for (let r = 0; r < rows.length; r++) {
       let c = 0;
       for (const cell of rows[r].content ?? []) {
         while (grid[r][c]) c++;
         const colSpan = Number(cell.attrs?.colspan) || 1, rowSpan = Number(cell.attrs?.rowspan) || 1;
+        // Cells share the width; their padding and lines take about 10 points.
+        const cellWidth = (this.width / cols0) * colSpan - 10;
         grid[r][c] = {
-          stack: await this.blocks(cell.content), colSpan: colSpan > 1 ? colSpan : undefined, rowSpan: rowSpan > 1 ? rowSpan : undefined,
+          stack: await this.narrower(this.width - cellWidth, () => this.blocks(cell.content)), colSpan: colSpan > 1 ? colSpan : undefined, rowSpan: rowSpan > 1 ? rowSpan : undefined,
           bold: cell.type === 'tableHeader' || undefined,
         };
         for (let dr = 0; dr < rowSpan; dr++) for (let dc = 0; dc < colSpan; dc++) {
@@ -165,11 +226,13 @@ async function base64(url: string): Promise<string> {
   return btoa(s);
 }
 
-export async function pdfFromEditor(editor: Editor, title: string): Promise<Blob> {
+export async function pdfFromEditor(editor: Editor, title: string, pictos?: PictoExport): Promise<Blob> {
   const b = new Builder();
   const docFont = fontById(settings.value.docFont).id;
   b.fonts.add(docFont);
-  const content = await b.blocks(editor.getJSON().content);
+  const json = editor.getJSON();
+  b.pictos = (pictos ?? await pictosForExport(json)) === 'yes';
+  const content = await b.blocks(json.content);
 
   const vfs: Record<string, string> = {};
   const fonts: Record<string, Record<string, string>> = {};
