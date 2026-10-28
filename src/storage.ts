@@ -1,9 +1,11 @@
 // Autosave of the open document in this browser/app (IndexedDB, with localStorage fallback).
 // Nothing leaves the device.
 
+import { STORAGE } from './storage-name';
+
 export interface SavedDoc { title: string; content: object; updated: number }
 
-const DB = 'lecaa-docs';
+const DB = STORAGE;
 const STORE = 'docs';
 const KEY = 'current';
 
@@ -25,7 +27,7 @@ export async function loadDoc(): Promise<SavedDoc | null> {
       r.onerror = () => resolve(null);
     });
   } catch {
-    try { return JSON.parse(localStorage.getItem('lecaa-docs:doc') || 'null'); } catch { return null; }
+    try { return JSON.parse(localStorage.getItem(`${STORAGE}:doc`) || 'null'); } catch { return null; }
   }
 }
 
@@ -39,6 +41,6 @@ export async function storeDoc(doc: SavedDoc): Promise<boolean> {
       tx.onerror = () => resolve(false);
     });
   } catch {
-    try { localStorage.setItem('lecaa-docs:doc', JSON.stringify(doc)); return true; } catch { return false; }
+    try { localStorage.setItem(`${STORAGE}:doc`, JSON.stringify(doc)); return true; } catch { return false; }
   }
 }

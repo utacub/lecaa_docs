@@ -110,7 +110,7 @@ await page.waitForFunction(() => !window.lecaa.speech.voices.some(v => v.id === 
 ok(!(await page.evaluate(() => window.lecaa.speech.voices.some(v => v.id === 'neural:ona-medium'))), 'es pot esborrar');
 
 // Spanish: its own voices, Spanish phonemes, and the Catalan voice is not offered
-await page.evaluate(() => localStorage.setItem('lecaa-docs:lang', 'es'));
+await page.evaluate(() => localStorage.setItem('lecaa-pictos-proto:lang', 'es'));
 await page.reload();
 await page.waitForFunction(() => document.querySelector('.ProseMirror') && window.lecaa);
 await page.waitForFunction(() => window.lecaa);
@@ -125,7 +125,7 @@ ok((await page.evaluate(() => window.lecaa.settings.value.voice.id)) === 'neural
 await page.evaluate(() => { window.__played.length = 0; return window.lecaa.speech.play([{ kind: 'tts', text: 'Hola, me llamo Davefx y hablo castellano.' }], { lock: false }); });
 const esPlayed = await page.evaluate(() => window.__played.slice());
 ok(esPlayed.length === 1 && esPlayed[0] > 1 && esPlayed[0] < 7, `frase castellana sintetitzada (${esPlayed[0]?.toFixed(2)} s)`);
-await page.evaluate(() => localStorage.setItem('lecaa-docs:lang', 'ca'));
+await page.evaluate(() => localStorage.setItem('lecaa-pictos-proto:lang', 'ca'));
 
 ok(errors.length === 0, 'sense errors a la consola' + (errors.length ? ': ' + errors.join(' | ') : ''));
 await browser.close();

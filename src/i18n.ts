@@ -2,9 +2,11 @@
 // names and sounds (letters.ts), keyboards and voices. Changing the language saves the document
 // and reloads the app, so every part starts again in the new language.
 
+import { STORAGE } from './storage-name';
+
 export type Lang = 'ca' | 'es';
 
-const KEY = 'lecaa-docs:lang';
+const KEY = `${STORAGE}:lang`;
 
 function saved(): Lang {
   try { return localStorage.getItem(KEY) === 'es' ? 'es' : 'ca'; } catch { return 'ca'; }

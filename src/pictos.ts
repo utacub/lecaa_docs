@@ -16,6 +16,7 @@ import type { IconNode } from 'lucide';
 import { LANG, T } from './i18n';
 import { settings } from './settings';
 import { h } from './ui';
+import { STORAGE } from './storage-name';
 
 // Toolbar icon, in Lucide's style: a pictogram (a face in a square) above a line of text.
 export const PictoIcon: IconNode = [
@@ -69,7 +70,7 @@ export const pictosLoaded = () => !!index;
 export const onPictosLoaded = (l: () => void) => listeners.add(l);
 
 // ----- the student's own choices: word -> pictogram id (0 = no pictogram) -----
-const CHOICES_KEY = 'lecaa-docs:pictos:ca';
+const CHOICES_KEY = `${STORAGE}:pictos:ca`;
 let choices: Record<string, number> = {};
 try { choices = JSON.parse(localStorage.getItem(CHOICES_KEY) || '{}') ?? {}; } catch { /* private mode */ }
 function choose(word: string, id: number | null) {

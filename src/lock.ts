@@ -8,8 +8,9 @@ import { T } from './i18n';
 import { settings } from './settings';
 import { inTauri } from './speech/native';
 import { h, toast } from './ui';
+import { STORAGE } from './storage-name';
 
-const KEY = 'lecaa-docs:locked';
+const KEY = `${STORAGE}:locked`;
 
 export async function hashPassword(pw: string): Promise<string> {
   const data = new TextEncoder().encode('lecaa-docs:' + pw);

@@ -1,7 +1,9 @@
 // Downloaded voice files live in IndexedDB, so Piper voices keep working without a connection.
 // IndexedDB (unlike Cache Storage) also works in the single-file edition opened from file://.
 
-const DB = 'lecaa-docs-veus';
+import { STORAGE } from '../../storage-name';
+
+const DB = `${STORAGE}-veus`;
 const STORE = 'files';
 
 let dbp: Promise<IDBDatabase> | null = null;

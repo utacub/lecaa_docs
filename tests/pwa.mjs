@@ -29,8 +29,13 @@ const imageOf = word => page.evaluate(async w => {
 await page.goto(origin + '/');
 // A cache of the published edition on the same site must survive this edition's service worker.
 await page.evaluate(() => caches.open('lecaa-docs-publicada').then(c => c.put('/x', new Response('x'))));
+// So must the document and the settings that the published edition keeps in this browser.
+const published = { 'lecaa-docs:lang': 'es', 'lecaa-docs:doc': '{"title":"publicat"}' };
+await page.evaluate(p => Object.entries(p).forEach(([k, v]) => localStorage.setItem(k, v)), published);
 await page.evaluate(() => navigator.serviceWorker.ready);
 await page.reload();
+await page.waitForFunction(() => window.lecaa);
+ok(await page.evaluate(p => document.documentElement.lang === 'ca' && Object.entries(p).every(([k, v]) => localStorage.getItem(k) === v), published), 'no llegeix ni canvia el document ni la configuració de la versió publicada');
 await ready();
 await page.evaluate(() => window.lecaa.settings.update(s => { s.guard.enabled = false; }));
 ok(await page.evaluate(() => !!navigator.serviceWorker.controller), 'el service worker controla la pàgina');

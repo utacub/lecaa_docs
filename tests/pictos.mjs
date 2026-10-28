@@ -86,7 +86,7 @@ await page.screenshot({ path: 'test-results/pictos-selector.png' });
 await page.click('.picto-chooser .picto-option:nth-child(2)');
 await wait(150);
 ok((await pictos()).some(x => x === 'casa:6964'), 'la tria es manté: ' + JSON.stringify(await pictos()));
-ok(await page.evaluate(() => JSON.parse(localStorage.getItem('lecaa-docs:pictos:ca')).casa === 6964), 'la tria es desa en aquest dispositiu');
+ok(await page.evaluate(() => JSON.parse(localStorage.getItem('lecaa-pictos-proto:pictos:ca')).casa === 6964), 'la tria es desa en aquest dispositiu');
 await page.click('.ProseMirror .pw[data-word="casa"]', { position: { x: 10, y: -15 } }).catch(() => {});
 await wait(200);
 await page.click('.picto-chooser .row button:last-child');
@@ -117,13 +117,13 @@ await page.screenshot({ path: 'test-results/pictos.png' });
 // 8. Spanish: no pictograms yet, no button, nothing loaded
 const requested = [];
 page.on('request', r => { if (r.url().includes('/pictos/')) requested.push(r.url()); });
-await page.evaluate(() => localStorage.setItem('lecaa-docs:lang', 'es'));
+await page.evaluate(() => localStorage.setItem('lecaa-pictos-proto:lang', 'es'));
 await page.reload();
 await page.waitForFunction(() => document.querySelector('.ProseMirror') && window.lecaa);
 await wait(500);
 const es = await page.evaluate(() => ({ btn: !!document.querySelector('.toolbar button[aria-label="Pictogramas encima de las palabras"]'), on: document.querySelector('.ProseMirror').classList.contains('pictos-on') }));
 ok(!es.btn && !es.on && requested.length === 0, 'en castellà no hi ha pictogrames: ' + JSON.stringify({ ...es, requested: requested.length }));
-await page.evaluate(() => localStorage.setItem('lecaa-docs:lang', 'ca'));
+await page.evaluate(() => localStorage.setItem('lecaa-pictos-proto:lang', 'ca'));
 
 ok(errors.length === 0, 'cap error a la consola: ' + JSON.stringify(errors));
 await browser.close();

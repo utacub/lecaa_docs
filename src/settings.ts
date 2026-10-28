@@ -3,6 +3,7 @@
 // the settings drawer and the engines share one source.
 
 import { LANG, T } from './i18n';
+import { STORAGE } from './storage-name';
 
 export type LetterMode = 'off' | 'name' | 'sound';
 export type RecordedVoice = string; // folder of recorded letter sounds (src/assets/sons)
@@ -69,8 +70,8 @@ export const DEFAULTS: Settings = {
   lockPassword: '',
 };
 
-const KEY = LANG === 'ca' ? 'lecaa-docs:settings' : `lecaa-docs:settings:${LANG}`;
-const PASSWORD_KEY = 'lecaa-docs:lock-password';
+const KEY = LANG === 'ca' ? `${STORAGE}:settings` : `${STORAGE}:settings:${LANG}`;
+const PASSWORD_KEY = `${STORAGE}:lock-password`;
 
 function merge<T>(base: T, over: unknown): T {
   if (typeof base !== 'object' || base === null || Array.isArray(base)) {
