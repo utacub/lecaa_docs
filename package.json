@@ -35,7 +35,6 @@
     "lucide": "^1.59.0",
     "mammoth": "^1.13.0",
     "onnxruntime-web": "1.18.0",
-    "open-dyslexic": "1.0.3",
     "pdfmake": "0.3.12"
   },
   "devDependencies": {

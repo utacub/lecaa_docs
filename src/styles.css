@@ -286,12 +286,15 @@ body.is-locked .page { border-color: var(--focus); box-shadow: 0 0 0 6px var(--f
    the "no voice" notice gets a row of its own, so it never pushes the buttons off the screen. */
 @media (max-width: 900px) {
   .topbar { flex-wrap: wrap; row-gap: 8px; justify-content: flex-end; }
-  .topbar .doc-title { flex: 1 1 9rem; }
+  /* The title keeps room for a whole title (iPad upright): the language and the buttons go to a
+     second row instead of squeezing it. */
+  .topbar .doc-title { flex: 1 1 25rem; }
   .topbar > .brand { margin-right: auto; }
   .topbar > .voice-warning { order: 10; flex: 1 1 100%; max-width: none; text-align: center; }
 }
+@media (max-width: 560px) { .topbar .doc-title { flex-basis: 8rem; } }
 
-/* ARASAAC pictograms above the finished words (Catalan prototype). Every line keeps room for a
+/* ARASAAC pictograms above the finished words. Every line keeps room for a
    pictogram above its text, so the text does not jump when one appears. */
 .ProseMirror.pictos-on { --picto-gap: .08em; }
 .ProseMirror.pictos-on :is(p, h1, h2) { line-height: calc(1.35em + 2 * (var(--picto-size, 2em) + var(--picto-gap))); }

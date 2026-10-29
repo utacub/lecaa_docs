@@ -25,7 +25,7 @@ const texts: Record<string, string> = {
   'Llicències': 'Lizentziak',
   'LECAA Docs és programari lliure, amb la llicència GNU GPL 3.0 o posterior: es pot fer servir, estudiar, modificar i compartir, i les versions modificades s’han de compartir amb la mateixa llicència. ': 'LECAA Docs software librea da, GNU GPL 3.0 edo geroagoko lizentziarekin: erabili, aztertu, aldatu eta partekatu daiteke, eta aldatutako bertsioak lizentzia berarekin partekatu behar dira. ',
   'Codi font': 'Iturburu-kodea',
-  'Les tipografies tenen la llicència SIL Open Font License 1.1, i l’OpenDyslexic que s’inclou als PDF, Bitstream Vera i CC BY 3.0. La veu Ona prové de dades de la UPC (Festcat, CC BY-SA 3.0 ES); Davefx, de dades d’OHF-Voice (CC0); Sharvard, del corpus Sharvard (CC BY 3.0); Maider i Antton, de dades d’itzune (CC BY 4.0), i Tugão és de domini públic (CC0). Els logotips són marques de les institucions titulars i no formen part de la llicència de l’app.': 'Letra-tipoek SIL Open Font License 1.1 lizentzia dute, eta PDFetan sartzen den OpenDyslexic-ek, Bitstream Vera eta CC BY 3.0. Ona ahotsa UPCren datuetatik dator (Festcat, CC BY-SA 3.0 ES); Davefx, OHF-Voice-ren datuetatik (CC0); Sharvard, Sharvard corpusetik (CC BY 3.0); Maider eta Antton, itzune-ren datuetatik (CC BY 4.0), eta Tugão domeinu publikokoa da (CC0). Logotipoak erakunde titularren markak dira eta ez dira aplikazioaren lizentziaren parte.',
+  'Totes les tipografies, incloses les dels PDF, tenen la llicència SIL Open Font License 1.1. La veu Ona prové de dades de la UPC (Festcat, CC BY-SA 3.0 ES); Davefx, de dades d’OHF-Voice (CC0); Sharvard, del corpus Sharvard (CC BY 3.0); Maider i Antton, de dades d’itzune (CC BY 4.0), i Tugão és de domini públic (CC0). Els logotips són marques de les institucions titulars i no formen part de la llicència de l’app.': 'Letra-tipo guztiek, PDFetakoek barne, SIL Open Font License 1.1 lizentzia dute. Ona ahotsa UPCren datuetatik dator (Festcat, CC BY-SA 3.0 ES); Davefx, OHF-Voice-ren datuetatik (CC0); Sharvard, Sharvard corpusetik (CC BY 3.0); Maider eta Antton, itzune-ren datuetatik (CC BY 4.0), eta Tugão domeinu publikokoa da (CC0). Logotipoak erakunde titularren markak dira eta ez dira aplikazioaren lizentziaren parte.',
   'Versió': 'Bertsioa',
   'Document sense títol': 'Izenik gabeko dokumentua',
   'Document de Word (compatible amb Google Docs)': 'Word dokumentua (Google Docs-ekin bateragarria)',
@@ -233,6 +233,9 @@ const texts: Record<string, string> = {
   'Autor dels pictogrames: Sergio Palao. Origen: ARASAAC (https://arasaac.org). Llicència: CC (BY-NC-SA). Propietat: Govern d’Aragó (Espanya).': 'Piktogramen egilea: Sergio Palao. Jatorria: ARASAAC (https://arasaac.org). Lizentzia: CC (BY-NC-SA). Jabea: Aragoiko Gobernua (Espainia).',
   'Les imatges s’han reduït a 192 píxels i 256 colors. Es poden fer servir sense finalitat comercial, citant l’autor, l’origen, la llicència i el propietari, i els materials que se’n facin, com els documents desats amb pictogrames, s’han de compartir amb la mateixa llicència. ': 'Irudiak 192 pixeletara eta 256 koloretara murriztu dira. Helburu komertzialik gabe erabil daitezke, egilea, jatorria, lizentzia eta jabea aipatuta, eta haiekin egiten diren materialak, piktogramekin gordetako dokumentuak adibidez, lizentzia berarekin partekatu behar dira. ',
   'Condicions d’ús d’ARASAAC': 'ARASAACen erabilera-baldintzak',
+  'Cursiva': 'Etzana',
+  'Calma': 'Lasai',
+  'Navegador': 'Nabigatzailea',
 };
 
 export default texts;

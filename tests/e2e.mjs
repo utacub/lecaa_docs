@@ -293,7 +293,18 @@ await page.click('[aria-label="Configuració"]');
 await wait(500);
 ok((await page.locator('#voice-select option').count()) >= 1, 'la configuració llista la veu catalana');
 await page.screenshot({ path: 'test-results/settings.png' });
+// Every control has a name for screen readers, and the keyboard stays inside the drawer.
+const unnamed = await page.evaluate(() => [...document.querySelectorAll('.drawer input, .drawer select')]
+  .filter(el => el.type !== 'file' && !el.labels?.length && !el.getAttribute('aria-label')).map(el => el.outerHTML.slice(0, 60)));
+ok(!unnamed.length, 'tots els controls de la configuració tenen nom: ' + JSON.stringify(unnamed));
+const outside = [];
+for (let i = 0; i < 80; i++) {
+  await page.keyboard.press('Tab');
+  outside.push(await page.evaluate(() => { const a = document.activeElement; return a && a !== document.body && !a.closest('.drawer'); }));
+}
+ok(!outside.some(Boolean), 'el tabulador no surt de la configuració');
 await page.keyboard.press('Escape');
+ok((await page.locator('.drawer').count()) === 0 && (await page.locator('[inert]').count()) === 0, 'Esc la tanca i la resta de la pàgina torna a respondre');
 
 await page.click('[aria-label="Tanca"]').catch(() => {});
 

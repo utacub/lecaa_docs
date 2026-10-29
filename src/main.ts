@@ -163,7 +163,7 @@ async function boot() {
 
   const fmt = {
     bold: tb(T('Negreta', 'Negrita'), Bold, run(c => c.toggleBold())),
-    italic: tb('Cursiva', Italic, run(c => c.toggleItalic())),
+    italic: tb(T('Cursiva', 'Cursiva'), Italic, run(c => c.toggleItalic())),
     underline: tb(T('Subratllat', 'Subrayado'), Underline, run(c => c.toggleUnderline())),
     left: tb(T('Alinea a l’esquerra', 'Alinear a la izquierda'), TextAlignStart, run(c => c.setTextAlign('left'))),
     center: tb(T('Centra', 'Centrar'), TextAlignCenter, run(c => c.setTextAlign('center'))),

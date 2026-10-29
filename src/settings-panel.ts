@@ -28,12 +28,22 @@ function radio(name: string, value: string, label: string, sub: string | null, c
   return h('label', { class: 'opt' }, input, h('span', {}, label, sub ? h('span', { class: 'sub' }, sub) : null));
 }
 
+// Each control gets an id, so that its label names it for screen readers and voice control.
+let fieldId = 0;
+const nextId = () => `setting-${++fieldId}`;
+
 function range(label: string, min: number, max: number, step: number, get: (s: Settings) => number, set: (s: Settings, v: number) => void, fmt: (v: number) => string) {
+  const id = nextId();
   const out = h('span', {}, fmt(get(settings.value)));
-  const input = h('input', { type: 'range', min, max, step }) as HTMLInputElement;
+  const input = h('input', { type: 'range', id, min, max, step, 'aria-valuetext': fmt(get(settings.value)) }) as HTMLInputElement;
   input.value = String(get(settings.value));
-  input.addEventListener('input', () => { out.textContent = fmt(Number(input.value)); upd(s => set(s, Number(input.value))); });
-  return h('div', { class: 'field' }, h('label', {}, label, ': ', out), input);
+  input.addEventListener('input', () => {
+    const text = fmt(Number(input.value));
+    out.textContent = text;
+    input.setAttribute('aria-valuetext', text);
+    upd(s => set(s, Number(input.value)));
+  });
+  return h('div', { class: 'field' }, h('label', { for: id }, label, ': ', out), input);
 }
 
 function voiceLabel(v: VoiceInfo) {
@@ -156,7 +166,14 @@ function fontField() {
 export function openSettings(onClose: () => void) {
   const s = settings.value;
   const backdrop = h('div', { class: 'drawer-backdrop' });
-  const close = () => { backdrop.remove(); drawer.remove(); onClose(); };
+  // While the drawer is open the rest of the page is inert: Tab stays inside the drawer and
+  // screen readers do not reach what is behind it (a modal dialog).
+  const inerted: Element[] = [];
+  const close = () => {
+    if (!drawer.isConnected) return;
+    for (const el of inerted) el.removeAttribute('inert');
+    backdrop.remove(); drawer.remove(); onClose();
+  };
   backdrop.addEventListener('click', close);
 
   // ----- full-screen password -----
@@ -252,10 +269,10 @@ export function openSettings(onClose: () => void) {
   };
   renderFeedback();
 
-  const msgInput = h('input', { type: 'text', value: s.guard.message }) as HTMLInputElement;
+  const msgInput = h('input', { type: 'text', id: 'guard-message', value: s.guard.message }) as HTMLInputElement;
   msgInput.addEventListener('change', () => upd(x => { x.guard.message = msgInput.value.trim() || T('Pensa bé cada lletra que escrius', 'Piensa bien cada letra que escribes'); }));
 
-  const debounce = h('select', {}, ...[0, 150, 300, 500, 800].map(ms => {
+  const debounce = h('select', { id: 'motor-debounce' }, ...[0, 150, 300, 500, 800].map(ms => {
     const o = h('option', { value: ms }, ms ? `${ms} ms` : T('Desactivat', 'Desactivado')) as HTMLOptionElement;
     o.selected = s.motor.debounceMs === ms;
     return o;
@@ -289,11 +306,11 @@ export function openSettings(onClose: () => void) {
           check(T('La mateixa lletra 3 vegades seguides', 'La misma letra 3 veces seguidas'), T('En català cap paraula en té tres d’iguals', 'En castellano ninguna palabra tiene tres iguales'), x => x.guard.repeatLetters, (x, v) => { x.guard.repeatLetters = v; }),
           check(T('Moltes consonants sense cap vocal', 'Muchas consonantes sin ninguna vocal'), T('6 o més', '6 o más'), x => x.guard.consonants, (x, v) => { x.guard.consonants = v; }),
           check(T('Mantenir una tecla premuda', 'Mantener una tecla pulsada'), T('Excepte la tecla d’esborrar, que continua esborrant (màxim 4 lletres per segon).', 'Excepto la tecla de borrar, que sigue borrando (máximo 4 letras por segundo).'), x => x.guard.autoRepeat, (x, v) => { x.guard.autoRepeat = v; })),
-        h('div', { class: 'field' }, h('label', {}, T('Missatge de l’avís', 'Mensaje del aviso')), msgInput),
+        h('div', { class: 'field' }, h('label', { for: 'guard-message' }, T('Missatge de l’avís', 'Mensaje del aviso')), msgInput),
         range(T('Durada de l’avís', 'Duración del aviso'), 2, 8, 1, x => x.guard.calmMs / 1000, (x, v) => { x.guard.calmMs = v * 1000; }, v => `${v} s`),
         h('button', { class: 'small-btn', type: 'button', onclick: () => { close(); guard.calm(); } }, T('Mostra l’avís', 'Mostrar el aviso'))),
       h('fieldset', {}, h('legend', {}, T('Ajust motriu', 'Ajuste motor')),
-        h('div', { class: 'field' }, h('label', {}, T('Ignora la mateixa tecla repetida en menys de', 'Ignorar la misma tecla repetida en menos de')), debounce),
+        h('div', { class: 'field' }, h('label', { for: 'motor-debounce' }, T('Ignora la mateixa tecla repetida en menys de', 'Ignorar la misma tecla repetida en menos de')), debounce),
         h('p', { class: 'hint' }, T('Útil si hi ha tremolor o rebots: evita lletres duplicades sense voler.', 'Útil si hay temblor o rebotes: evita letras duplicadas sin querer.'))),
       pictosAvailable ? h('fieldset', {}, h('legend', {}, T('Pictogrames ARASAAC', 'Pictogramas ARASAAC')),
         check(T('Mostra el pictograma damunt de cada paraula acabada', 'Mostrar el pictograma encima de cada palabra terminada'), T('Apareix en prémer l’espai o un signe de puntuació. També es pot activar i desactivar amb el botó de la barra d’eines.', 'Aparece al pulsar el espacio o un signo de puntuación. También se puede activar y desactivar con el botón de la barra de herramientas.'), x => x.pictos.enabled, (x, v) => { x.pictos.enabled = v; }),
@@ -324,6 +341,7 @@ export function openSettings(onClose: () => void) {
           fileInput))));
 
   drawer.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+  for (const el of document.body.children) if (!el.hasAttribute('inert')) { el.setAttribute('inert', ''); inerted.push(el); }
   document.body.append(backdrop, drawer);
   (drawer.querySelector('button') as HTMLButtonElement).focus();
   speech.refresh().then(renderVoices);
