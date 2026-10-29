@@ -27,10 +27,11 @@ const imageOf = word => page.evaluate(async w => {
 }, word);
 
 await page.goto(origin + '/');
-// The pictogram test edition is on the same site (utacub.github.io/lecaa_docs_pictos): its cache
-// must survive this app's service worker.
+// Other apps on the same site (utacub.github.io) keep their caches, like the one the pictogram test
+// edition (lecaa_docs_pictos, removed on 29/10/2026) may have left in a browser: it must survive this
+// app's service worker.
 await page.evaluate(() => caches.open('lecaa-pictos-proto-pictogrames').then(c => c.put('/x', new Response('x'))));
-// So must the document and the settings that the test edition keeps in this browser.
+// So must the document and the settings that the test edition left in this browser.
 const published = { 'lecaa-pictos-proto:lang': 'es', 'lecaa-pictos-proto:doc': '{"title":"prova"}' };
 await page.evaluate(p => Object.entries(p).forEach(([k, v]) => localStorage.setItem(k, v)), published);
 await page.evaluate(() => navigator.serviceWorker.ready);

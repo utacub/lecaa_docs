@@ -4,6 +4,7 @@
 //   calm, friendly 3-second pause that blocks all activity.
 // - Motor filter: the same key again within `debounceMs` is ignored (key bounce, tremor).
 
+import { T } from './i18n';
 import { contentMisuse } from './letters';
 import { settings } from './settings';
 import { speech } from './speech';
@@ -108,7 +109,7 @@ class InputGuard {
     speech.stop();
     this.calmUntil = performance.now() + ms;
     if (!this.calmEl) {
-      this.calmEl = h('div', { class: 'calm', role: 'alertdialog', 'aria-live': 'assertive', 'aria-label': 'Calma' },
+      this.calmEl = h('div', { class: 'calm', role: 'alertdialog', 'aria-live': 'assertive', 'aria-label': T('Calma', 'Calma') },
         h('div', { class: 'calm-card' },
           h('div', { class: 'calm-dot' }),
           h('p', { class: 'calm-text' }, settings.value.guard.message)));

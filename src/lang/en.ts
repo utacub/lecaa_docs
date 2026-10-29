@@ -25,7 +25,7 @@ const texts: Record<string, string> = {
   'Llicències': 'Licences',
   'LECAA Docs és programari lliure, amb la llicència GNU GPL 3.0 o posterior: es pot fer servir, estudiar, modificar i compartir, i les versions modificades s’han de compartir amb la mateixa llicència. ': 'LECAA Docs is free software, under the GNU GPL 3.0 or later licence: it can be used, studied, changed and shared, and changed versions must be shared under the same licence. ',
   'Codi font': 'Source code',
-  'Les tipografies tenen la llicència SIL Open Font License 1.1, i l’OpenDyslexic que s’inclou als PDF, Bitstream Vera i CC BY 3.0. La veu Ona prové de dades de la UPC (Festcat, CC BY-SA 3.0 ES); Davefx, de dades d’OHF-Voice (CC0); Sharvard, del corpus Sharvard (CC BY 3.0); Maider i Antton, de dades d’itzune (CC BY 4.0), i Tugão és de domini públic (CC0). Els logotips són marques de les institucions titulars i no formen part de la llicència de l’app.': 'The fonts are under the SIL Open Font License 1.1, and the OpenDyslexic included in PDFs under Bitstream Vera and CC BY 3.0. The Ona voice comes from UPC data (Festcat, CC BY-SA 3.0 ES); Davefx, from OHF-Voice data (CC0); Sharvard, from the Sharvard corpus (CC BY 3.0); Maider and Antton, from itzune data (CC BY 4.0), and Tugão is in the public domain (CC0). The logos are trademarks of the institutions that own them and are not part of the app’s licence.',
+  'Totes les tipografies, incloses les dels PDF, tenen la llicència SIL Open Font License 1.1. La veu Ona prové de dades de la UPC (Festcat, CC BY-SA 3.0 ES); Davefx, de dades d’OHF-Voice (CC0); Sharvard, del corpus Sharvard (CC BY 3.0); Maider i Antton, de dades d’itzune (CC BY 4.0), i Tugão és de domini públic (CC0). Els logotips són marques de les institucions titulars i no formen part de la llicència de l’app.': 'All the fonts, including those in PDFs, are under the SIL Open Font License 1.1. The Ona voice comes from UPC data (Festcat, CC BY-SA 3.0 ES); Davefx, from OHF-Voice data (CC0); Sharvard, from the Sharvard corpus (CC BY 3.0); Maider and Antton, from itzune data (CC BY 4.0), and Tugão is in the public domain (CC0). The logos are trademarks of the institutions that own them and are not part of the app’s licence.',
   'Versió': 'Version',
   'Document sense títol': 'Untitled document',
   'Document de Word (compatible amb Google Docs)': 'Word document (works with Google Docs)',
@@ -233,6 +233,9 @@ const texts: Record<string, string> = {
   'Autor dels pictogrames: Sergio Palao. Origen: ARASAAC (https://arasaac.org). Llicència: CC (BY-NC-SA). Propietat: Govern d’Aragó (Espanya).': 'Pictograms author: Sergio Palao. Origin: ARASAAC (https://arasaac.org). License: CC (BY-NC-SA). Owner: Government of Aragon (Spain).',
   'Les imatges s’han reduït a 192 píxels i 256 colors. Es poden fer servir sense finalitat comercial, citant l’autor, l’origen, la llicència i el propietari, i els materials que se’n facin, com els documents desats amb pictogrames, s’han de compartir amb la mateixa llicència. ': 'The images have been reduced to 192 pixels and 256 colours. They may be used for non-commercial purposes, citing the author, origin, licence and owner, and any materials made with them, such as documents saved with pictograms, must be shared under the same licence. ',
   'Condicions d’ús d’ARASAAC': 'ARASAAC terms of use',
+  'Cursiva': 'Italic',
+  'Calma': 'Calm',
+  'Navegador': 'Browser',
 };
 
 export default texts;

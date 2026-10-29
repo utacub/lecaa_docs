@@ -1,8 +1,9 @@
 // PDF export, loaded only when used. pdfmake lays out the document with the same fonts as the
 // screen (embedded, so the PDF looks the same everywhere and the text stays selectable). When the
 // pictograms are shown, they go above the words, as on screen (pictos-export.ts).
-// Fonts are the WOFF files of the bundled fonts: pdfmake cannot read WOFF2. OpenDyslexic comes
-// from the open-dyslexic package (OTF), because pdfmake cannot subset the CFF of the WOFF one.
+// Fonts are the WOFF files of the bundled fonts: pdfmake cannot read WOFF2. OpenDyslexic is the
+// OTF of its own release (src/assets/fonts/opendyslexic, SIL OFL 1.1, the licence of the screen
+// one), because pdfmake cannot subset the CFF of the WOFF one.
 
 import type { Editor, JSONContent } from '@tiptap/core';
 import pdfMake from 'pdfmake/build/pdfmake';
@@ -16,10 +17,10 @@ import atk400i from '@fontsource/atkinson-hyperlegible/files/atkinson-hyperlegib
 import atk700i from '@fontsource/atkinson-hyperlegible/files/atkinson-hyperlegible-latin-700-italic.woff?url';
 import lex400 from '@fontsource/lexend/files/lexend-latin-400-normal.woff?url';
 import lex700 from '@fontsource/lexend/files/lexend-latin-700-normal.woff?url';
-import dys400 from 'open-dyslexic/otf/OpenDyslexic-Regular.otf?url';
-import dys700 from 'open-dyslexic/otf/OpenDyslexic-Bold.otf?url';
-import dys400i from 'open-dyslexic/otf/OpenDyslexic-Italic.otf?url';
-import dys700i from 'open-dyslexic/otf/OpenDyslexic-BoldItalic.otf?url';
+import dys400 from './assets/fonts/opendyslexic/OpenDyslexic-Regular.otf?url';
+import dys700 from './assets/fonts/opendyslexic/OpenDyslexic-Bold.otf?url';
+import dys400i from './assets/fonts/opendyslexic/OpenDyslexic-Italic.otf?url';
+import dys700i from './assets/fonts/opendyslexic/OpenDyslexic-BoldItalic.otf?url';
 import pwEs from '@fontsource/playwrite-es/files/playwrite-es-latin-400-normal.woff?url';
 import pwFr from '@fontsource/playwrite-fr-moderne/files/playwrite-fr-moderne-latin-400-normal.woff?url';
 import { BASE_PT } from './docio';
