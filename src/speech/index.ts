@@ -2,7 +2,7 @@
 // available on this device, and the recorded letter sounds. Sequences can be cancelled
 // as a whole, and `busy` tells the input guard whether audio feedback is still playing.
 
-import { isLangVoice, LANG } from '../i18n';
+import { isLangVoice, isOwnLangVoice, LANG } from '../i18n';
 import { decodeClip, ready } from './audio';
 import { settings } from '../settings';
 import { NativeEngine } from './native';
@@ -18,7 +18,9 @@ export type SoundItem =
   | { kind: 'tts'; text: string; onWord?: (i: number, len: number) => void }
   | { kind: 'clip'; file: string };
 
-const CLIP_DIR = LANG === 'es' ? '../assets/sons/es/' : '../assets/sons/';
+// Only Catalan and Spanish have recorded letter sounds; in the other languages the voice says the
+// name of each letter.
+const CLIP_DIR = LANG === 'ca' ? '../assets/sons/' : `../assets/sons/${LANG}/`;
 
 // Recorded voices available for the interface language (folders that hold clips).
 export const recordedVoices = [...new Set(Object.keys(clipUrls)
@@ -60,8 +62,12 @@ class SpeechHub {
     return this.voices;
   }
 
-  // Voices of the interface language (Spanish: Spain's Spanish only).
-  langVoices() { return this.voices.filter(v => isLangVoice(v.lang)); }
+  // Voices of the interface language (Spanish: Spain's Spanish only; Galician: also the Spanish
+  // and Portuguese alternatives, after the Galician ones).
+  langVoices() {
+    const all = this.voices.filter(v => isLangVoice(v.lang));
+    return [...all.filter(v => isOwnLangVoice(v.lang)), ...all.filter(v => !isOwnLangVoice(v.lang))];
+  }
 
   // The configured voice, or the best default in the interface language: system voices first,
   // then the voices downloaded into the app, offline first.
@@ -69,12 +75,12 @@ class SpeechHub {
     const id = settings.value.voice.id;
     const chosen = id ? this.voices.find(v => v.id === id) : undefined;
     if (chosen) return chosen;
-    const ca = this.langVoices();
-    return ca.find(v => v.id.startsWith('native:') && v.offline !== false)
-      ?? ca.find(v => v.id.startsWith('neural:'))
-      ?? ca.find(v => v.offline !== false)
-      ?? ca[0]
-      ?? null;
+    const best = (vs: VoiceInfo[]) => vs.find(v => v.id.startsWith('native:') && v.offline !== false)
+      ?? vs.find(v => v.id.startsWith('neural:'))
+      ?? vs.find(v => v.offline !== false)
+      ?? vs[0];
+    const all = this.langVoices();
+    return best(all.filter(v => isOwnLangVoice(v.lang))) ?? best(all) ?? null;
   }
 
   private engineFor(v: VoiceInfo) {

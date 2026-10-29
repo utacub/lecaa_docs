@@ -2,7 +2,7 @@
 // (name via synthetic voice, or sound via recorded clip). Each option is independent;
 // letter name and letter sound are mutually exclusive by construction (one setting).
 
-import { isLetter, lastSentence, lastWord, phonemeFile, SENTENCE_END, spokenName, WORD_PUNCT } from './letters';
+import { HAS_LETTER_SOUNDS, isLetter, lastSentence, lastWord, phonemeFile, SENTENCE_END, spokenName, WORD_PUNCT } from './letters';
 import { settings } from './settings';
 import { speech, type SoundItem } from './speech';
 
@@ -31,12 +31,14 @@ export function itemsForChar(ch: string, before: string): SoundItem[] {
     spokeUnit = items.length > 0;
   }
 
-  if (!spokeUnit && f.letter !== 'off') {
-    if (f.letter === 'sound' && isLetter(ch)) {
+  // Without recorded sounds (Basque, Galician, English, French), the voice says the name.
+  const letter = f.letter === 'sound' && !HAS_LETTER_SOUNDS ? 'name' : f.letter;
+  if (!spokeUnit && letter !== 'off') {
+    if (letter === 'sound' && isLetter(ch)) {
       const file = phonemeFile(ch);
       if (file) items.push({ kind: 'clip', file });
-    } else if (f.letter === 'name' || !isLetter(ch)) {
-      const name = f.letter === 'name' ? spokenName(ch, f.upperCaseWord) : null;
+    } else if (letter === 'name' || !isLetter(ch)) {
+      const name = letter === 'name' ? spokenName(ch, f.upperCaseWord) : null;
       if (name) items.push({ kind: 'tts', text: name });
     }
   }

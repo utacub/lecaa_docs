@@ -2,7 +2,7 @@
   "name": "lecaa-docs",
   "license": "GPL-3.0-or-later",
   "private": true,
-  "version": "0.4.1-pictos.2",
+  "version": "0.4.1-pictos.3",
   "type": "module",
   "scripts": {
     "dev": "vite",

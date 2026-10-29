@@ -95,10 +95,10 @@ export class NeuralEngine implements SpeechEngine {
 
   async listVoices(): Promise<VoiceInfo[]> {
     await this.scan();
-    return MODELS.filter(m => m.lang === LANG && this.installed.has(m.key)).flatMap(m => m.voices.map(v => ({
+    return MODELS.filter(m => m.offer.includes(LANG) && this.installed.has(m.key)).flatMap(m => m.voices.map(v => ({
       id: PREFIX + v.id,
       name: `${v.name} · ${v.dialect}`,
-      lang: m.lang === 'es' ? 'es-ES' : 'ca-ES',
+      lang: m.lang,
       engine: T('Veus Piper (dins l’app)', 'Voces Piper (dentro de la app)'),
       offline: true,
     })));
@@ -289,7 +289,7 @@ export class NeuralEngine implements SpeechEngine {
     try { buf = await this.buffer(id, text, opts.rate); } catch (e) {
       const msg = String((e as Error)?.message ?? e);
       console.warn('[neural]', e);
-      this.notice(T(`La veu no ha pogut parlar (${msg}).`, `La voz no ha podido hablar (${msg}).`));
+      this.notice(T('La veu no ha pogut parlar ({error}).', 'La voz no ha podido hablar ({error}).', { error: msg }));
       return;
     }
     if (!buf || my !== this.token) return;

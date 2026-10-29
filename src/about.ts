@@ -2,7 +2,8 @@
 // text as the credits of LECAA.
 
 import { X } from 'lucide';
-import { LANG, T } from './i18n';
+import { LANG, T, type Lang } from './i18n';
+import { HAS_LETTER_SOUNDS } from './letters';
 import { pictosAvailable } from './pictos';
 import { h, icon } from './ui';
 import { version as VERSION } from '../package.json';
@@ -22,18 +23,27 @@ const INSTITUTIONS = [
   { src: drets, name: 'Departament de Drets Socials i Inclusió', caption: 'UTAC Sírius · Departament de Drets Socials i Inclusió', url: 'https://dretssocials.gencat.cat/' },
 ];
 
+// Inflected forms of the words, to find the pictogram of "cases" or "menjo" (English and Basque:
+// rules of the app itself, in scripts/pictos-formes.py).
+const FORMS: Partial<Record<Lang, [string, string, string]>> = {
+  ca: ['catalan-dict-tools', 'Softcatalà · GPL 2.0 / LGPL 2.1', 'https://github.com/Softcatala/catalan-dict-tools'],
+  es: ['spanish-dict-tools', 'Jaume Ortolà · LGPL 2.1', 'https://github.com/jaumeortola/spanish-dict-tools'],
+  gl: ['OpenTrad (FreeLing)', 'SLI · Universidade de Vigo · CC BY-SA 3.0', 'https://github.com/TALP-UPC/FreeLing'],
+  // The LGPL-LR asks for a reference to its text, which is in the pictograms folder.
+  fr: ['Lefff (FreeLing)', 'Benoît Sagot · Inria · LGPL-LR', './pictos/LLICENCIA.txt'],
+};
+const forms = FORMS[LANG];
+
 // [use, product, owner, url]
 const TOOLS: [string, string, string, string][] = [
   [T('Aplicació', 'Aplicación'), 'Claude', 'Anthropic', 'https://claude.ai/'],
-  [T('Sons de les lletres', 'Sonidos de las letras'), 'ElevenLabs', 'ElevenLabs', 'https://elevenlabs.io/'],
-  [T('Veus per descarregar', 'Voces para descargar'), 'Piper (Ona, Davefx, Sharvard)', 'Rhasspy · Open Home Foundation', 'https://github.com/rhasspy/piper'],
+  ...(HAS_LETTER_SOUNDS ? [[T('Sons de les lletres', 'Sonidos de las letras'), 'ElevenLabs', 'ElevenLabs', 'https://elevenlabs.io/']] as [string, string, string, string][] : []),
+  [T('Veus per descarregar', 'Voces para descargar'), 'Piper (Ona, Davefx, Sharvard, Maider, Antton, Tugão)', 'Rhasspy · Open Home Foundation', 'https://github.com/rhasspy/piper'],
   [T('Tipografies', 'Tipografías'), 'Andika, Atkinson Hyperlegible, Lexend, OpenDyslexic, Playwrite', 'SIL OFL 1.1', 'https://openfontlicense.org/'],
   [T('Icones', 'Iconos'), 'Lucide', 'Lucide Contributors', 'https://lucide.dev/'],
   ...(pictosAvailable ? [
     [T('Pictogrames', 'Pictogramas'), 'ARASAAC (autor: Sergio Palao)', T('Govern d’Aragó · CC BY-NC-SA 4.0', 'Gobierno de Aragón · CC BY-NC-SA 4.0'), 'https://arasaac.org/'],
-    LANG === 'es'
-      ? ['Formas de las palabras', 'spanish-dict-tools', 'Jaume Ortolà · LGPL 2.1', 'https://github.com/jaumeortola/spanish-dict-tools']
-      : ['Formes de les paraules', 'catalan-dict-tools', 'Softcatalà · GPL 2.0 / LGPL 2.1', 'https://github.com/Softcatala/catalan-dict-tools'],
+    ...(forms ? [[T('Formes de les paraules', 'Formas de las palabras'), ...forms]] : []),
   ] as [string, string, string, string][] : []),
 ];
 
@@ -85,8 +95,8 @@ export function openAbout(onClose: () => void): void {
           'LECAA Docs es software libre, con la licencia GNU GPL 3.0 o posterior: se puede usar, estudiar, modificar y compartir, y las versiones modificadas deben compartirse con la misma licencia. '),
           link(T('Codi font', 'Código fuente'), 'https://github.com/utacub/lecaa_docs'), ' · ', link('GNU GPL 3.0', 'https://www.gnu.org/licenses/gpl-3.0.html')),
         h('p', {}, T(
-          'Les tipografies tenen la llicència SIL Open Font License 1.1, i l’OpenDyslexic que s’inclou als PDF, Bitstream Vera i CC BY 3.0. La veu Ona prové de dades de la UPC (Festcat, CC BY-SA 3.0 ES); Davefx, de dades d’OHF-Voice (CC0), i Sharvard, del corpus Sharvard (CC BY 3.0). Els logotips són marques de les institucions titulars i no formen part de la llicència de l’app.',
-          'Las tipografías tienen la licencia SIL Open Font License 1.1, y la OpenDyslexic que se incluye en los PDF, Bitstream Vera y CC BY 3.0. La voz Ona procede de datos de la UPC (Festcat, CC BY-SA 3.0 ES); Davefx, de datos de OHF-Voice (CC0), y Sharvard, del corpus Sharvard (CC BY 3.0). Los logotipos son marcas de las instituciones titulares y no forman parte de la licencia de la app.')),
+          'Les tipografies tenen la llicència SIL Open Font License 1.1, i l’OpenDyslexic que s’inclou als PDF, Bitstream Vera i CC BY 3.0. La veu Ona prové de dades de la UPC (Festcat, CC BY-SA 3.0 ES); Davefx, de dades d’OHF-Voice (CC0); Sharvard, del corpus Sharvard (CC BY 3.0); Maider i Antton, de dades d’itzune (CC BY 4.0), i Tugão és de domini públic (CC0). Els logotips són marques de les institucions titulars i no formen part de la llicència de l’app.',
+          'Las tipografías tienen la licencia SIL Open Font License 1.1, y la OpenDyslexic que se incluye en los PDF, Bitstream Vera y CC BY 3.0. La voz Ona procede de datos de la UPC (Festcat, CC BY-SA 3.0 ES); Davefx, de datos de OHF-Voice (CC0); Sharvard, del corpus Sharvard (CC BY 3.0); Maider y Antton, de datos de itzune (CC BY 4.0), y Tugão es de dominio público (CC0). Los logotipos son marcas de las instituciones titulares y no forman parte de la licencia de la app.')),
         h('p', { class: 'about-version' }, `${T('Versió', 'Versión')} ${VERSION}`))));
 
   dlg.addEventListener('close', () => { dlg.remove(); onClose(); });

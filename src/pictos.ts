@@ -1,13 +1,14 @@
-// ARASAAC pictograms above the words (prototype, Catalan and Spanish). When a word is finished (a
+// ARASAAC pictograms above the words (prototype, in the six languages of the app). When a word is finished (a
 // space, a punctuation mark, Enter, or the caret leaves it), the pictogram of that word appears
 // above it. On screen they are decorations, not part of the document; the .docx and PDF files get
 // them when they are shown (pictos-export.ts).
 //
 // The pictograms travel apart from the app, as a "pictos" folder next to it (pictos/index-ca.js,
-// pictos/index-es.js and pictos/img/<id>.png, the same images for both languages), because their
+// pictos/index-es.js... and pictos/img/<id>.png, the same images for every language), because their
 // licence (CC BY-NC-SA 4.0) is not the app's (GPL). The index is a script, not JSON, so it also
 // loads when the app is opened as a file (file://). scripts/pictos-index.py builds it from the
-// ARASAAC catalogue and the inflected forms of each language (Softcatalà, spanish-dict-tools).
+// ARASAAC catalogue and the inflected forms of each language (Softcatalà, spanish-dict-tools,
+// FreeLing for Galician and French, and the rules of scripts/pictos-formes.py for English and Basque).
 
 import { Extension } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
@@ -41,8 +42,9 @@ interface Index {
   stop: string[];                // function words
 }
 
-// Languages with an index in the pictogram pack.
-export const pictosAvailable = LANG === 'ca' || LANG === 'es';
+// Languages with an index in the pictogram pack: all six.
+export const PICTO_LANGS = ['ca', 'es', 'eu', 'gl', 'en', 'fr'];
+export const pictosAvailable = PICTO_LANGS.includes(LANG);
 
 let index: Index | null = null;
 let stop = new Set<string>();
@@ -90,6 +92,15 @@ function idsOf(flat: number[], preferType = 0): number[] {
   return [...ids, ...rest];
 }
 
+// Elided words before an apostrophe (Catalan "l'aigua", French "j'aime", "qu'il") and English
+// endings after one ("dad's", "don't").
+const ELIDED: Partial<Record<string, RegExp>> = {
+  ca: /^(?:l|d|s|m|t|n)'(.+)$/,
+  fr: /^(?:l|d|s|m|t|n|j|c|qu|jusqu|lorsqu|puisqu)'(.+)$/,
+  en: /^(.+?)(?:'s|'ll|'re|'ve|'d|'m|n't)$/,
+};
+const EN_NOT: Record<string, string> = { "can't": 'can', "won't": 'will', "shan't": 'shall' };
+
 // Every pictogram that fits the word, best first: the word itself as a keyword (or plural),
 // then without an elided article or a pronoun attached ("l'aigua", "rentar-se"), then its lemma
 // ("menjo" -> "menjar"). A word that is a keyword and also a form of another one ("como", of
@@ -98,10 +109,11 @@ export function candidates(word: string): number[] {
   if (!index) return [];
   const n = norm(word);
   const tries = [n];
-  const elided = n.match(/^(?:l|d|s|m|t|n)'(.+)$/);
+  const elided = EN_NOT[n] ? [n, EN_NOT[n]] : n.match(ELIDED[LANG] ?? /$^/);
   const core = elided ? elided[1] : n;
   if (core !== n) tries.push(core);
-  const head = core.split(/['-]/)[0];
+  // A pronoun attached to a single word ("rentar-se"); never inside an expression of several words.
+  const head = core.includes(' ') ? core : core.split(/['-]/)[0];
   if (head && head !== core) tries.push(head);
   const out: number[] = [];
   const add = (ids: number[]) => { for (const id of ids) if (!out.includes(id)) out.push(id); };
@@ -261,8 +273,8 @@ function openChooser(view: EditorView, el: HTMLElement) {
   const close = () => { box.remove(); document.removeEventListener('pointerdown', outside, true); view.focus(); };
   const pick = (id: number | null) => { choose(word, id); close(); refreshPictos(view); };
   const outside = (e: Event) => { if (!box.contains(e.target as Node)) close(); };
-  const box = h('div', { class: 'picto-chooser', role: 'dialog', 'aria-label': T(`Pictogrames per a «${word}»`, `Pictogramas para «${word}»`) },
-    h('div', { class: 'picto-chooser-title' }, T(`Tria el pictograma de «${word}»`, `Elige el pictograma de «${word}»`)),
+  const box = h('div', { class: 'picto-chooser', role: 'dialog', 'aria-label': T('Pictogrames per a «{paraula}»', 'Pictogramas para «{paraula}»', { paraula: word }) },
+    h('div', { class: 'picto-chooser-title' }, T('Tria el pictograma de «{paraula}»', 'Elige el pictograma de «{paraula}»', { paraula: word })),
     h('div', { class: 'picto-chooser-grid' }, ...ids.map(id => h('button', {
       type: 'button', class: 'picto-option', 'aria-pressed': String(id === current), title: `ARASAAC ${id}`,
       onclick: () => pick(id),

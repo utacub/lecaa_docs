@@ -42,7 +42,7 @@ export interface Settings {
   docFontSize: number;
   docFont: string;        // id from fonts.ts
   protectSettings: boolean;
-  lockPassword: string;   // hash of the password that ends full-screen mode ('' = not set); shared by both languages
+  lockPassword: string;   // hash of the password that ends full-screen mode ('' = not set); shared by all languages
 }
 
 export const DEFAULTS: Settings = {

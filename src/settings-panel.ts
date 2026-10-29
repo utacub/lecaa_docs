@@ -1,7 +1,7 @@
 import { X } from 'lucide';
 import { FONTS } from './fonts';
 import { guard } from './guard';
-import { isLangVoice, LANG, T } from './i18n';
+import { BCP47, isLangVoice, LANG, T } from './i18n';
 import { askNewPassword } from './lock';
 import { inTauri } from './speech/native';
 import { settings, type LetterMode, type Settings } from './settings';
@@ -41,31 +41,29 @@ function voiceLabel(v: VoiceInfo) {
   return `${v.name} (${v.lang})${offline}`;
 }
 
+// Voices that can be downloaded into the app in this language (none for English and French).
+const ownVoices = MODELS.filter(m => m.offer.includes(LANG));
+
 function noVoicesHelp() {
   const ua = navigator.userAgent;
-  const where = LANG === 'es'
-    ? /Android/i.test(ua)
-      ? 'En Android, instala una voz en español de España (Google o Samsung) en Ajustes > Accesibilidad > Salida de texto a voz.'
-      : /iPhone|iPad|Mac OS/i.test(ua)
-        ? 'En iOS y macOS, descarga las voces Mónica o Jorge (español de España) en Ajustes > Accesibilidad > Contenido leído > Voces.'
-        : /Windows/i.test(ua)
-          ? 'En Windows, añade el idioma Español (España) con su voz en Configuración > Hora e idioma > Voz (voces Helena, Laura o Pablo). La app para Windows las detecta todas; el navegador solo ve una parte.'
-          : 'Instala una voz en español de España en el sistema y vuelve a cargar la lista.'
-    : /Android/i.test(ua)
-      ? 'A Android, instal·la una veu catalana (Google, Acapela o Vocalizer) a Configuració > Accessibilitat > Text a veu. La versió web no pot veure totes les veus d’Android: fes servir l’app per a Android quan estigui disponible.'
-      : /iPhone|iPad|Mac OS/i.test(ua)
-        ? 'A iOS i macOS, descarrega les veus Jordi, Montse o Pau a Configuració > Accessibilitat > Contingut llegit > Veus. Safari no mostra totes les veus descarregades a la versió web; l’app instal·lable sí que les veurà.'
-        : /Windows/i.test(ua)
-          ? 'A Windows, afegeix la veu catalana Herena des de Configuració > Hora i idioma > Veu, o instal·la Microsoft Speech Platform amb la veu Herena. L’app per a Windows les detecta totes; el navegador només en veu una part.'
-          : 'Instal·la una veu catalana al sistema i torna a carregar la llista.';
+  const where = /Android/i.test(ua)
+    ? T('A Android, instal·la una veu catalana (Google, Acapela o Vocalizer) a Configuració > Accessibilitat > Text a veu. La versió web no pot veure totes les veus d’Android: fes servir l’app per a Android quan estigui disponible.',
+      'En Android, instala una voz en español de España (Google o Samsung) en Ajustes > Accesibilidad > Salida de texto a voz.')
+    : /iPhone|iPad|Mac OS/i.test(ua)
+      ? T('A iOS i macOS, descarrega les veus Jordi, Montse o Pau a Configuració > Accessibilitat > Contingut llegit > Veus. Safari no mostra totes les veus descarregades a la versió web; l’app instal·lable sí que les veurà.',
+        'En iOS y macOS, descarga las voces Mónica o Jorge (español de España) en Ajustes > Accesibilidad > Contenido leído > Voces.')
+      : /Windows/i.test(ua)
+        ? T('A Windows, afegeix la veu catalana Herena des de Configuració > Hora i idioma > Veu, o instal·la Microsoft Speech Platform amb la veu Herena. L’app per a Windows les detecta totes; el navegador només en veu una part.',
+          'En Windows, añade el idioma Español (España) con su voz en Configuración > Hora e idioma > Voz (voces Helena, Laura o Pablo). La app para Windows las detecta todas; el navegador solo ve una parte.')
+        : T('Instal·la una veu catalana al sistema i torna a carregar la llista.', 'Instala una voz en español de España en el sistema y vuelve a cargar la lista.');
   return h('div', { class: 'voice-list-empty' },
     T('No s’ha trobat cap veu catalana en aquest dispositiu. ', 'No se ha encontrado ninguna voz en castellano de España en este dispositivo. '), where,
-    T(' També pots descarregar una veu catalana gratuïta aquí sota: funciona en qualsevol dispositiu i sense connexió.',
-      ' También puedes descargar una voz gratuita aquí abajo: funciona en cualquier dispositivo y sin conexión.'));
+    ownVoices.length ? T(' També pots descarregar una veu catalana gratuïta aquí sota: funciona en qualsevol dispositiu i sense connexió.',
+      ' También puedes descargar una voz gratuita aquí abajo: funciona en cualquier dispositivo y sin conexión.') : '');
 }
 
 const mb = (bytes: number) => `${Math.round(bytes / 1_000_000)} MB`;
-const thousands = (n: number) => n.toLocaleString('ca-ES');
+const thousands = (n: number) => n.toLocaleString(BCP47);
 
 // All the pictograms on this device, to use them without a connection (about 70 MB).
 function pictosOfflineBox() {
@@ -76,8 +74,8 @@ function pictosOfflineBox() {
     const total = allPictoIds().length;
     const have = await offlineCount();
     const status = h('p', { class: 'hint' }, total
-      ? T(`Sense connexió: ${thousands(have)} de ${thousands(total)} pictogrames desats en aquest dispositiu. Els que es fan servir es desen sols.`,
-        `Sin conexión: ${thousands(have)} de ${thousands(total)} pictogramas guardados en este dispositivo. Los que se usan se guardan solos.`)
+      ? T('Sense connexió: {n} de {total} pictogrames desats en aquest dispositiu. Els que es fan servir es desen sols.',
+        'Sin conexión: {n} de {total} pictogramas guardados en este dispositivo. Los que se usan se guardan solos.', { n: thousands(have), total: thousands(total) })
       : T('No s’han trobat els pictogrames.', 'No se han encontrado los pictogramas.'));
     const buttons = h('div', { class: 'row' });
     if (total && have < total) buttons.append(h('button', { class: 'small-btn', type: 'button', onclick: () => void download() }, have ? T('Desa la resta', 'Guardar el resto') : T('Desa’ls tots (70 MB)', 'Guardarlos todos (70 MB)')));
@@ -95,9 +93,9 @@ function pictosOfflineBox() {
     box.replaceChildren(h('div', { class: 'neural-title' }, T('Pictogrames sense connexió', 'Pictogramas sin conexión')),
       h('div', { class: 'neural-progress' }, bar, label),
       h('button', { class: 'small-btn', type: 'button', onclick: () => abort?.abort() }, T('Atura', 'Detener')));
-    const { failed } = await downloadAll((done, total) => { bar.max = total; bar.value = done; label.textContent = `${thousands(done)} ${T('de', 'de')} ${thousands(total)}`; }, abort.signal);
+    const { failed } = await downloadAll((done, total) => { bar.max = total; bar.value = done; label.textContent = T('{n} de {total}', '{n} de {total}', { n: thousands(done), total: thousands(total) }); }, abort.signal);
     if (!abort.signal.aborted) toast(failed
-      ? T(`S’han desat els pictogrames, però ${failed} no s’han pogut baixar.`, `Se han guardado los pictogramas, pero ${failed} no se han podido descargar.`)
+      ? T('S’han desat els pictogrames, però {n} no s’han pogut baixar.', 'Se han guardado los pictogramas, pero {n} no se han podido descargar.', { n: failed })
       : T('Tots els pictogrames ja són en aquest dispositiu', 'Todos los pictogramas ya están en este dispositivo'));
     abort = null;
     if (box.isConnected) void render();
@@ -110,17 +108,17 @@ function pictosOfflineBox() {
 function neuralVoicesBox(onInstalled: (voiceId: string) => void) {
   const box = h('div', { class: 'neural-list' });
   const render = async () => {
-    const rows = await Promise.all(MODELS.filter(m => m.lang === LANG).map(async m => {
+    const rows = await Promise.all(MODELS.filter(m => m.offer.includes(LANG)).map(async m => {
       const st = await neural.state(m.key);
       const status = st.state === 'downloading'
         ? h('div', { class: 'neural-progress' },
-          h('progress', { max: st.total || 1, value: st.loaded, 'aria-label': T(`Descarregant ${m.title}`, `Descargando ${m.title}`) }),
-          h('span', {}, `${mb(st.loaded)} ${T('de', 'de')} ${mb(st.total)}`))
+          h('progress', { max: st.total || 1, value: st.loaded, 'aria-label': T('Descarregant {nom}', 'Descargando {nom}', { nom: m.title }) }),
+          h('span', {}, T('{n} de {total}', '{n} de {total}', { n: mb(st.loaded), total: mb(st.total) })))
         : st.state === 'installed'
           ? h('div', { class: 'row' },
             h('span', { class: 'neural-ok' }, T('Descarregada · funciona sense connexió', 'Descargada · funciona sin conexión')),
             h('button', { class: 'small-btn', type: 'button', onclick: async () => {
-              if (!confirm(T(`Vols esborrar ${m.title} d’aquest dispositiu?`, `¿Quieres borrar ${m.title} de este dispositivo?`))) return;
+              if (!confirm(T('Vols esborrar {nom} d’aquest dispositiu?', '¿Quieres borrar {nom} de este dispositivo?', { nom: m.title }))) return;
               await neural.uninstall(m.key);
             } }, T('Esborra', 'Borrar')))
           : h('button', { class: 'small-btn', type: 'button', 'data-install': m.key, onclick: async () => {
@@ -129,7 +127,7 @@ function neuralVoicesBox(onInstalled: (voiceId: string) => void) {
             try {
               await neural.install(m.key);
               await speech.refresh();
-              toast(T(`${m.title} ja és a punt`, `${m.title} ya está lista`));
+              toast(T('{nom} ja és a punt', '{nom} ya está lista', { nom: m.title }));
               onInstalled('neural:' + m.voices[0].id);
             } catch {
               toast(T('No s’ha pogut descarregar la veu. Torna-ho a provar més tard.', 'No se ha podido descargar la voz. Vuelve a intentarlo más tarde.'));
@@ -190,7 +188,9 @@ export function openSettings(onClose: () => void) {
     sel.addEventListener('change', () => upd(x => { x.voice.id = sel.value; }));
     const inLang = all.filter(v => isLangVoice(v.lang)).length;
     voiceBox.replaceChildren(
-      inLang === 0 && !settings.value.voice.showAll ? noVoicesHelp() : h('div', { class: 'field' }, h('label', { for: 'voice-select' }, T(`Veu (${inLang} en català)`, `Voz (${inLang} en castellano de España)`)), sel),
+      // Galician: no free voice works inside the browser (LECAA Tecla gives the same notice).
+      ...(LANG === 'gl' ? [h('p', { class: 'hint voice-notice' }, T('Avís sobre les veus gallegues', 'Aviso sobre las voces gallegas'))] : []),
+      inLang === 0 && !settings.value.voice.showAll ? noVoicesHelp() : h('div', { class: 'field' }, h('label', { for: 'voice-select' }, T('Veu ({n} en català)', 'Voz ({n} en castellano de España)', { n: inLang })), sel),
       h('div', { class: 'row' },
         h('button', { class: 'small-btn', type: 'button', onclick: () => speech.play([{ kind: 'tts', text: T('Hola! Aquesta és la veu que llegirà el que escriguis.', '¡Hola! Esta es la voz que leerá lo que escribas.') }], { lock: false }) }, T('Prova la veu', 'Probar la voz')),
         h('button', { class: 'small-btn', type: 'button', onclick: async () => { await speech.refresh(); renderVoices(); toast(T('Llista de veus actualitzada', 'Lista de voces actualizada')); } }, T('Torna a buscar veus', 'Volver a buscar voces'))),
@@ -202,7 +202,7 @@ export function openSettings(onClose: () => void) {
   };
   renderVoices();
   speech.onVoices(() => { if (voiceBox.isConnected) renderVoices(); });
-  const neuralBox = h('details', { class: 'neural', open: speech.langVoices().length === 0 },
+  const neuralBox = !ownVoices.length ? null : h('details', { class: 'neural', open: speech.langVoices().length === 0 },
     h('summary', {}, T('Veus catalanes gratuïtes per descarregar', 'Voces gratuitas en castellano para descargar')),
     h('p', { class: 'hint' }, T('Es descarreguen una sola vegada i després funcionen dins l’app, sense connexió, en qualsevol dispositiu.', 'Se descargan una sola vez y después funcionan dentro de la app, sin conexión, en cualquier dispositivo.')),
     neuralVoicesBox(id => {
@@ -238,7 +238,7 @@ export function openSettings(onClose: () => void) {
         class: 'small-btn', type: 'button',
         onclick: () => { upd(x => { x.feedback.sentence = false; x.feedback.word = false; x.feedback.letter = 'off'; }); renderFeedback(); renderLetter(); },
       }, T('Cap feedback (només els botons de lectura)', 'Sin feedback (solo los botones de lectura)')),
-      check('Frase', T('Es llegeix la frase en escriure un punt, ? o !, o en prémer Intro.', 'Se lee la frase al escribir un punto, ? o !, o al pulsar Intro.'), x => x.feedback.sentence, (x, v) => { x.feedback.sentence = v; }),
+      check(T('Frase', 'Frase'), T('Es llegeix la frase en escriure un punt, ? o !, o en prémer Intro.', 'Se lee la frase al escribir un punto, ? o !, o al pulsar Intro.'), x => x.feedback.sentence, (x, v) => { x.feedback.sentence = v; }),
       check(T('Paraula', 'Palabra'), T('Es llegeix cada paraula en prémer l’espai.', 'Se lee cada palabra al pulsar el espacio.'), x => x.feedback.word, (x, v) => { x.feedback.word = v; }),
       h('div', { class: 'subgroup' }, check(T('També amb els signes de puntuació', 'También con los signos de puntuación'), null, x => x.feedback.wordOnPunct, (x, v) => { x.feedback.wordOnPunct = v; })),
       h('div', { class: 'hint' }, T('Lletra (només una de les dues opcions):', 'Letra (solo una de las dos opciones):')),
@@ -298,7 +298,7 @@ export function openSettings(onClose: () => void) {
       pictosAvailable ? h('fieldset', {}, h('legend', {}, T('Pictogrames ARASAAC (prova)', 'Pictogramas ARASAAC (prueba)')),
         check(T('Mostra el pictograma damunt de cada paraula acabada', 'Mostrar el pictograma encima de cada palabra terminada'), T('Apareix en prémer l’espai o un signe de puntuació. També es pot activar i desactivar amb el botó de la barra d’eines.', 'Aparece al pulsar el espacio o un signo de puntuación. También se puede activar y desactivar con el botón de la barra de herramientas.'), x => x.pictos.enabled, (x, v) => { x.pictos.enabled = v; }),
         h('div', { class: 'subgroup' },
-          range(T('Mida del pictograma', 'Tamaño del pictograma'), 1.4, 3, 0.2, x => x.pictos.size, (x, v) => { x.pictos.size = v; }, v => T(`${Math.round(v * 10) / 10} vegades la lletra`, `${Math.round(v * 10) / 10} veces la letra`)),
+          range(T('Mida del pictograma', 'Tamaño del pictograma'), 1.4, 3, 0.2, x => x.pictos.size, (x, v) => { x.pictos.size = v; }, v => T('{n} vegades la lletra', '{n} veces la letra', { n: Math.round(v * 10) / 10 })),
           check(T('Només paraules amb contingut', 'Solo palabras con contenido'), T('Sense pictograma per als articles, preposicions, conjuncions i pronoms febles (el, de, i, que, es…).', 'Sin pictograma para los artículos, preposiciones, conjunciones y pronombres átonos (el, de, y, que, se…).'), x => x.pictos.contentOnly, (x, v) => { x.pictos.contentOnly = v; })),
         h('p', { class: 'hint' }, T('Toca un pictograma per triar-ne un altre per a aquella paraula, o cap. L’app recorda la tria en aquest dispositiu. Quan es veuen, els pictogrames també es desen al .docx i al PDF.', 'Toca un pictograma para elegir otro para esa palabra, o ninguno. La app recuerda la elección en este dispositivo. Cuando se ven, los pictogramas también se guardan en el .docx y en el PDF.')),
         offlineSupported ? pictosOfflineBox() : null) : null,
@@ -306,8 +306,8 @@ export function openSettings(onClose: () => void) {
         check(T('Ressalta el que s’està llegint', 'Resaltar lo que se está leyendo'), null, x => x.highlight, (x, v) => { x.highlight = v; }),
         range(T('Mida del text a la pantalla', 'Tamaño del texto en la pantalla'), 16, 40, 1, x => x.docFontSize, (x, v) => { x.docFontSize = v; }, v => `${v} px`),
         fontField()),
-      h('fieldset', {}, h('legend', {}, 'Pantalla completa'),
-        h('p', { class: 'hint' }, T('El botó de pantalla completa amaga les barres d’eines i la configuració. Només se’n pot sortir amb aquesta contrasenya (botó 🔒 a la cantonada).', 'El botón de pantalla completa oculta las barras de herramientas y la configuración. Solo se puede salir con esta contraseña (botón 🔒 en la esquina). La contraseña es la misma en los dos idiomas.')),
+      h('fieldset', {}, h('legend', {}, T('Pantalla completa', 'Pantalla completa')),
+        h('p', { class: 'hint' }, T('El botó de pantalla completa amaga les barres d’eines i la configuració. Només se’n pot sortir amb aquesta contrasenya (botó 🔒 a la cantonada).', 'El botón de pantalla completa oculta las barras de herramientas y la configuración. Solo se puede salir con esta contraseña (botón 🔒 en la esquina). La contraseña es la misma en todos los idiomas.')),
         passwordBox),
       h('fieldset', {}, h('legend', {}, T('Configuració', 'Configuración')),
         h('p', { class: 'hint' }, T('Cada idioma té la seva pròpia configuració.', 'Cada idioma tiene su propia configuración.')),

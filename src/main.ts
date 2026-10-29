@@ -335,12 +335,12 @@ async function boot() {
     document.documentElement.style.setProperty('--doc-font', fontById(s.docFont).css);
     document.documentElement.style.setProperty('--picto-size', `${s.pictos.size}em`);
     const parts: string[] = [];
-    if (s.feedback.sentence) parts.push('frase');
+    if (s.feedback.sentence) parts.push(T('frase', 'frase'));
     if (s.feedback.word) parts.push(T('paraula', 'palabra'));
     if (s.feedback.letter === 'name') parts.push(T('nom de la lletra', 'nombre de la letra'));
     if (s.feedback.letter === 'sound') parts.push(T('so de la lletra', 'sonido de la letra'));
     // The feedback in use is shown as the settings button's tooltip.
-    let summary = anyTypingFeedback(s) ? `Feedback: ${parts.join(', ')}` : T('Sense feedback', 'Sin feedback');
+    let summary = anyTypingFeedback(s) ? T('Feedback: {llista}', 'Feedback: {llista}', { llista: parts.join(', ') }) : T('Sense feedback', 'Sin feedback');
     if (s.lockWhileSpeaking) summary += T(' · protecció activa', ' · protección activa');
     setBtn.title = `${T('Configuració', 'Configuración')} (${summary})`;
   };
