@@ -3,9 +3,9 @@
 // cache and removes the old one.
 const VERSION = '__VERSION__';
 const FILES = __FILES__;
-// Pictogram prototype: caches of its own, so that this test edition and the published one, which
-// can live on the same site (utacub.github.io), never delete each other's caches.
-const PREFIX = 'lecaa-pictos-proto-';
+// Only this app's caches: the pictogram test edition on the same site (utacub.github.io) has its own
+// ('lecaa-pictos-proto-'), and neither deletes the other's.
+const PREFIX = 'lecaa-docs-';
 const CACHE = PREFIX + VERSION;
 // Pictograms are kept across versions: they are downloaded once (as they are used, or all at once
 // from the settings) and a new version of the app does not download them again.

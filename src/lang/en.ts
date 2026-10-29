@@ -209,7 +209,7 @@ const texts: Record<string, string> = {
   'Ajust motriu': 'Motor adjustment',
   'Ignora la mateixa tecla repetida en menys de': 'Ignore the same key repeated within',
   'Útil si hi ha tremolor o rebots: evita lletres duplicades sense voler.': 'Useful with tremor or key bounce: avoids letters doubled by mistake.',
-  'Pictogrames ARASAAC (prova)': 'ARASAAC pictograms (test)',
+  'Pictogrames ARASAAC': 'ARASAAC pictograms',
   'Mostra el pictograma damunt de cada paraula acabada': 'Show the pictogram above each finished word',
   'Apareix en prémer l’espai o un signe de puntuació. També es pot activar i desactivar amb el botó de la barra d’eines.': 'It appears when you press the space bar or a punctuation mark. It can also be turned on and off with the toolbar button.',
   'Mida del pictograma': 'Pictogram size',

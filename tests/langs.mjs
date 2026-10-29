@@ -58,7 +58,7 @@ const CASES = {
 
 await page.goto(url);
 for (const [lang, c] of Object.entries(CASES)) {
-  await page.evaluate(l => localStorage.setItem('lecaa-pictos-proto:lang', l), lang);
+  await page.evaluate(l => localStorage.setItem('lecaa-docs:lang', l), lang);
   requested.length = 0;
   await page.reload();
   await page.waitForFunction(() => document.querySelector('.ProseMirror.pictos-on'));
@@ -107,7 +107,7 @@ for (const [lang, c] of Object.entries(CASES)) {
   await page.keyboard.press('Escape');
   await page.evaluate(() => document.querySelector('.drawer-backdrop')?.click());
 }
-await page.evaluate(() => localStorage.setItem('lecaa-pictos-proto:lang', 'ca'));
+await page.evaluate(() => localStorage.setItem('lecaa-docs:lang', 'ca'));
 ok(errors.length === 0, 'cap error a la consola: ' + JSON.stringify(errors));
 await browser.close();
 console.log(failures ? `${failures} errors` : 'Tot correcte');

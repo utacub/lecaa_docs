@@ -180,12 +180,15 @@ async function boot() {
     tb(T('Esborra la columna', 'Borrar la columna'), TextCursorInput, run(c => c.deleteColumn())),
     tb(T('Esborra la taula', 'Borrar la tabla'), Trash2, run(c => c.deleteTable())));
 
-  // ----- pictograms above the words (prototype) -----
+  // ----- pictograms above the words -----
   const pictosMissing = () => toast(T('No s’han trobat els pictogrames. Posa la carpeta «pictos» al costat de LECAA Docs i torna a obrir l’app.', 'No se han encontrado los pictogramas. Pon la carpeta «pictos» junto a LECAA Docs y vuelve a abrir la app.'), 8000);
+  // The single file sent alone (without the "pictos" folder) has no pictograms: the button then
+  // shows them off, and says why only when it is pressed, not each time the app opens.
+  let missing = false;
   const pictoBtn = tb(T('Pictogrames damunt de les paraules', 'Pictogramas encima de las palabras'), PictoIcon, () => {
-    const on = !settings.value.pictos.enabled;
+    const on = missing || !settings.value.pictos.enabled;
+    if (on) void loadPictos().then(ok => { missing = !ok; refreshPictoBtn(); refreshPictos(editor.view); if (!ok) pictosMissing(); });
     settings.update(x => { x.pictos.enabled = on; });
-    if (on) void loadPictos().then(ok => { if (!ok) pictosMissing(); });
     editor.commands.focus();
   });
   pictoBtn.hidden = !pictosAvailable;
@@ -345,11 +348,11 @@ async function boot() {
     setBtn.title = `${T('Configuració', 'Configuración')} (${summary})`;
   };
   settings.subscribe(refreshSettings);
-  const refreshPictoBtn = () => pictoBtn.setAttribute('aria-pressed', String(settings.value.pictos.enabled));
+  function refreshPictoBtn() { pictoBtn.setAttribute('aria-pressed', String(settings.value.pictos.enabled && !missing)); }
   settings.subscribe(() => { refreshPictoBtn(); refreshPictos(editor.view); });
   refreshPictoBtn();
   if (pictosAvailable && settings.value.pictos.enabled) {
-    void loadPictos().then(ok => { refreshPictos(editor.view); if (!ok) pictosMissing(); });
+    void loadPictos().then(ok => { missing = !ok; refreshPictoBtn(); refreshPictos(editor.view); });
   }
   settings.subscribe(s => { if (s.feedback.letter === 'sound') speech.preloadClips(); });
   if (settings.value.feedback.letter === 'sound') speech.preloadClips();

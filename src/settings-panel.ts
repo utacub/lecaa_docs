@@ -295,7 +295,7 @@ export function openSettings(onClose: () => void) {
       h('fieldset', {}, h('legend', {}, T('Ajust motriu', 'Ajuste motor')),
         h('div', { class: 'field' }, h('label', {}, T('Ignora la mateixa tecla repetida en menys de', 'Ignorar la misma tecla repetida en menos de')), debounce),
         h('p', { class: 'hint' }, T('Útil si hi ha tremolor o rebots: evita lletres duplicades sense voler.', 'Útil si hay temblor o rebotes: evita letras duplicadas sin querer.'))),
-      pictosAvailable ? h('fieldset', {}, h('legend', {}, T('Pictogrames ARASAAC (prova)', 'Pictogramas ARASAAC (prueba)')),
+      pictosAvailable ? h('fieldset', {}, h('legend', {}, T('Pictogrames ARASAAC', 'Pictogramas ARASAAC')),
         check(T('Mostra el pictograma damunt de cada paraula acabada', 'Mostrar el pictograma encima de cada palabra terminada'), T('Apareix en prémer l’espai o un signe de puntuació. També es pot activar i desactivar amb el botó de la barra d’eines.', 'Aparece al pulsar el espacio o un signo de puntuación. También se puede activar y desactivar con el botón de la barra de herramientas.'), x => x.pictos.enabled, (x, v) => { x.pictos.enabled = v; }),
         h('div', { class: 'subgroup' },
           range(T('Mida del pictograma', 'Tamaño del pictograma'), 1.4, 3, 0.2, x => x.pictos.size, (x, v) => { x.pictos.size = v; }, v => T('{n} vegades la lletra', '{n} veces la letra', { n: Math.round(v * 10) / 10 })),

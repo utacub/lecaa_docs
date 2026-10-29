@@ -209,7 +209,7 @@ const texts: Record<string, string> = {
   'Ajust motriu': 'Doikuntza motorra',
   'Ignora la mateixa tecla repetida en menys de': 'Ez hartu kontuan tekla bera, denbora honetan errepikatzen bada:',
   'Útil si hi ha tremolor o rebots: evita lletres duplicades sense voler.': 'Erabilgarria dardara edo erreboteak badaude: nahi gabe bikoiztutako letrak saihesten ditu.',
-  'Pictogrames ARASAAC (prova)': 'ARASAAC piktogramak (proba)',
+  'Pictogrames ARASAAC': 'ARASAAC piktogramak',
   'Mostra el pictograma damunt de cada paraula acabada': 'Erakutsi piktograma amaitutako hitz bakoitzaren gainean',
   'Apareix en prémer l’espai o un signe de puntuació. També es pot activar i desactivar amb el botó de la barra d’eines.': 'Zuriunea edo puntuazio-ikur bat sakatzean agertzen da. Tresna-barrako botoiarekin ere aktibatu eta desaktibatu daiteke.',
   'Mida del pictograma': 'Piktogramaren tamaina',

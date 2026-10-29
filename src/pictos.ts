@@ -1,4 +1,4 @@
-// ARASAAC pictograms above the words (prototype, in the six languages of the app). When a word is finished (a
+// ARASAAC pictograms above the words, in the six languages of the app. When a word is finished (a
 // space, a punctuation mark, Enter, or the caret leaves it), the pictogram of that word appears
 // above it. On screen they are decorations, not part of the document; the .docx and PDF files get
 // them when they are shown (pictos-export.ts).
@@ -17,6 +17,7 @@ import { Decoration, DecorationSet, type EditorView } from '@tiptap/pm/view';
 import type { IconNode } from 'lucide';
 import { LANG, T } from './i18n';
 import { settings } from './settings';
+import { inTauri } from './speech/native';
 import { h } from './ui';
 import { STORAGE } from './storage-name';
 
@@ -296,9 +297,9 @@ function openChooser(view: EditorView, el: HTMLElement) {
 
 // ----- offline: all the pictograms on the device (online edition / PWA) -----
 // Same cache as the service worker (src/sw.js). The single file cannot keep them: it needs the
-// "pictos" folder next to it.
-const PICTOS_CACHE = 'lecaa-pictos-proto-pictogrames';
-export const offlineSupported = pictosAvailable && !__SINGLE_FILE__ && location.protocol.startsWith('http') && 'caches' in window;
+// "pictos" folder next to it. The desktop app already has them all inside.
+const PICTOS_CACHE = `${STORAGE}-pictogrames`; // the service worker's PREFIX + 'pictogrames'
+export const offlineSupported = pictosAvailable && !__SINGLE_FILE__ && !inTauri() && location.protocol.startsWith('http') && 'caches' in window;
 
 export function allPictoIds(): number[] {
   const ids = new Set<number>();

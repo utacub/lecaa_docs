@@ -88,7 +88,7 @@ await page.screenshot({ path: 'test-results/pictos-selector.png' });
 await page.click('.picto-chooser .picto-option:nth-child(2)');
 await wait(150);
 ok((await pictos()).some(x => x === 'casa:6964'), 'la tria es manté: ' + JSON.stringify(await pictos()));
-ok(await page.evaluate(() => JSON.parse(localStorage.getItem('lecaa-pictos-proto:pictos:ca')).casa === 6964), 'la tria es desa en aquest dispositiu');
+ok(await page.evaluate(() => JSON.parse(localStorage.getItem('lecaa-docs:pictos:ca')).casa === 6964), 'la tria es desa en aquest dispositiu');
 await page.click('.ProseMirror .pw[data-word="casa"]', { position: { x: 10, y: -15 } }).catch(() => {});
 await wait(200);
 await page.click('.picto-chooser .row button:last-child');
@@ -164,7 +164,7 @@ await wait(150);
 // 8. Spanish: its own index, the same pictograms and toolbar button
 const requested = [];
 page.on('request', r => { if (r.url().includes('/pictos/index-')) requested.push(new URL(r.url()).pathname.split('/').pop()); });
-await page.evaluate(() => localStorage.setItem('lecaa-pictos-proto:lang', 'es'));
+await page.evaluate(() => localStorage.setItem('lecaa-docs:lang', 'es'));
 await page.reload();
 await page.waitForFunction(() => document.querySelector('.ProseMirror.pictos-on') && window.lecaa);
 await page.evaluate(() => window.lecaa.settings.update(s => { s.guard.enabled = false; }));
@@ -186,9 +186,25 @@ const comoIds = await page.evaluate(() => [...document.querySelectorAll('.picto-
 ok(comoIds[0] === '12313' && comoIds.includes('2349'), 'el selector de «como» també ofereix «comer»: ' + JSON.stringify(comoIds.slice(0, 5)));
 await page.click('.picto-chooser .picto-option img[src$="/2349.png"]');
 await wait(150);
-ok((await pictos()).includes('como:2349') && await page.evaluate(() => JSON.parse(localStorage.getItem('lecaa-pictos-proto:pictos:es')).como === 2349 && !JSON.parse(localStorage.getItem('lecaa-pictos-proto:pictos:ca') || '{}').como),
+ok((await pictos()).includes('como:2349') && await page.evaluate(() => JSON.parse(localStorage.getItem('lecaa-docs:pictos:es')).como === 2349 && !JSON.parse(localStorage.getItem('lecaa-docs:pictos:ca') || '{}').como),
   'la tria en castellà es desa a part de la catalana');
-await page.evaluate(() => localStorage.setItem('lecaa-pictos-proto:lang', 'ca'));
+await page.evaluate(() => localStorage.setItem('lecaa-docs:lang', 'ca'));
+
+// 9. The single file sent alone, without the "pictos" folder: no notice each time it opens, the
+// button shows them off and, when pressed, says what is missing.
+if (fs.existsSync('dist-single/index.html')) {
+  const alone = await ctx.newPage();
+  await alone.goto('file://' + fs.realpathSync('dist-single/index.html'));
+  await alone.waitForFunction(() => window.lecaa);
+  await alone.waitForTimeout(800);
+  const start = await alone.evaluate(() => ({ toast: document.querySelector('.toast')?.textContent ?? '', pressed: document.querySelector('[aria-label="Pictogrames damunt de les paraules"]').getAttribute('aria-pressed'), on: document.querySelector('.ProseMirror').classList.contains('pictos-on') }));
+  await alone.click('[aria-label="Pictogrames damunt de les paraules"]');
+  await alone.waitForTimeout(500);
+  const after = await alone.evaluate(() => ({ toast: document.querySelector('.toast')?.textContent ?? '', pressed: document.querySelector('[aria-label="Pictogrames damunt de les paraules"]').getAttribute('aria-pressed') }));
+  ok(!start.toast && start.pressed === 'false' && !start.on && /carpeta «pictos»/.test(after.toast) && after.pressed === 'false',
+    'el fitxer únic sense la carpeta de pictogrames s’obre sense avisos i ho explica en prémer el botó: ' + JSON.stringify({ start, after }));
+  await alone.close();
+}
 
 ok(errors.length === 0, 'cap error a la consola: ' + JSON.stringify(errors));
 await browser.close();

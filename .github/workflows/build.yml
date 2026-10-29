@@ -18,6 +18,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
       - run: npm ci
+      - name: Pictograms joined in large files, for "save them all" in the settings
+        run: python3 -I scripts/pictos-paquets.py public/pictos
       - run: npm run build
       - run: npm run build:single
       - run: npx vitest run --passWithNoTests
@@ -29,9 +31,15 @@ jobs:
           npx playwright install --with-deps chromium
           sudo apt-get install -y poppler-utils   # pdftotext, pdffonts and pdfimages for the PDF checks
           npx vite preview --port 4173 --strictPort &
+          python3 -m http.server 4174 --bind 127.0.0.1 -d dist &
           sleep 3
           export CHROMIUM="$(node -e "console.log(require('@playwright/test').chromium.executablePath())")"
           check node tests/e2e.mjs http://localhost:4173/
+          check node tests/pictos.mjs http://localhost:4173/
+          check node tests/langs.mjs http://localhost:4173/
+          check node tests/pwa.mjs http://lecaa.test:4174
+          # The real Piper voices of Basque and Galician, downloaded from Hugging Face.
+          check node tests/voices-langs.mjs http://localhost:4173/
           # In-app Piper voices with the real (small) Ona and Pau models.
           mkdir -p piper && cd piper
           for v in ona; do mkdir -p $v && curl -sSL "https://github.com/rhasspy/piper/releases/download/v0.0.2/voice-ca-upc_$v-x-low.tar.gz" | tar xz -C $v; done
@@ -45,6 +53,13 @@ jobs:
         run: cp dist-single/index.html LECAA-Docs.html
       - uses: actions/upload-artifact@v4
         with: { name: LECAA-Docs-fitxer-unic, path: LECAA-Docs.html }
+      - name: Portable edition (the single file and the pictograms folder next to it, for a USB stick)
+        run: |
+          mkdir -p portatil/LECAA-Docs
+          cp dist-single/index.html portatil/LECAA-Docs/LECAA-Docs.html
+          cp -r public/pictos portatil/LECAA-Docs/pictos && rm -rf portatil/LECAA-Docs/pictos/paquets
+      - uses: actions/upload-artifact@v4
+        with: { name: LECAA-Docs-portatil, path: portatil }
       - name: Site for GitHub Pages (online edition + single file)
         run: cp dist-single/index.html dist/LECAA-Docs.html
       - uses: actions/upload-pages-artifact@v3

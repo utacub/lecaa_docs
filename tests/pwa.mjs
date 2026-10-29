@@ -1,4 +1,4 @@
-// Pictogram prototype as an installed web app (PWA): its own caches, and pictograms offline.
+// The app as an installed web app (PWA): its own caches, and the pictograms offline.
 // The service worker needs a secure origin that is not localhost (the app does not register it
 // there), so the test maps lecaa.test to this computer and treats it as secure.
 import { chromium } from '@playwright/test';
@@ -27,30 +27,31 @@ const imageOf = word => page.evaluate(async w => {
 }, word);
 
 await page.goto(origin + '/');
-// A cache of the published edition on the same site must survive this edition's service worker.
-await page.evaluate(() => caches.open('lecaa-docs-publicada').then(c => c.put('/x', new Response('x'))));
-// So must the document and the settings that the published edition keeps in this browser.
-const published = { 'lecaa-docs:lang': 'es', 'lecaa-docs:doc': '{"title":"publicat"}' };
+// The pictogram test edition is on the same site (utacub.github.io/lecaa_docs_pictos): its cache
+// must survive this app's service worker.
+await page.evaluate(() => caches.open('lecaa-pictos-proto-pictogrames').then(c => c.put('/x', new Response('x'))));
+// So must the document and the settings that the test edition keeps in this browser.
+const published = { 'lecaa-pictos-proto:lang': 'es', 'lecaa-pictos-proto:doc': '{"title":"prova"}' };
 await page.evaluate(p => Object.entries(p).forEach(([k, v]) => localStorage.setItem(k, v)), published);
 await page.evaluate(() => navigator.serviceWorker.ready);
 await page.reload();
 await page.waitForFunction(() => window.lecaa);
-ok(await page.evaluate(p => document.documentElement.lang === 'ca' && Object.entries(p).every(([k, v]) => localStorage.getItem(k) === v), published), 'no llegeix ni canvia el document ni la configuració de la versió publicada');
+ok(await page.evaluate(p => document.documentElement.lang === 'ca' && Object.entries(p).every(([k, v]) => localStorage.getItem(k) === v), published), 'no llegeix ni canvia el document ni la configuració de la versió de prova');
 await ready();
 await page.evaluate(() => window.lecaa.settings.update(s => { s.guard.enabled = false; }));
 ok(await page.evaluate(() => !!navigator.serviceWorker.controller), 'el service worker controla la pàgina');
 
 const manifest = await page.evaluate(async () => { const m = await (await fetch(document.querySelector('link[rel=manifest]').href)).json(); return m; });
-ok(manifest.name.includes('pictogrames') && manifest.id === './' && manifest.start_url === './', 'manifest propi de la prova: ' + JSON.stringify({ name: manifest.name, id: manifest.id }));
+ok(manifest.name === 'LECAA Docs' && manifest.id === '/lecaa_docs/' && manifest.start_url === '/lecaa_docs/', 'manifest de l’app: ' + JSON.stringify({ name: manifest.name, id: manifest.id }));
 
 // The pictograms that are shown are kept.
 await page.locator('.ProseMirror').click();
 await clear();
 await page.keyboard.type('casa gos ', { delay: 40 });
 await wait(800);
-const kept = await page.evaluate(async () => (await (await caches.open('lecaa-pictos-proto-pictogrames')).keys()).map(r => new URL(r.url).pathname));
+const kept = await page.evaluate(async () => (await (await caches.open('lecaa-docs-pictogrames')).keys()).map(r => new URL(r.url).pathname));
 ok(kept.some(p => p.endsWith('/pictos/index-ca.js')) && kept.some(p => p.endsWith('/img/2317.png')) && kept.some(p => p.endsWith('/img/2517.png')), 'es desen l’índex i els pictogrames que es veuen: ' + kept.length);
-ok(await page.evaluate(async () => (await caches.keys()).includes('lecaa-docs-publicada')), 'la memòria cau de la versió publicada no s’esborra');
+ok(await page.evaluate(async () => (await caches.keys()).includes('lecaa-pictos-proto-pictogrames')), 'la memòria cau de la versió de prova no s’esborra');
 
 // Settings: save them all.
 await page.click('[aria-label="Configuració"]');

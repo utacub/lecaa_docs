@@ -34,7 +34,7 @@ const CASES = [
 page.on('requestfailed', r => console.log('failed', r.url().slice(0, 120), r.failure()?.errorText));
 await page.goto(url);
 for (const [lang, key, text] of CASES) {
-  await page.evaluate(l => localStorage.setItem('lecaa-pictos-proto:lang', l), lang);
+  await page.evaluate(l => localStorage.setItem('lecaa-docs:lang', l), lang);
   await page.reload();
   await page.waitForFunction(() => document.querySelector('.ProseMirror') && window.lecaa);
   await page.evaluate(() => window.lecaa.settings.update(s => { s.guard.enabled = false; }));
@@ -56,7 +56,7 @@ for (const [lang, key, text] of CASES) {
   const played = await page.evaluate(() => window.__played.slice());
   ok(played.length === 1 && played[0] > 1.2 && played[0] < 8, `${lang}: ${key} diu «${text}» (${played[0]?.toFixed(2)} s d’àudio, ${Date.now() - t1} ms)`);
 }
-await page.evaluate(() => localStorage.setItem('lecaa-pictos-proto:lang', 'ca'));
+await page.evaluate(() => localStorage.setItem('lecaa-docs:lang', 'ca'));
 ok(errors.length === 0, 'cap error a la consola: ' + JSON.stringify(errors));
 await browser.close();
 console.log(failures ? `${failures} errors` : 'Tot correcte');
