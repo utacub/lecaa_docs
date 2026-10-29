@@ -7,7 +7,7 @@ import { inTauri } from './speech/native';
 import { settings, type LetterMode, type Settings } from './settings';
 import { recordedVoices, speech, type VoiceInfo } from './speech';
 import { neural } from './speech/neural';
-import { allPictoIds, deleteOffline, downloadAll, loadPictos, offlineCount, offlineSupported, pictosAvailable } from './pictos';
+import { allPictoIds, deleteOffline, downloadAll, loadPictos, offlineCount, offlineSupported, pictoCredit, pictosAvailable } from './pictos';
 import { MODELS } from './speech/neural/catalog';
 import { h, icon, toast } from './ui';
 
@@ -301,6 +301,7 @@ export function openSettings(onClose: () => void) {
           range(T('Mida del pictograma', 'Tamaño del pictograma'), 1.4, 3, 0.2, x => x.pictos.size, (x, v) => { x.pictos.size = v; }, v => T('{n} vegades la lletra', '{n} veces la letra', { n: Math.round(v * 10) / 10 })),
           check(T('Només paraules amb contingut', 'Solo palabras con contenido'), T('Sense pictograma per als articles, preposicions, conjuncions i pronoms febles (el, de, i, que, es…).', 'Sin pictograma para los artículos, preposiciones, conjunciones y pronombres átonos (el, de, y, que, se…).'), x => x.pictos.contentOnly, (x, v) => { x.pictos.contentOnly = v; })),
         h('p', { class: 'hint' }, T('Toca un pictograma per triar-ne un altre per a aquella paraula, o cap. L’app recorda la tria en aquest dispositiu. Quan es veuen, els pictogrames també es desen al .docx i al PDF.', 'Toca un pictograma para elegir otro para esa palabra, o ninguno. La app recuerda la elección en este dispositivo. Cuando se ven, los pictogramas también se guardan en el .docx y en el PDF.')),
+        h('p', { class: 'hint picto-credit' }, pictoCredit()),
         offlineSupported ? pictosOfflineBox() : null) : null,
       h('fieldset', {}, h('legend', {}, T('Lectura i document', 'Lectura y documento')),
         check(T('Ressalta el que s’està llegint', 'Resaltar lo que se está leyendo'), null, x => x.highlight, (x, v) => { x.highlight = v; }),

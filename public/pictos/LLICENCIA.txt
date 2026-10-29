@@ -1,10 +1,21 @@
 Pictogrames
 -----------
 Els pictogrames de la carpeta img/ són d'ARASAAC (https://arasaac.org).
-Autor: Sergio Palao. Origen: ARASAAC. Propietat: Govern d'Aragó (Espanya).
-Llicència: Creative Commons BY-NC-SA 4.0 (https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ca).
-Les imatges s'han reduït a 192 px amb 256 colors (obra derivada, amb la mateixa llicència).
-No es poden fer servir amb finalitat comercial.
+Autor pictogramas: Sergio Palao. Origen: ARASAAC (https://arasaac.org). Licencia: CC (BY-NC-SA).
+Propiedad: Gobierno de Aragón (España).
+(Autor dels pictogrames: Sergio Palao. Origen: ARASAAC. Llicència: CC (BY-NC-SA). Propietat: Govern
+d'Aragó, Espanya.)
+
+Llicència: Creative Commons Reconeixement-NoComercial-CompartirIgual (BY-NC-SA),
+https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ca. Condicions d'ús d'ARASAAC:
+https://arasaac.org/terms-of-use. Les condicions d'ARASAAC diuen «CC BY-NC-SA» sense número de
+versió; la 4.0 és la que indiquen CATEDU (Govern d'Aragó) i Global Symbols.
+Les imatges s'han reduït a 192 px amb 256 colors: és una obra derivada i es distribueix amb la
+mateixa llicència. No es poden fer servir amb finalitat comercial.
+Els documents que es fan amb LECAA Docs i que porten pictogrames també són materials fets amb
+recursos d'ARASAAC: només es poden compartir sense finalitat comercial, amb la mateixa llicència i
+citant autor, origen, llicència i propietari. Per això l'app posa aquesta cita al peu de cada
+pàgina del .docx i del PDF i al final de la pàgina impresa.
 
 Índexs de paraules (index-ca.js, index-es.js, index-eu.js, index-gl.js, index-en.js, index-fr.js)
 -----------------------------------------------------------------------------------------------

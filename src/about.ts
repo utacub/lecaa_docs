@@ -4,7 +4,7 @@
 import { X } from 'lucide';
 import { LANG, T, type Lang } from './i18n';
 import { HAS_LETTER_SOUNDS } from './letters';
-import { pictosAvailable } from './pictos';
+import { ARASAAC_TERMS_URL, pictoCredit, PICTO_LICENCE_URL, pictosAvailable } from './pictos';
 import { h, icon } from './ui';
 import { version as VERSION } from '../package.json';
 import lecaaDocsLogo from './assets/marca/lecaa-docs.svg?raw';
@@ -97,6 +97,10 @@ export function openAbout(onClose: () => void): void {
         h('p', {}, T(
           'Les tipografies tenen la llicència SIL Open Font License 1.1, i l’OpenDyslexic que s’inclou als PDF, Bitstream Vera i CC BY 3.0. La veu Ona prové de dades de la UPC (Festcat, CC BY-SA 3.0 ES); Davefx, de dades d’OHF-Voice (CC0); Sharvard, del corpus Sharvard (CC BY 3.0); Maider i Antton, de dades d’itzune (CC BY 4.0), i Tugão és de domini públic (CC0). Els logotips són marques de les institucions titulars i no formen part de la llicència de l’app.',
           'Las tipografías tienen la licencia SIL Open Font License 1.1, y la OpenDyslexic que se incluye en los PDF, Bitstream Vera y CC BY 3.0. La voz Ona procede de datos de la UPC (Festcat, CC BY-SA 3.0 ES); Davefx, de datos de OHF-Voice (CC0); Sharvard, del corpus Sharvard (CC BY 3.0); Maider y Antton, de datos de itzune (CC BY 4.0), y Tugão es de dominio público (CC0). Los logotipos son marcas de las instituciones titulares y no forman parte de la licencia de la app.')),
+        ...(pictosAvailable ? [h('p', { class: 'picto-credit' }, pictoCredit(), ' ', T(
+          'Les imatges s’han reduït a 192 píxels i 256 colors. Es poden fer servir sense finalitat comercial, citant l’autor, l’origen, la llicència i el propietari, i els materials que se’n facin, com els documents desats amb pictogrames, s’han de compartir amb la mateixa llicència. ',
+          'Las imágenes se han reducido a 192 píxeles y 256 colores. Se pueden usar sin finalidad comercial, citando el autor, el origen, la licencia y el propietario, y los materiales que se hagan con ellas, como los documentos guardados con pictogramas, deben compartirse con la misma licencia. '),
+          link('CC BY-NC-SA 4.0', PICTO_LICENCE_URL), ' · ', link(T('Condicions d’ús d’ARASAAC', 'Condiciones de uso de ARASAAC'), ARASAAC_TERMS_URL))] : []),
         h('p', { class: 'about-version' }, `${T('Versió', 'Versión')} ${VERSION}`))));
 
   dlg.addEventListener('close', () => { dlg.remove(); onClose(); });

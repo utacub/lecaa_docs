@@ -231,6 +231,9 @@ const texts: Record<string, string> = {
   'Veus Piper (dins l’app)': 'Voces Piper (dentro da app)',
   'Preparant la veu… La primera vegada pot trigar una estona.': 'Preparando a voz… A primeira vez pode tardar un pouco.',
   'La veu no ha pogut parlar ({error}).': 'A voz non puido falar ({error}).',
+  'Autor dels pictogrames: Sergio Palao. Origen: ARASAAC (https://arasaac.org). Llicència: CC (BY-NC-SA). Propietat: Govern d’Aragó (Espanya).': 'Autor dos pictogramas: Sergio Palao. Orixe: ARASAAC (https://arasaac.org). Licenza: CC (BY-NC-SA). Propiedade: Goberno de Aragón (España).',
+  'Les imatges s’han reduït a 192 píxels i 256 colors. Es poden fer servir sense finalitat comercial, citant l’autor, l’origen, la llicència i el propietari, i els materials que se’n facin, com els documents desats amb pictogrames, s’han de compartir amb la mateixa llicència. ': 'As imaxes reducíronse a 192 píxeles e 256 cores. Pódense usar sen finalidade comercial, citando o autor, a orixe, a licenza e o propietario, e os materiais que se fagan con elas, como os documentos gardados con pictogramas, deben compartirse coa mesma licenza. ',
+  'Condicions d’ús d’ARASAAC': 'Condicións de uso de ARASAAC',
 };
 
 export default texts;

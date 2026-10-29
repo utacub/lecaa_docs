@@ -130,6 +130,9 @@ await dlDocx.saveAs('test-results/pictos.docx');
 const docXml = execSync('unzip -p test-results/pictos.docx word/document.xml').toString();
 const media = execSync('unzip -l test-results/pictos.docx').toString().split('\n').filter(l => /word\/media\/.+\.png/.test(l)).length;
 const words = [...docXml.matchAll(/<w:t(?: [^>]*)?>([^<]*)<\/w:t>/g)].map(m => m[1]).join(' ');
+// ARASAAC's citation in the footer of each page (none when the pictograms are not saved).
+const footerOf = file => { try { return execSync(`unzip -p ${file} 'word/footer*.xml'`).toString(); } catch { return ''; } };
+const credited = footerOf('test-results/pictos.docx').includes('Autor dels pictogrames: Sergio Palao. Origen: ARASAAC (https://arasaac.org). Llicència: CC (BY-NC-SA). Propietat: Govern d’Aragó (Espanya).');
 // On screen the last word waits for the caret to leave it; the saved document has all of them.
 // Each line is two paragraphs, pictograms and words, with a centred tab stop per word.
 // The single file opened from the disk cannot read the pictures: it saves the text alone and says so.
@@ -137,12 +140,13 @@ const fromFile = url.startsWith('file:');
 const stops = (docXml.match(/<w:tab w:val="center"/g) || []).length;
 const hasWords = list => list.every(w => words.includes(w));
 if (fromFile) {
-  ok(media === 0 && !stops && hasWords(['El meu dia', 'casa, amb la mare.', 'gat', 'Bona nit']) && (await page.textContent('.toast')).includes('Sense pictogrames'),
+  ok(media === 0 && !stops && !credited && hasWords(['El meu dia', 'casa, amb la mare.', 'gat', 'Bona nit']) && (await page.textContent('.toast')).includes('Sense pictogrames'),
     'des del fitxer obert al disc, el .docx es desa sense pictogrames i ho diu');
 } else {
   ok(media >= shown.length && stops >= 20 && hasWords(['El', 'meu', 'dia', 'pa amb tomàquet', 'casa,', '•', 'gat', 'Bona', 'nit'])
     && docXml.includes('<w:b/>') && !docXml.includes('<w:tbl>'),
     `el .docx porta els pictogrames damunt de les paraules: ${media} imatges, ${stops} tabuladors centrats, ` + JSON.stringify(words.slice(0, 80)));
+  ok(credited, 'el .docx cita els pictogrames com demana ARASAAC, al peu de pàgina');
 }
 const [dlPdf] = await Promise.all([page.waitForEvent('download'), page.click('[aria-label="Desa com a PDF"]')]);
 await dlPdf.saveAs('test-results/pictos.pdf');
@@ -150,16 +154,35 @@ await dlPdf.saveAs('test-results/pictos.pdf');
 const pdfImages = execSync('pdfimages -list test-results/pictos.pdf').toString().trim().split('\n').slice(2)
   .map(l => l.trim().split(/\s+/)).filter(c => c[2] === 'image' && c[3] !== '1').length;
 const pdfText = execSync('pdftotext test-results/pictos.pdf -').toString().replace(/\s+/g, ' ');
-ok((fromFile ? pdfImages === 0 : pdfImages >= shown.length) && ['El', 'meu', 'dia', 'pa amb tomàquet', 'casa,', 'gat', 'gos', 'Bona', 'nit'].every(w => pdfText.includes(w)),
+ok((fromFile ? pdfImages === 0 : pdfImages >= shown.length) && ['El', 'meu', 'dia', 'pa amb tomàquet', 'casa,', 'gat', 'gos', 'Bona', 'nit'].every(w => pdfText.includes(w))
+  && pdfText.includes('Autor dels pictogrames: Sergio Palao. Origen: ARASAAC') === !fromFile,
   `el PDF porta ${fromFile ? 'només el text' : 'els pictogrames damunt de les paraules'} (${pdfImages} imatges) i el text seleccionable: ` + JSON.stringify(pdfText.trim().slice(0, 80)));
 // without pictograms on screen, the documents have none
 await btn.click();
 const [dlPlain] = await Promise.all([page.waitForEvent('download'), page.click('[aria-label="Desa com a .docx"]')]);
 await dlPlain.saveAs('test-results/sense-pictos.docx');
 const plainXml = execSync('unzip -p test-results/sense-pictos.docx word/document.xml').toString();
-ok(!plainXml.includes('<w:tabs>') && !/word\/media/.test(execSync('unzip -l test-results/sense-pictos.docx').toString()) && plainXml.includes('<w:numPr>'), 'amb els pictogrames desactivats, el .docx és el de sempre');
+ok(!plainXml.includes('<w:tabs>') && !/word\/media/.test(execSync('unzip -l test-results/sense-pictos.docx').toString()) && plainXml.includes('<w:numPr>') && !footerOf('test-results/sense-pictos.docx'), 'amb els pictogrames desactivats, el .docx és el de sempre');
 await btn.click();
 await wait(150);
+// The printed page cites them too, below the text.
+await page.emulateMedia({ media: 'print' });
+const printed = await page.evaluate(() => getComputedStyle(document.querySelector('.ProseMirror'), '::after').content);
+await page.emulateMedia({ media: 'screen' });
+ok(printed.includes('Sergio Palao') && printed.includes('BY-NC-SA'), 'en imprimir, la pàgina cita els pictogrames: ' + printed.slice(0, 60));
+// And the settings and «Sobre LECAA Docs».
+await page.click('[aria-label="Configuració"]');
+await wait(300);
+const inSettings = await page.evaluate(() => document.querySelector('.drawer .picto-credit')?.textContent ?? '');
+await page.keyboard.press('Escape');
+await page.evaluate(() => document.querySelector('.drawer-backdrop')?.click());
+await page.click('[aria-label="Sobre LECAA Docs"]');
+await wait(300);
+const about = await page.evaluate(() => ({ text: document.querySelector('dialog .picto-credit')?.textContent ?? '', links: [...document.querySelectorAll('dialog .picto-credit a')].map(a => a.href) }));
+await page.keyboard.press('Escape');
+ok(inSettings.includes('Sergio Palao') && about.text.includes('Sergio Palao') && about.text.includes('sense finalitat comercial')
+  && about.links.includes('https://creativecommons.org/licenses/by-nc-sa/4.0/') && about.links.includes('https://arasaac.org/terms-of-use'),
+  'la configuració i «Sobre LECAA Docs» citen els pictogrames i enllacen la llicència i les condicions d’ARASAAC');
 
 // 8. Spanish: its own index, the same pictograms and toolbar button
 const requested = [];

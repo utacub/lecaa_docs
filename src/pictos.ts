@@ -47,6 +47,15 @@ interface Index {
 export const PICTO_LANGS = ['ca', 'es', 'eu', 'gl', 'en', 'fr'];
 export const pictosAvailable = PICTO_LANGS.includes(LANG);
 
+// How ARASAAC asks to cite its pictograms (arasaac.org/terms-of-use: author, origin, licence and
+// owner). It goes wherever they are shown or saved: the settings, "About", the .docx and PDF
+// files (page footer) and the printed page.
+export const pictoCredit = () => T(
+  'Autor dels pictogrames: Sergio Palao. Origen: ARASAAC (https://arasaac.org). Llicència: CC (BY-NC-SA). Propietat: Govern d’Aragó (Espanya).',
+  'Autor pictogramas: Sergio Palao. Origen: ARASAAC (https://arasaac.org). Licencia: CC (BY-NC-SA). Propiedad: Gobierno de Aragón (España).');
+export const PICTO_LICENCE_URL = 'https://creativecommons.org/licenses/by-nc-sa/4.0/';
+export const ARASAAC_TERMS_URL = 'https://arasaac.org/terms-of-use';
+
 let index: Index | null = null;
 let stop = new Set<string>();
 let loading: Promise<boolean> | null = null;
@@ -219,6 +228,7 @@ const REFRESH = 'lecaa-pictos-refresh';
 
 export function refreshPictos(view: EditorView) {
   view.dom.classList.toggle('pictos-on', pictosShown());
+  view.dom.dataset.pictoCredit = pictoCredit(); // printed below the text (styles.css)
   const tr = view.state.tr.setMeta(REFRESH, true).setMeta('lecaa-system', true).setMeta('addToHistory', false);
   // Lines are taller with pictograms (and shorter without): the caret must stay in sight.
   if (view.hasFocus()) tr.scrollIntoView();

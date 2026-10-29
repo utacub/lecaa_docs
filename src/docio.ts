@@ -5,11 +5,12 @@
 import type { Editor, JSONContent } from '@tiptap/core';
 import DOMPurify from 'dompurify';
 import {
-  AlignmentType, Document, HeadingLevel, ImageRun, LevelFormat, LineRuleType, Packer, Paragraph, Tab, Table, TableCell,
+  AlignmentType, Document, Footer, HeadingLevel, ImageRun, LevelFormat, LineRuleType, Packer, Paragraph, Tab, Table, TableCell,
   TableRow, TabStopType, TextRun, WidthType, type ParagraphChild,
 } from 'docx';
 import { fontByFamily, fontById } from './fonts';
 import { BCP47, T } from './i18n';
+import { pictoCredit } from './pictos';
 import { layout, pictoPng, pictosForExport, type PictoExport } from './pictos-export';
 import { settings } from './settings';
 import { inTauri } from './speech/native';
@@ -242,7 +243,12 @@ export async function docxFromEditor(editor: Editor, title: string, pictos?: Pic
         levels: [0, 1, 2, 3].map(level => ({ level, format: LevelFormat.DECIMAL, text: `%${level + 1}.`, alignment: AlignmentType.START, style: { paragraph: { indent: { left: 720 * (level + 1), hanging: 360 } } } })),
       }],
     },
-    sections: [{ properties: withPictos ? { page: PICTO_PAGE } : undefined, children: children.length ? children : [new Paragraph('')] }],
+    sections: [{
+      properties: withPictos ? { page: PICTO_PAGE } : undefined,
+      // With pictograms, each page cites them as ARASAAC asks, in the footer, apart from the text.
+      footers: withPictos ? { default: new Footer({ children: [new Paragraph({ children: [new TextRun({ text: pictoCredit(), size: 16, color: '555555' })] })] }) } : undefined,
+      children: children.length ? children : [new Paragraph('')],
+    }],
   });
   return Packer.toBlob(doc);
 }

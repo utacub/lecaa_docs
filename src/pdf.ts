@@ -25,6 +25,7 @@ import pwFr from '@fontsource/playwrite-fr-moderne/files/playwrite-fr-moderne-la
 import { BASE_PT } from './docio';
 import { fontByFamily, fontById } from './fonts';
 import { BCP47 } from './i18n';
+import { pictoCredit } from './pictos';
 import { layout, pictoDataUrl, pictosForExport, type PictoExport } from './pictos-export';
 import { settings } from './settings';
 
@@ -254,6 +255,8 @@ export async function pdfFromEditor(editor: Editor, title: string, pictos?: Pict
     info: { title, creator: 'LECAA Docs', producer: 'LECAA Docs' },
     language: BCP47,
     content: content.length ? content : [{ text: ' ' }],
+    // With pictograms, each page cites them as ARASAAC asks.
+    ...(b.pictos ? { footer: { text: pictoCredit(), fontSize: 8, lineHeight: 1.1, color: '#555555', margin: [64, 22, 64, 0] } } : {}),
     defaultStyle: { font: docFont, fontSize: BASE_PT, lineHeight: 1.25 },
   });
   return doc.getBlob();
