@@ -105,6 +105,62 @@ await btn.click();
 await wait(150);
 ok((await pictos()).length > 0 && await btn.getAttribute('aria-pressed') === 'true', 'el botó els torna a activar');
 
+// 6b. pictograms that fade after a few seconds, or that only show on the word that is touched;
+// the saved documents still get all of them
+const opacityOf = w => page.evaluate(w => {
+  const el = document.querySelector(`.ProseMirror .pw[data-word="${w}"]`);
+  return el ? Math.round(Number(getComputedStyle(el, '::before').opacity) * 100) / 100 : -1;
+}, w);
+await page.evaluate(() => window.lecaa.settings.update(s => { s.pictos.show = 'fade'; s.pictos.fadeSeconds = 1; }));
+await clear();
+await page.keyboard.type('gat ', { delay: 80 });
+await wait(300);
+const fade = { start: await opacityOf('gat') };
+await wait(2000);
+fade.end = await opacityOf('gat');
+await page.keyboard.type('gos ', { delay: 80 });
+await wait(300);
+fade.whileTyping = await opacityOf('gat');
+fade.next = await opacityOf('gos');
+await page.evaluate(() => window.lecaa.editor.commands.setTextSelection(2));
+await wait(300);
+fade.touched = await opacityOf('gat');
+ok(fade.start > 0.9 && fade.end < 0.1 && fade.whileTyping < 0.1 && fade.next > 0.9 && fade.touched > 0.9,
+  '«Uns segons»: el pictograma s’esvaeix, no torna en escriure les paraules següents i torna en tocar la paraula: ' + JSON.stringify(fade));
+await page.evaluate(() => window.lecaa.settings.update(s => { s.pictos.show = 'caret'; }));
+await page.evaluate(() => window.lecaa.editor.commands.focus('end'));
+await wait(300);
+const caretMode = { end: [await opacityOf('gat'), await opacityOf('gos')] };
+await page.evaluate(() => window.lecaa.editor.commands.setTextSelection(6));
+await wait(300);
+caretMode.onGos = [await opacityOf('gat'), await opacityOf('gos')];
+ok(caretMode.end.every(o => o === 0) && caretMode.onGos[0] === 0 && caretMode.onGos[1] === 1,
+  '«Només en tocar la paraula»: només es veu el pictograma de la paraula del cursor: ' + JSON.stringify(caretMode));
+const hiddenGat = await page.evaluate(() => { const r = document.querySelector('.ProseMirror .pw[data-word="gat"]').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top - 15 }; });
+await page.mouse.click(hiddenGat.x, hiddenGat.y);
+await wait(300);
+ok(!(await page.locator('.picto-chooser').count()), 'un pictograma amagat no obre el selector');
+await page.keyboard.press('Escape');
+fs.mkdirSync('test-results', { recursive: true });
+const [dlHidden] = await Promise.all([page.waitForEvent('download'), page.click('[aria-label="Desa com a .docx"]')]);
+await dlHidden.saveAs('test-results/pictos-amagats.docx');
+const hiddenMedia = execSync('unzip -l test-results/pictos-amagats.docx').toString().split('\n').filter(l => /word\/media\/.+\.png/.test(l)).length;
+ok(hiddenMedia >= 2, 'el .docx porta els pictogrames encara que a la pantalla estiguin amagats: ' + hiddenMedia);
+await page.click('[aria-label="Configuració"]');
+await page.waitForSelector('.drawer');
+const radios = await page.evaluate(() => [...document.querySelectorAll('.drawer input[name="picto-show"]')].map(r => r.value + (r.checked ? '*' : '')));
+await page.click('.drawer input[name="picto-show"][value="fade"]');
+await wait(300);
+const fadeRange = await page.locator('.drawer input[type="range"][aria-valuetext="1 s"]').isVisible();
+const focusKept = await page.evaluate(() => document.activeElement?.matches('input[name="picto-show"][value="fade"]'));
+await page.click('.drawer input[name="picto-show"][value="always"]');
+await wait(200);
+ok(JSON.stringify(radios) === '["always","fade","caret*"]' && fadeRange && focusKept && await page.evaluate(() => window.lecaa.settings.value.pictos.show === 'always'),
+  'la configuració ofereix les tres maneres de veure’ls i el temps abans d’esvair-se, i el focus es queda a l’opció triada: ' + JSON.stringify({ radios, fadeRange, focusKept }));
+await page.keyboard.press('Escape');
+await wait(200);
+await ed.click();
+
 // 7. the document itself does not change (no pictograms in the saved content)
 ok(!JSON.stringify(await page.evaluate(() => window.lecaa.editor.getJSON())).includes('picto'), 'el document desat no conté pictogrames');
 

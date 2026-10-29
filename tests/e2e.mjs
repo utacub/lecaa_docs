@@ -60,6 +60,32 @@ const about = await page.evaluate(() => {
 });
 ok(about.open && about.imgs.length === 5 && about.imgs.every(x => x.endsWith(':true')) && about.text.includes('La UTAC és un equip de la Universitat de Barcelona i de la Fundació Bosch i Gimpera. Concreta la seva activitat'), 'diàleg Sobre LECAA Docs amb els 5 logos i el text de la UTAC: ' + JSON.stringify(about.imgs));
 await page.screenshot({ path: 'test-results/about.png' });
+// «Marc teòric»: a button just under «La idea» that opens the text with its references
+const fwButton = await page.evaluate(() => {
+  const b = document.querySelector('dialog.about .framework-btn');
+  return { text: b?.textContent, inIdea: b?.closest('section')?.querySelector('h3')?.textContent };
+});
+await page.click('dialog.about .framework-btn');
+await page.waitForSelector('dialog.framework[open] .framework-refs li');
+const fw = await page.evaluate(() => {
+  const d = document.querySelector('dialog.framework');
+  return { titles: [...d.querySelectorAll('section h3')].map(h => h.textContent), refs: [...d.querySelectorAll('.framework-refs li')].map(li => li.textContent), dois: d.querySelectorAll('.framework-refs a[href^="https://doi.org/"]').length, italics: d.querySelectorAll('.framework-refs em').length, focus: document.activeElement === d.querySelector('.body') };
+});
+const sortedRefs = [...fw.refs].sort((a, b) => a.localeCompare(b, 'en'));
+ok(fwButton.text === 'Marc teòric' && fwButton.inIdea === 'La idea' && fw.titles.length === 15 && fw.titles[0] === 'L’escriptura és per a tothom' && fw.titles.at(-1) === 'Referències'
+  && fw.refs.length === 39 && fw.dois >= 25 && fw.italics === 39 && fw.focus, 'el botó Marc teòric, sota La idea, obre el text amb 14 apartats i 39 referències APA: ' + JSON.stringify({ fwButton, n: fw.titles.length, refs: fw.refs.length, dois: fw.dois, italics: fw.italics }));
+// Every citation in the text has its reference, and every reference is cited.
+const fwText = await page.evaluate(() => [...document.querySelectorAll('dialog.framework section:not(.framework-refs) p, dialog.framework > .body > p')].map(p => p.textContent).join(' '));
+const cited = new Set([...fwText.matchAll(/([A-Z][\p{L}-]+)(?: i [A-Z][\p{L}-]+| et al\.)?,? \(?(\d{4})/gu)].map(m => m[1] + ' ' + m[2]));
+const listed = new Set(fw.refs.map(r => r.match(/^([^,.]+)[,.]/)[1] + ' ' + r.match(/\((\d{4})\)/)[1]));
+const notListed = [...cited].filter(c => !listed.has(c) && !/^(LECAA|UTAC)/.test(c));
+const notCited = [...listed].filter(l => !cited.has(l));
+ok(!notListed.length && !notCited.length, 'cada cita del marc teòric té la seva referència i al revés: ' + JSON.stringify({ notListed, notCited }));
+await page.screenshot({ path: 'test-results/marc-teoric.png' });
+await page.keyboard.press('Escape');
+await wait(300);
+ok(await page.evaluate(() => !document.querySelector('dialog.framework') && document.querySelector('dialog.about')?.open && document.activeElement?.classList.contains('framework-btn')),
+  'Esc tanca el marc teòric i torna a «Sobre LECAA Docs», al mateix botó');
 await page.keyboard.press('Escape');
 await wait(300);
 ok(await page.evaluate(() => !document.querySelector('dialog.about')), 'Esc tanca el diàleg');
@@ -275,7 +301,10 @@ const p = 'test-results/Prova.docx';
 await dl.saveAs(p);
 ok(fs.statSync(p).size > 1000 && dl.suggestedFilename() === 'Prova.docx', 'exporta .docx: ' + fs.statSync(p).size + ' bytes');
 await clear();
-const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.click('[aria-label="Obre un document"]')]);
+// A file from the device is opened from «Els meus documents» and becomes a new document there.
+await page.click('[aria-label="Els meus documents"]');
+await page.waitForSelector('dialog.docs[open]');
+const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.click('dialog.docs >> text=Obre un fitxer del dispositiu')]);
 await chooser.setFiles(p);
 await wait(800);
 const html = await page.evaluate(() => window.lecaa.editor.getHTML());
@@ -287,6 +316,82 @@ await page.reload();
 await page.waitForFunction(() => document.querySelector('.ProseMirror') && window.lecaa);
 await wait(500);
 ok((await text()).includes('Negreta') && (await page.locator('.doc-title').inputValue()) === 'Prova', 'desat automàtic després de recarregar');
+
+// 13b. «Els meus documents»: a new document keeps the previous one, every document has its dates,
+// switching does not mix their undo histories, and a document can be deleted.
+const docsList = async () => {
+  await page.click('[aria-label="Els meus documents"]');
+  await page.waitForSelector('dialog.docs[open] .docs-list li');
+  const rows = await page.evaluate(() => [...document.querySelectorAll('dialog.docs .docs-list li')].map(li => ({
+    name: li.querySelector('.docs-name')?.firstChild?.textContent ?? li.textContent, open: !!li.querySelector('[aria-current="true"]'),
+    dates: li.querySelector('.docs-dates')?.textContent ?? '', words: li.querySelector('.docs-words')?.textContent ?? '' })));
+  return rows;
+};
+const closeDocs = async () => { await page.keyboard.press('Escape'); await wait(200); };
+let rows = await docsList();
+const startCount = rows.length;
+ok(rows[0]?.name === 'Prova' && rows[0].open && /^Començat: .+ · Últim canvi: .+$/.test(rows[0].dates) && rows[0].words.startsWith('Negreta i normal'),
+  'la llista mostra el document obert, amb les dates i les primeres paraules: ' + JSON.stringify(rows[0]));
+await closeDocs();
+await page.click('[aria-label="Document nou"]');
+await wait(300);
+ok((await text()) === '' && (await page.locator('.doc-title').inputValue()) === 'Document sense títol'
+  && (await page.locator('.toast').textContent()).includes('Els meus documents'), 'Document nou comença en blanc i avisa on és l’anterior');
+rows = await docsList();
+ok(rows.length === startCount && !rows.some(r => r.open), 'un document en blanc encara no surt a la llista');
+await closeDocs();
+await ed.click();
+await page.keyboard.type('Segon text', { delay: 120 });
+await page.locator('.doc-title').fill('Segon');
+await wait(1200);
+rows = await docsList();
+ok(rows.length === startCount + 1 && rows[0].name === 'Segon' && rows[0].open && rows.some(r => r.name === 'Prova' && !r.open),
+  'el document nou es desa a part i surt primer: ' + JSON.stringify(rows.map(r => r.name)));
+await page.click('dialog.docs .docs-open:not([aria-current]) >> text=Prova');
+await wait(400);
+ok((await text()).includes('Negreta') && (await page.locator('.doc-title').inputValue()) === 'Prova', 'en triar-lo s’obre l’altre document');
+const before13 = await page.evaluate(() => window.lecaa.editor.getHTML());
+await page.keyboard.press('Control+z');
+await page.keyboard.press('Control+z');
+await wait(200);
+ok((await page.evaluate(() => window.lecaa.editor.getHTML())) === before13, 'desfer no porta el text de l’altre document');
+await page.reload();
+await page.waitForFunction(() => document.querySelector('.ProseMirror') && window.lecaa);
+await wait(500);
+ok((await page.locator('.doc-title').inputValue()) === 'Prova', 'en recarregar s’obre l’últim document obert');
+rows = await docsList();
+page.once('dialog', d => d.accept());
+await page.click('dialog.docs [aria-label="Esborra «Segon»"]');
+await wait(400);
+const left = await page.evaluate(() => [...document.querySelectorAll('dialog.docs .docs-name')].map(n => n.firstChild.textContent));
+ok(!left.includes('Segon') && left.includes('Prova') && (await text()).includes('Negreta'), 'esborrar un document el treu de la llista i no toca l’obert: ' + JSON.stringify(left));
+await closeDocs();
+await ed.click();
+
+// 13c. selecting one word (or less) shows «Lletreja»: the voice says the name of each letter
+const spellShown = async (from, to) => {
+  await page.evaluate(([f, t]) => window.lecaa.editor.chain().focus().setTextSelection({ from: f, to: t }).run(), [from, to]);
+  await wait(600);
+  return page.locator('.spell-menu').isVisible();
+};
+await clear();
+await page.evaluate(() => window.lecaa.editor.chain().command(({ tr }) => { tr.setMeta('lecaa-system', true); return true; }).insertContent('<p>Casa gran i bonica</p>').run());
+await reset();
+const spellWord = await spellShown(1, 5);
+const spellSpaces = await spellShown(1, 6);
+const spellTwo = await spellShown(1, 10);
+const spellLetter = await spellShown(6, 7);
+ok(spellWord && spellSpaces && !spellTwo && spellLetter, 'el menu Lletreja surt amb una paraula, amb un espai al final o amb una lletra, i no amb dues paraules: ' + JSON.stringify({ spellWord, spellSpaces, spellTwo, spellLetter }));
+await spellShown(1, 5);
+const menuBox = await page.locator('.spell-menu').boundingBox();
+const wordBox = await page.evaluate(() => { const r = window.lecaa.editor.view.coordsAtPos(1); return { bottom: r.bottom }; });
+await page.click('.spell-btn');
+await wait(1500);
+ok(JSON.stringify(await spoken()) === '["ce majúscula","a","essa","a"]' && menuBox.y > wordBox.bottom, 'Lletreja diu el nom de cada lletra, també la majúscula: ' + JSON.stringify(await spoken()));
+ok(await page.evaluate(() => window.lecaa.editor.isFocused && window.lecaa.editor.state.selection.from === 1 && window.lecaa.editor.state.selection.to === 5), 'i la selecció es manté a l’editor');
+await page.keyboard.type('Gossa', { delay: 120 });
+await wait(500);
+ok(!(await page.locator('.spell-menu').isVisible()), 'en escriure, el menú desapareix');
 
 // 14. settings drawer opens and lists the Catalan voice
 await page.click('[aria-label="Configuració"]');

@@ -4,7 +4,7 @@ import { guard } from './guard';
 import { BCP47, isLangVoice, LANG, T } from './i18n';
 import { askNewPassword } from './lock';
 import { inTauri } from './speech/native';
-import { settings, type LetterMode, type Settings } from './settings';
+import { settings, type LetterMode, type PictoShow, type Settings } from './settings';
 import { recordedVoices, speech, type VoiceInfo } from './speech';
 import { neural } from './speech/neural';
 import { allPictoIds, deleteOffline, downloadAll, loadPictos, offlineCount, offlineSupported, pictoCredit, pictosAvailable } from './pictos';
@@ -153,6 +153,23 @@ function neuralVoicesBox(onInstalled: (voiceId: string) => void) {
   neural.onStateChanged(() => { if (box.isConnected) void render(); });
   void render();
   return box;
+}
+
+// How the pictograms are shown: always, a few seconds after each word, or only on the word of the
+// caret, so that the learner looks at the letters (see "Marc teòric").
+function pictoShowBox() {
+  const show = settings.value.pictos.show;
+  // Hidden, not rebuilt, when another way is chosen: the focus stays on the chosen option.
+  const fadeTime = h('div', { class: 'subgroup', hidden: show !== 'fade' },
+    range(T('Temps abans d’esvair-se', 'Tiempo antes de desvanecerse'), 1, 10, 1, x => x.pictos.fadeSeconds, (x, v) => { x.pictos.fadeSeconds = v; }, v => `${v} s`));
+  const pick = (v: PictoShow) => () => { upd(x => { x.pictos.show = v; }); fadeTime.hidden = v !== 'fade'; };
+  return h('div', { class: 'subgroup' },
+    h('div', { class: 'hint' }, T('Com es veuen:', 'Cómo se ven:')),
+    radio('picto-show', 'always', T('Sempre', 'Siempre'), T('Cada paraula acabada té el pictograma damunt.', 'Cada palabra terminada tiene el pictograma encima.'), show, pick('always')),
+    radio('picto-show', 'fade', T('Uns segons', 'Unos segundos'), T('El pictograma apareix en acabar la paraula i s’esvaeix; torna quan es toca la paraula.', 'El pictograma aparece al terminar la palabra y se desvanece; vuelve al tocar la palabra.'), show, pick('fade')),
+    fadeTime,
+    radio('picto-show', 'caret', T('Només en tocar la paraula', 'Solo al tocar la palabra'), T('El pictograma es veu quan es toca la paraula o el cursor hi és a sobre.', 'El pictograma se ve cuando se toca la palabra o el cursor está en ella.'), show, pick('caret')),
+    h('p', { class: 'hint' }, T('En tots els casos, els documents desats i impresos porten tots els pictogrames.', 'En todos los casos, los documentos guardados e impresos llevan todos los pictogramas.')));
 }
 
 function fontField() {
@@ -317,6 +334,7 @@ export function openSettings(onClose: () => void) {
         h('div', { class: 'subgroup' },
           range(T('Mida del pictograma', 'Tamaño del pictograma'), 1.4, 3, 0.2, x => x.pictos.size, (x, v) => { x.pictos.size = v; }, v => T('{n} vegades la lletra', '{n} veces la letra', { n: Math.round(v * 10) / 10 })),
           check(T('Només paraules amb contingut', 'Solo palabras con contenido'), T('Sense pictograma per als articles, preposicions, conjuncions i pronoms febles (el, de, i, que, es…).', 'Sin pictograma para los artículos, preposiciones, conjunciones y pronombres átonos (el, de, y, que, se…).'), x => x.pictos.contentOnly, (x, v) => { x.pictos.contentOnly = v; })),
+        pictoShowBox(),
         h('p', { class: 'hint' }, T('Toca un pictograma per triar-ne un altre per a aquella paraula, o cap. L’app recorda la tria en aquest dispositiu. Quan es veuen, els pictogrames també es desen al .docx i al PDF.', 'Toca un pictograma para elegir otro para esa palabra, o ninguno. La app recuerda la elección en este dispositivo. Cuando se ven, los pictogramas también se guardan en el .docx y en el PDF.')),
         h('p', { class: 'hint picto-credit' }, pictoCredit()),
         offlineSupported ? pictosOfflineBox() : null) : null,

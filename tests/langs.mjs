@@ -47,13 +47,13 @@ const clear = () => page.evaluate(() => window.lecaa.editor.chain().command(({ t
 // 2494 bread, 2248 water, 37642 bread with tomato, 2617 I); "-" means none (function word).
 const CASES = {
   eu: { text: 'Txakurrak ogia jaten du etxean eta ura edaten. Ni etxera noa. ', expect: { Txakurrak: 2517, ogia: 2494, jaten: 2349, etxean: 2317, eta: '-', ura: 2248, etxera: 2317, Ni: 2617 },
-    ui: { read: 'Irakurri', settings: 'Ezarpenak' }, voice: 'Proba Euskara', names: ['be', 'ixa', 'zeta'], letters: 'bxz' },
+    ui: { read: 'Irakurri', settings: 'Ezarpenak', framework: 'Esparru teorikoa' }, voice: 'Proba Euskara', names: ['be', 'ixa', 'zeta'], letters: 'bxz' },
   gl: { text: 'Os cans comen pan con tomate na casa. Eu bebo auga. ', expect: { Os: '-', cans: 2517, comen: 2349, 'pan con tomate': 37642, na: '-', casa: 2317, Eu: 2617, auga: 2248 },
-    ui: { read: 'Ler', settings: 'Configuración' }, voice: 'Prova Castellano', names: ['be', 'xis', 'zeta'], letters: 'bxz' },
+    ui: { read: 'Ler', settings: 'Configuración', framework: 'Marco teórico' }, voice: 'Prova Castellano', names: ['be', 'xis', 'zeta'], letters: 'bxz' },
   en: { text: 'The dogs ate bread at my house. I’m drinking cold water. ', expect: { The: '-', dogs: 2517, ate: 2349, bread: 2494, at: '-', house: 2317, 'I’m': 2617, drinking: 2276, water: 2248 },
-    ui: { read: 'Read', settings: 'Settings' }, voice: 'Test English', names: ['B', 'X', 'Z'], letters: 'bxz' },
+    ui: { read: 'Read', settings: 'Settings', framework: 'Theoretical framework' }, voice: 'Test English', names: ['B', 'X', 'Z'], letters: 'bxz' },
   fr: { text: 'Les chiens mangent du pain à la maison. Je bois de l’eau. ', expect: { Les: '-', chiens: 2517, mangent: 2349, pain: 2494, du: '-', maison: 2317, Je: 2617, 'l’eau': 2248 },
-    ui: { read: 'Lire', settings: 'Réglages' }, voice: 'Test Français', names: ['B', 'X', 'Z'], letters: 'bxz' },
+    ui: { read: 'Lire', settings: 'Réglages', framework: 'Cadre théorique' }, voice: 'Test Français', names: ['B', 'X', 'Z'], letters: 'bxz' },
 };
 
 await page.goto(url);
@@ -106,6 +106,19 @@ for (const [lang, c] of Object.entries(CASES)) {
   ok(!drawer.sound.includes('sound'), `${lang}: sense l’opció de so de la lletra (no hi ha locucions)`);
   await page.keyboard.press('Escape');
   await page.evaluate(() => document.querySelector('.drawer-backdrop')?.click());
+
+  // «Marc teòric», under «La idea» in «Sobre LECAA Docs», in the language of the app
+  await page.locator('.topbar-actions button').nth(-2).click();
+  await page.click('dialog.about .framework-btn');
+  await page.waitForSelector('dialog.framework[open] .framework-refs li');
+  const fw = await page.evaluate(() => {
+    const d = document.querySelector('dialog.framework');
+    return { lang: d.lang, title: d.querySelector('h2').textContent, button: document.querySelector('.framework-btn').textContent, sections: d.querySelectorAll('section h3').length, refs: d.querySelectorAll('.framework-refs li').length, text: d.querySelector('.body').textContent };
+  });
+  ok(fw.lang === lang && fw.title === c.ui.framework && fw.button === c.ui.framework && fw.sections === 15 && fw.refs === 39 && /Schlosser/.test(fw.text) && /\(Light \S+ McNaughton, 2012/.test(fw.text),
+    `${lang}: marc teòric traduït, amb els apartats i les referències: ` + JSON.stringify({ ...fw, text: fw.text.slice(0, 80) }));
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Escape');
 }
 await page.evaluate(() => localStorage.setItem('lecaa-docs:lang', 'ca'));
 ok(errors.length === 0, 'cap error a la consola: ' + JSON.stringify(errors));

@@ -6,6 +6,7 @@ import { Extension, type Editor } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
+import { spokenName } from './letters';
 import { settings } from './settings';
 import { speech } from './speech';
 
@@ -98,6 +99,31 @@ class Reader {
     this.queue = collect(ed.state.doc, range[0], range[1]);
     this.index = 0;
     if (!this.queue.length) return false;
+    void this.loop();
+    return true;
+  }
+
+  // Spells the text between from and to: the name of each letter (and of each sign), one after
+  // another, with the letter highlighted. Capital letters say so.
+  spell(from: number, to: number): boolean {
+    const ed = this.editor;
+    if (!ed || from >= to) return false;
+    const queue: Sentence[] = [];
+    ed.state.doc.nodesBetween(from, to, (node, pos) => {
+      if (!node.isText) return true;
+      const t = node.text ?? '';
+      for (let i = 0; i < t.length; i++) {
+        const p = pos + i;
+        const name = p >= from && p < to && !/\s/.test(t[i]) ? spokenName(t[i], true) : null;
+        if (name) queue.push({ text: name, pos: [p] });
+      }
+      return false;
+    });
+    if (!queue.length) return false;
+    this.run++;
+    speech.stop();
+    this.queue = queue;
+    this.index = 0;
     void this.loop();
     return true;
   }

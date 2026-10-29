@@ -6,6 +6,7 @@ import { LANG, T } from './i18n';
 import { STORAGE } from './storage-name';
 
 export type LetterMode = 'off' | 'name' | 'sound';
+export type PictoShow = 'always' | 'fade' | 'caret';
 export type RecordedVoice = string; // folder of recorded letter sounds (src/assets/sons)
 
 export interface Settings {
@@ -38,6 +39,8 @@ export interface Settings {
     enabled: boolean;       // ARASAAC pictograms above the finished words
     contentOnly: boolean;   // none for articles, prepositions, conjunctions and weak pronouns
     size: number;           // height of the pictogram, in times the height of the letters (em)
+    show: PictoShow;        // always above the word, a few seconds, or only on the word of the caret
+    fadeSeconds: number;    // 'fade': how long a pictogram stays after its word is finished
   };
   docFontSize: number;
   docFont: string;        // id from fonts.ts
@@ -63,7 +66,7 @@ export const DEFAULTS: Settings = {
   voice: { id: null, rate: 1, pitch: 1, volume: 1, showAll: false },
   recordedVoice: 'anna',
   highlight: true,
-  pictos: { enabled: true, contentOnly: true, size: 2 },
+  pictos: { enabled: true, contentOnly: true, size: 2, show: 'always', fadeSeconds: 3 },
   docFontSize: 22,
   docFont: 'andika',
   protectSettings: false,

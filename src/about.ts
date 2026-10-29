@@ -3,6 +3,7 @@
 
 import { X } from 'lucide';
 import { LANG, T, type Lang } from './i18n';
+import { frameworkButton } from './framework';
 import { HAS_LETTER_SOUNDS } from './letters';
 import { ARASAAC_TERMS_URL, pictoCredit, PICTO_LICENCE_URL, pictosAvailable } from './pictos';
 import { h, icon } from './ui';
@@ -68,7 +69,9 @@ export function openAbout(onClose: () => void): void {
           'LECAA Docs es un procesador de textos sencillo para personas que usan comunicación aumentativa y alternativa (CAA) y aprenden a escribir. Mientras se escribe, la app puede decir el sonido o el nombre de cada letra, la palabra terminada y la frase entera, y lee en voz alta el texto o la parte seleccionada. Funciona con el teclado físico y con el teclado en pantalla de cada sistema, tiene letras pensadas para la lectura y una pantalla completa protegida para el aula. Los documentos se guardan en el mismo dispositivo, en .docx o en PDF.')),
         h('p', {}, T(
           'És una eina germana de LECAA (Lectura i Escriptura per a usuaris de Comunicació Augmentativa i Alternativa), en comparteix la imatge i és gratuïta per a tothom.',
-          'Es una herramienta hermana de LECAA (Lectura i Escriptura per a usuaris de Comunicació Augmentativa i Alternativa), comparte con ella la imagen y es gratuita para todo el mundo.'))),
+          'Es una herramienta hermana de LECAA (Lectura i Escriptura per a usuaris de Comunicació Augmentativa i Alternativa), comparte con ella la imagen y es gratuita para todo el mundo.')),
+        // Why the app offers each option, with the research behind it.
+        frameworkButton()),
       // The online edition offers the portable one (published next to it as LECAA-Docs.html).
       ...(__SINGLE_FILE__ ? [] : [h('section', {},
         h('h3', {}, T('Versió portàtil', 'Versión portátil')),

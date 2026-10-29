@@ -66,7 +66,33 @@ button { touch-action: manipulation; }
 .about-tools .use { grid-row: span 3; color: var(--muted); font-size: 14px; }
 .about-tools a { font-size: 14px; color: var(--accent); }
 .about-version { color: var(--muted); font-size: 13px; margin-top: 16px !important; }
+/* "Marc teòric" (framework.ts): a button under "La idea" and its own text, above "Sobre LECAA Docs". */
+.framework-btn { display: inline-flex; align-items: center; gap: 8px; margin-top: 4px; }
+.framework-btn svg { width: 18px; height: 18px; }
+.framework .body:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+.framework .body p { max-width: 68ch; }
+.framework-intro { color: var(--muted); }
+.framework-refs ul { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+.framework-refs li { padding-left: 2em; text-indent: -2em; margin-bottom: 8px; overflow-wrap: anywhere; }
+.framework-refs a { color: var(--accent); }
 @media (max-width: 560px) { .about-tools li { grid-template-columns: 1fr; } .about-tools .use { grid-row: auto; } }
+
+/* ---------- my documents ---------- */
+.docs .small-btn { display: inline-flex; align-items: center; gap: 6px; }
+.docs .small-btn svg { width: 18px; height: 18px; }
+.docs .hint { color: var(--muted); font-size: 14px; margin: 12px 0 8px; }
+.docs-list { list-style: none; margin: 0; padding: 0; }
+.docs-list li { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--line); }
+.docs-open {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; text-align: left; padding: 10px 8px;
+  background: none; border: 0; border-radius: 8px; color: var(--ink); cursor: pointer; font: inherit;
+}
+.docs-open:hover { background: var(--mint); }
+.docs-open[aria-current="true"] { box-shadow: inset 4px 0 0 var(--accent); }
+.docs-name { font-weight: 700; font-size: 17px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.docs-dates { color: var(--muted); font-size: 13px; }
+.docs-words { color: var(--ink); font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.docs-empty { color: var(--muted); padding: 12px 0; }
 
 /* ---------- top bar ---------- */
 .topbar {
@@ -308,11 +334,33 @@ body.is-locked .page { border-color: var(--focus); box-shadow: 0 0 0 6px var(--f
   cursor: pointer; animation: picto-in .25s ease-out;
 }
 @keyframes picto-in { from { opacity: 0; transform: translateX(-50%) scale(.85); } }
-@media (prefers-reduced-motion: reduce) { .ProseMirror.pictos-on .pw::before { animation: none; } }
-@media print { .ProseMirror.pictos-on .pw::before { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+@keyframes picto-out { to { opacity: 0; } }
+/* "A few seconds": each pictogram fades a while after its word is finished; "Only on the word of the
+   caret": hidden until the word is touched or the caret is on it (.pw-here, pictos.ts). Their place is
+   kept, so the text never moves. */
+.ProseMirror.pictos-fade .pw:not(.pw-here)::before { animation: picto-in .25s ease-out, picto-out .8s ease-in var(--picto-fade, 3s) forwards; }
+.ProseMirror.pictos-caret .pw:not(.pw-here)::before { opacity: 0; animation: none; cursor: text; }
+@media (prefers-reduced-motion: reduce) {
+  .ProseMirror.pictos-on .pw::before { animation: none; }
+  .ProseMirror.pictos-fade .pw:not(.pw-here)::before { animation: picto-out 1ms linear var(--picto-fade, 3s) forwards; }
+}
+/* On paper, as in the saved documents, every pictogram is there. */
+@media print { .ProseMirror.pictos-on .pw::before { print-color-adjust: exact; -webkit-print-color-adjust: exact; opacity: 1 !important; animation: none !important; } }
 /* The printed page cites the pictograms, as ARASAAC asks (pictoCredit in pictos.ts). */
 .ProseMirror.pictos-on::after { display: none; }
 @media print { .ProseMirror.pictos-on::after { content: attr(data-picto-credit); display: block; margin-top: 2em; font: 9pt/1.3 sans-serif; color: #555; } }
+
+/* "Spell" under a selected word (spell-menu.ts). */
+.spell-menu {
+  position: fixed; z-index: 55; background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  box-shadow: var(--shadow); padding: 4px;
+}
+.spell-btn {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 6px 14px; border: 0; border-radius: 9px;
+  background: var(--accent); color: var(--accent-ink); font: inherit; font-weight: 700; font-size: 16px; cursor: pointer;
+}
+.spell-btn:hover { filter: brightness(1.08); }
+@media print { .spell-menu { display: none !important; } }
 
 .picto-chooser {
   position: fixed; z-index: 60; max-width: min(92vw, 440px); background: var(--surface); color: var(--ink);
