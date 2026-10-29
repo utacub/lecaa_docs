@@ -208,6 +208,10 @@ function build(state: EditorState): DecorationSet {
   if (!pictosShown()) return DecorationSet.empty;
   const decos: Decoration[] = [];
   const caret = state.selection.empty ? state.selection.head : -1;
+  // When the pictograms fade or are only shown on demand, the word with the caret (or inside the
+  // selection) shows its own: a touch or a click on a word brings its pictogram back.
+  const { from: selFrom, to: selTo } = state.selection;
+  const onDemand = settings.value.pictos.show !== 'always';
   state.doc.descendants((node, pos) => {
     if (!node.isTextblock) return true;
     const { text, pos: map, nodeEnd } = textOf(node, pos + 1);
@@ -216,8 +220,9 @@ function build(state: EditorState): DecorationSet {
     const docTo = (to: number) => map[to - 1] + 1;
     for (const p of pictosIn(text, to => docTo(to) < end || caret !== docTo(to))) {
       const from = map[p.from];
+      const here = onDemand && selFrom <= docTo(p.to) && selTo >= from;
       decos.push(Decoration.inline(from, Math.min(docTo(p.to), nodeEnd[p.from]),
-        { class: 'pw', 'data-picto': String(p.id), 'data-word': norm(p.word), style: `--picto: url("${absUrl(p.id)}")` }));
+        { class: here ? 'pw pw-here' : 'pw', 'data-picto': String(p.id), 'data-word': norm(p.word), style: `--picto: url("${absUrl(p.id)}")` }));
     }
     return false;
   });
@@ -227,7 +232,10 @@ function build(state: EditorState): DecorationSet {
 const REFRESH = 'lecaa-pictos-refresh';
 
 export function refreshPictos(view: EditorView) {
+  const show = settings.value.pictos.show;
   view.dom.classList.toggle('pictos-on', pictosShown());
+  view.dom.classList.toggle('pictos-fade', show === 'fade');
+  view.dom.classList.toggle('pictos-caret', show === 'caret');
   view.dom.dataset.pictoCredit = pictoCredit(); // printed below the text (styles.css)
   const tr = view.state.tr.setMeta(REFRESH, true).setMeta('lecaa-system', true).setMeta('addToHistory', false);
   // Lines are taller with pictograms (and shorter without): the caret must stay in sight.
@@ -238,8 +246,17 @@ export function refreshPictos(view: EditorView) {
 // The picture of a word sits above its text box: a press there opens the chooser.
 function pictoAt(e: MouseEvent | Touch, target: EventTarget | null): HTMLElement | null {
   const el = (target as HTMLElement | null)?.closest?.('.pw') as HTMLElement | null;
-  if (!el) return null;
-  return e.clientY < el.getBoundingClientRect().top ? el : null;
+  if (!el || e.clientY >= el.getBoundingClientRect().top) return null;
+  return hidden(el) ? null : el;
+}
+
+// A pictogram that has faded, or that waits for its word to be touched, does not open the chooser.
+function hidden(el: HTMLElement): boolean {
+  const show = settings.value.pictos.show;
+  if (show === 'always' || el.classList.contains('pw-here')) return false;
+  if (show === 'caret') return true;
+  const out = el.getAnimations?.({ subtree: true }).find(a => (a as CSSAnimation).animationName === 'picto-out');
+  return (out?.effect?.getComputedTiming().progress ?? 0) > 0.5;
 }
 
 export const PictoLayer = Extension.create({

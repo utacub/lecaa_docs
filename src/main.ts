@@ -13,13 +13,15 @@ import { createEditor, installKeyboardGuard } from './editor';
 import { reader } from './reader';
 import { anyTypingFeedback, settings } from './settings';
 import { openSettings } from './settings-panel';
+import { installSpellMenu } from './spell-menu';
 import { loadPictos, PictoIcon, pictosAvailable, refreshPictos } from './pictos';
 import { pictosForExport } from './pictos-export';
 import { speech } from './speech';
 import { installAudioUnlock } from './speech/audio';
 import { neural } from './speech/neural';
 import { lock } from './lock';
-import { loadDoc, storeDoc } from './storage';
+import { openDocuments } from './documents';
+import { deleteDoc, keepsSeveral, listDocs, loadDoc, newDocId, openDocId, setOpenDocId, storeDoc, type SavedDoc } from './storage';
 import { fitToVisibleArea } from './viewport';
 import { h, icon, toast } from './ui';
 import lecaaDocsLogo from './assets/marca/lecaa-docs.svg?raw';
@@ -47,55 +49,101 @@ async function boot() {
   loadFonts();
   document.documentElement.lang = LANG;
   const saved = await loadDoc();
-  const title = h('input', { class: 'doc-title', value: saved?.title ?? T('Document sense títol', 'Documento sin título'), 'aria-label': T('Títol del document', 'Título del documento') }) as HTMLInputElement;
+  const untitled = () => T('Document sense títol', 'Documento sin título');
+  const title = h('input', { class: 'doc-title', value: saved?.title ?? untitled(), 'aria-label': T('Títol del document', 'Título del documento') }) as HTMLInputElement;
   const saveState = h('span', { class: 'save-state', 'aria-live': 'polite' });
   const page = h('div', { class: 'page' });
   const workspace = h('main', { class: 'workspace' }, page);
   const editor = createEditor(page, saved?.content ?? null);
   installKeyboardGuard(editor);
+  installSpellMenu(editor, workspace);
   installAudioUnlock();
   fitToVisibleArea(editor);
 
-  // ----- autosave -----
-  let timer = 0;
+  // ----- autosave of the open document (each one under its own id, see storage.ts) -----
+  let docId = openDocId();
+  let created = saved?.created ?? saved?.updated ?? Date.now();
+  let timer = 0, dirty = false;
+  const savedText = () => T('Desat en aquest dispositiu', 'Guardado en este dispositivo');
   const saveNow = async () => {
     clearTimeout(timer);
-    const ok = await storeDoc({ title: title.value, content: editor.getJSON(), updated: Date.now() });
-    saveState.textContent = ok ? T('Desat en aquest dispositiu', 'Guardado en este dispositivo') : T('No s’ha pogut desar', 'No se ha podido guardar');
+    dirty = false;
+    const ok = await storeDoc({ title: title.value, content: editor.getJSON(), updated: Date.now(), created }, docId);
+    saveState.textContent = ok ? savedText() : T('No s’ha pogut desar', 'No se ha podido guardar');
   };
   const persist = () => {
     clearTimeout(timer);
+    dirty = true;
     saveState.textContent = T('Desant…', 'Guardando…');
     timer = window.setTimeout(saveNow, 700);
   };
   editor.on('update', persist);
   title.addEventListener('input', persist);
-  saveState.textContent = saved ? T('Desat en aquest dispositiu', 'Guardado en este dispositivo') : '';
+  saveState.textContent = saved ? savedText() : '';
 
-  // ----- file actions -----
-  const setContent = (html: string | object) => {
-    editor.chain().command(({ tr }) => { tr.setMeta('lecaa-system', true); return true; }).setContent(html).run();
-    persist();
+  // ----- documents: new, open from the list, open a file, delete -----
+  // Shows a document without counting as a change (its dates stay as they were) and without an
+  // undo step that would bring the previous document back.
+  const show = (id: string, doc: SavedDoc | null) => {
+    reader.stop(); speech.stop();
+    clearTimeout(timer); dirty = false;
+    docId = id; setOpenDocId(id);
+    created = doc?.created ?? doc?.updated ?? Date.now();
+    editor.chain().command(({ tr }) => { tr.setMeta('lecaa-system', true).setMeta('addToHistory', false); return true; })
+      .setContent(doc?.content ?? '', { emitUpdate: false }).run();
+    title.value = doc?.title ?? untitled();
+    saveState.textContent = doc ? savedText() : '';
   };
-  const newDoc = () => {
-    if (!editor.isEmpty && !confirm(T('Vols començar un document nou? El document actual s’esborrarà d’aquest dispositiu si no l’has desat.', '¿Quieres empezar un documento nuevo? El documento actual se borrará de este dispositivo si no lo has guardado.'))) return;
-    setContent('');
-    title.value = T('Document sense títol', 'Documento sin título');
-    persist();
+  const blank = () => editor.isEmpty && (title.value.trim() === '' || title.value === untitled());
+  // Before another document is shown: the open one is saved, or left out of the list when blank.
+  const leave = async () => {
+    if (blank()) { clearTimeout(timer); dirty = false; if (keepsSeveral()) await deleteDoc(docId); return; }
+    if (dirty) await saveNow();
   };
-  const open = async () => {
+  const newDoc = async () => {
+    if (blank()) { editor.commands.focus(); return; }
+    if (!keepsSeveral() && !confirm(T('Vols començar un document nou? El document actual s’esborrarà d’aquest dispositiu si no l’has desat.', '¿Quieres empezar un documento nuevo? El documento actual se borrará de este dispositivo si no lo has guardado.'))) return;
+    await leave();
+    show(newDocId(), null);
+    editor.commands.focus();
+    if (keepsSeveral()) toast(T('Document nou. L’anterior és a «Els meus documents».', 'Documento nuevo. El anterior está en «Mis documentos».'));
+  };
+  const openSaved = async (id: string) => {
+    if (id === docId) { editor.commands.focus(); return; }
+    const doc = await loadDoc(id);
+    if (!doc) { toast(T('No s’ha pogut obrir aquest document', 'No se ha podido abrir este documento')); return; }
+    await leave();
+    show(id, doc);
+    editor.commands.focus('end');
+  };
+  // A file from the device (.docx, .html, .txt) becomes a new document of the list.
+  const importFile = async () => {
     const f = await openFile();
     if (!f) return;
     try {
-      setContent(await htmlFromFile(f.name, f.data));
+      const html = await htmlFromFile(f.name, f.data);
+      await leave();
+      show(newDocId(), null);
+      editor.chain().command(({ tr }) => { tr.setMeta('lecaa-system', true).setMeta('addToHistory', false); return true; }).setContent(html, { emitUpdate: false }).run();
       title.value = f.name.replace(/\.[^.]+$/, '');
-      persist();
+      await saveNow();
       toast(T('Document obert', 'Documento abierto'));
     } catch (e) {
       console.error(e);
       toast(T('No s’ha pogut obrir aquest fitxer', 'No se ha podido abrir este archivo'));
     }
   };
+  const removeDoc = async (id: string) => {
+    await deleteDoc(id);
+    if (id !== docId) return;
+    // The open document was deleted: the last changed one opens, or a blank page.
+    clearTimeout(timer); dirty = false;
+    const next = (await listDocs())[0];
+    show(next?.id ?? newDocId(), next ?? null);
+  };
+  const showDocuments = () => openDocuments(
+    { current: () => docId, open: openSaved, create: newDoc, importFile, remove: removeDoc },
+    () => editor.commands.focus());
   // With the pictograms on screen, the documents get them too. The single file opened from the
   // disk cannot read their pictures: it saves the text alone and says so.
   const unreadablePictos = () => T(' Sense pictogrames: des del fitxer obert al disc no es poden desar. Per desar-los, fes servir l’app web.', ' Sin pictogramas: desde el archivo abierto en el disco no se pueden guardar. Para guardarlos, usa la app web.');
@@ -194,7 +242,7 @@ async function boot() {
   pictoBtn.hidden = !pictosAvailable;
 
   const toolbar = h('div', { class: 'toolbar', role: 'toolbar', 'aria-label': T('Format', 'Formato') },
-    tb(T('Document nou', 'Documento nuevo'), FilePlus, newDoc), tb(T('Obre un document', 'Abrir un documento'), FolderOpen, open), tb(T('Desa com a .docx', 'Guardar como .docx'), FileDown, save), tb(T('Desa com a PDF', 'Guardar como PDF'), FileType, savePdf), tb(T('Imprimeix', 'Imprimir'), Printer, () => window.print()),
+    tb(T('Document nou', 'Documento nuevo'), FilePlus, () => void newDoc()), tb(T('Els meus documents', 'Mis documentos'), FolderOpen, showDocuments), tb(T('Desa com a .docx', 'Guardar como .docx'), FileDown, save), tb(T('Desa com a PDF', 'Guardar como PDF'), FileType, savePdf), tb(T('Imprimeix', 'Imprimir'), Printer, () => window.print()),
     h('span', { class: 'sep' }), undo, redo,
     h('span', { class: 'sep' }), fontSel, sizeSel, sizeDown, sizeUp,
     h('span', { class: 'sep' }), fmt.bold, fmt.italic, fmt.underline,
@@ -337,6 +385,7 @@ async function boot() {
     document.documentElement.style.setProperty('--doc-size', `${s.docFontSize}px`);
     document.documentElement.style.setProperty('--doc-font', fontById(s.docFont).css);
     document.documentElement.style.setProperty('--picto-size', `${s.pictos.size}em`);
+    document.documentElement.style.setProperty('--picto-fade', `${s.pictos.fadeSeconds}s`);
     const parts: string[] = [];
     if (s.feedback.sentence) parts.push(T('frase', 'frase'));
     if (s.feedback.word) parts.push(T('paraula', 'palabra'));
