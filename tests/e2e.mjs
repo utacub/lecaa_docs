@@ -72,12 +72,13 @@ const fw = await page.evaluate(() => {
   return { titles: [...d.querySelectorAll('section h3')].map(h => h.textContent), refs: [...d.querySelectorAll('.framework-refs li')].map(li => li.textContent), dois: d.querySelectorAll('.framework-refs a[href^="https://doi.org/"]').length, italics: d.querySelectorAll('.framework-refs em').length, focus: document.activeElement === d.querySelector('.body') };
 });
 const sortedRefs = [...fw.refs].sort((a, b) => a.localeCompare(b, 'en'));
-ok(fwButton.text === 'Marc teòric' && fwButton.inIdea === 'La idea' && fw.titles.length === 15 && fw.titles[0] === 'L’escriptura és per a tothom' && fw.titles.at(-1) === 'Referències'
-  && fw.refs.length === 39 && fw.dois >= 25 && fw.italics === 39 && fw.focus, 'el botó Marc teòric, sota La idea, obre el text amb 14 apartats i 39 referències APA: ' + JSON.stringify({ fwButton, n: fw.titles.length, refs: fw.refs.length, dois: fw.dois, italics: fw.italics }));
+ok(fwButton.text === 'Marc teòric' && fwButton.inIdea === 'La idea' && fw.titles.length === 16 && fw.titles[0] === 'L’escriptura és per a tothom' && fw.titles.at(-1) === 'Referències'
+  && fw.refs.length === 50 && fw.dois >= 34 && fw.italics === 50 && fw.focus, 'el botó Marc teòric, sota La idea, obre el text amb 15 apartats i 50 referències APA: ' + JSON.stringify({ fwButton, n: fw.titles.length, refs: fw.refs.length, dois: fw.dois, italics: fw.italics }));
 // Every citation in the text has its reference, and every reference is cited.
 const fwText = await page.evaluate(() => [...document.querySelectorAll('dialog.framework section:not(.framework-refs) p, dialog.framework > .body > p')].map(p => p.textContent).join(' '));
 const cited = new Set([...fwText.matchAll(/([A-Z][\p{L}-]+)(?: i [A-Z][\p{L}-]+| et al\.)?,? \(?(\d{4})/gu)].map(m => m[1] + ' ' + m[2]));
-const listed = new Set(fw.refs.map(r => r.match(/^([^,.]+)[,.]/)[1] + ' ' + r.match(/\((\d{4})\)/)[1]));
+// A compound surname («Garriga Ferriol») is cited by its last word, and a year may carry a letter (2003a).
+const listed = new Set(fw.refs.map(r => r.match(/^([^,.]+)[,.]/)[1].split(' ').at(-1) + ' ' + r.match(/\((\d{4})[a-z]?\)/)[1]));
 const notListed = [...cited].filter(c => !listed.has(c) && !/^(LECAA|UTAC)/.test(c));
 const notCited = [...listed].filter(l => !cited.has(l));
 ok(!notListed.length && !notCited.length, 'cada cita del marc teòric té la seva referència i al revés: ' + JSON.stringify({ notListed, notCited }));

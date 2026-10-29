@@ -115,7 +115,7 @@ for (const [lang, c] of Object.entries(CASES)) {
     const d = document.querySelector('dialog.framework');
     return { lang: d.lang, title: d.querySelector('h2').textContent, button: document.querySelector('.framework-btn').textContent, sections: d.querySelectorAll('section h3').length, refs: d.querySelectorAll('.framework-refs li').length, text: d.querySelector('.body').textContent };
   });
-  ok(fw.lang === lang && fw.title === c.ui.framework && fw.button === c.ui.framework && fw.sections === 15 && fw.refs === 39 && /Schlosser/.test(fw.text) && /\(Light \S+ McNaughton, 2012/.test(fw.text),
+  ok(fw.lang === lang && fw.title === c.ui.framework && fw.button === c.ui.framework && fw.sections === 16 && fw.refs === 50 && /Schlosser/.test(fw.text) && /\(Light \S+ McNaughton, 2012/.test(fw.text),
     `${lang}: marc teòric traduït, amb els apartats i les referències: ` + JSON.stringify({ ...fw, text: fw.text.slice(0, 80) }));
   await page.keyboard.press('Escape');
   await page.keyboard.press('Escape');
