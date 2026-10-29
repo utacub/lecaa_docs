@@ -1,0 +1,33 @@
+Pictogrames
+-----------
+Els pictogrames de la carpeta img/ són d'ARASAAC (https://arasaac.org).
+Autor: Sergio Palao. Origen: ARASAAC. Propietat: Govern d'Aragó (Espanya).
+Llicència: Creative Commons BY-NC-SA 4.0 (https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ca).
+Les imatges s'han reduït a 192 px amb 256 colors (obra derivada, amb la mateixa llicència).
+No es poden fer servir amb finalitat comercial.
+
+Índexs de paraules (index-ca.js, index-es.js, index-eu.js, index-gl.js, index-en.js, index-fr.js)
+-----------------------------------------------------------------------------------------------
+Cada índex té les paraules clau d'ARASAAC en aquell idioma (CC BY-NC-SA 4.0) i les formes
+flexionades de les paraules, que vénen de:
+Català: paraules clau en català d'ARASAAC (CC BY-NC-SA 4.0) i formes flexionades del diccionari
+de Softcatalà, catalan-dict-tools (https://github.com/Softcatala/catalan-dict-tools), amb doble
+llicència GPL 2.0 o posterior / LGPL 2.1 o posterior.
+Castellà: paraules clau en castellà d'ARASAAC (CC BY-NC-SA 4.0) i formes flexionades del
+diccionari castellà de LanguageTool de Jaume Ortolà, spanish-dict-tools
+(https://github.com/jaumeortola/spanish-dict-tools), amb llicència LGPL 2.1.
+Gallec: diccionari gallec de FreeLing (https://github.com/TALP-UPC/FreeLing,
+data/gl/dictionary), extret del projecte OpenTrad i fet pel Seminario de Lingüística Informática
+de la Universidade de Vigo, ampliat per Pablo Gamallo i Marcos Garcia (Universidade de Santiago
+de Compostela), amb llicència Creative Commons BY-SA 3.0.
+Francès: diccionari francès de FreeLing (data/fr/dictionary), extret del Lefff (Lexique des
+Formes Fléchies du Français) de Benoît Sagot (Inria / Université Paris 7), amb llicència LGPL-LR
+(Lesser General Public License for Linguistic Resources).
+Euskera i anglès: formes generades amb regles pròpies (scripts/pictos-formes.py) a partir de les
+paraules clau d'ARASAAC; no vénen de cap diccionari.
+
+Dins de cada índex, les paraules clau ("kw") i les formes ("lem") són dues taules separades i
+cadascuna conserva la seva llicència. Les formes gallegues i franceses s'han extret dels fitxers
+de FreeLing tal com eren a la revisió 0bae6b7f6d1b405e67658895de54b59bfb3b6338 (9/3/2026) i
+només s'hi han deixat les formes de les paraules que tenen pictograma (scripts/pictos-index.py,
+29/10/2026). El text de la LGPL-LR és a LGPL-LR.txt, en aquesta carpeta.
