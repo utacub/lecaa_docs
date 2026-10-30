@@ -6,11 +6,13 @@ import { Extension, type Editor } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
-import { spokenName } from './letters';
+import { HAS_LETTER_SOUNDS, isLetter, phonemeFile, spokenName } from './letters';
 import { settings } from './settings';
-import { speech } from './speech';
+import { recordedVoices, speech, type SoundItem } from './speech';
 
-interface Sentence { text: string; pos: number[] } // pos[i] = document position of text[i]
+// pos[i] = document position of text[i]. When spelling by sounds, clip is the recorded sound of the
+// letter (null for a silent letter, such as h).
+interface Sentence { text: string; pos: number[]; clip?: string | null }
 
 const key = new PluginKey<DecorationSet>('lecaa-reader');
 type Mark = { sentence?: [number, number] | null; word?: [number, number] | null };
@@ -71,6 +73,9 @@ function collect(doc: PMNode, from: number, to: number): Sentence[] {
   return out;
 }
 
+// «Lletreja» says the sound of each letter only where there are recorded letter sounds.
+export const spellsSounds = () => settings.value.spell === 'sound' && HAS_LETTER_SOUNDS && recordedVoices.length > 0;
+
 class Reader {
   private editor: Editor | null = null;
   private queue: Sentence[] = [];
@@ -103,18 +108,22 @@ class Reader {
     return true;
   }
 
-  // Spells the text between from and to: the name of each letter (and of each sign), one after
-  // another, with the letter highlighted. Capital letters say so.
+  // Spells the text between from and to, one letter after another, with the letter highlighted: the
+  // name of each letter (capital letters say so) or, where there are recorded letter sounds (Catalan
+  // and Spanish) and the settings ask for it, the sound of each letter. Signs always say their name.
   spell(from: number, to: number): boolean {
     const ed = this.editor;
     if (!ed || from >= to) return false;
+    const sounds = spellsSounds();
     const queue: Sentence[] = [];
     ed.state.doc.nodesBetween(from, to, (node, pos) => {
       if (!node.isText) return true;
       const t = node.text ?? '';
       for (let i = 0; i < t.length; i++) {
         const p = pos + i;
-        const name = p >= from && p < to && !/\s/.test(t[i]) ? spokenName(t[i], true) : null;
+        if (p < from || p >= to || /\s/.test(t[i])) continue;
+        if (sounds && isLetter(t[i])) { queue.push({ text: t[i], pos: [p], clip: phonemeFile(t[i]) }); continue; }
+        const name = spokenName(t[i], true);
         if (name) queue.push({ text: name, pos: [p] });
       }
       return false;
@@ -136,7 +145,7 @@ class Reader {
     while (this.index < this.queue.length && my === this.run) {
       const s = this.queue[this.index];
       this.mark({ sentence: [s.pos[0], s.pos[s.pos.length - 1] + 1], word: null });
-      const finished = await speech.play([{
+      const items: SoundItem[] = s.clip === undefined ? [{
         kind: 'tts', text: s.text,
         onWord: (i, len) => {
           if (my !== this.run) return;
@@ -144,8 +153,12 @@ class Reader {
           const a = s.pos[i], b = s.pos[Math.min(i + l, s.pos.length) - 1];
           if (a !== undefined && b !== undefined) this.mark({ word: [a, b + 1] });
         },
-      }], { lock: false });
+      }] : s.clip ? [{ kind: 'clip', file: s.clip }] : [];
+      const finished = await speech.play(items, { lock: false });
       if (!finished || my !== this.run) return;
+      // Letter sounds are short: a pause keeps each one apart, and a silent letter is still shown.
+      if (s.clip !== undefined) await new Promise(res => setTimeout(res, s.clip ? 250 : 500));
+      if (my !== this.run) return;
       this.index++;
     }
     if (my === this.run) this.finish();

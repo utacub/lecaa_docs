@@ -72,8 +72,8 @@ const fw = await page.evaluate(() => {
   return { titles: [...d.querySelectorAll('section h3')].map(h => h.textContent), refs: [...d.querySelectorAll('.framework-refs li')].map(li => li.textContent), dois: d.querySelectorAll('.framework-refs a[href^="https://doi.org/"]').length, italics: d.querySelectorAll('.framework-refs em').length, focus: document.activeElement === d.querySelector('.body') };
 });
 const sortedRefs = [...fw.refs].sort((a, b) => a.localeCompare(b, 'en'));
-ok(fwButton.text === 'Marc teòric' && fwButton.inIdea === 'La idea' && fw.titles.length === 16 && fw.titles[0] === 'L’escriptura és per a tothom' && fw.titles.at(-1) === 'Referències'
-  && fw.refs.length === 50 && fw.dois >= 34 && fw.italics === 50 && fw.focus, 'el botó Marc teòric, sota La idea, obre el text amb 15 apartats i 50 referències APA: ' + JSON.stringify({ fwButton, n: fw.titles.length, refs: fw.refs.length, dois: fw.dois, italics: fw.italics }));
+ok(fwButton.text === 'Marc teòric' && fwButton.inIdea === 'La idea' && fw.titles.length === 15 && fw.titles[0] === 'L’escriptura és per a tothom' && fw.titles.at(-1) === 'Referències'
+  && fw.refs.length === 50 && fw.dois >= 34 && fw.italics === 50 && fw.focus, 'el botó Marc teòric, sota La idea, obre el text amb 14 apartats i 50 referències APA: ' + JSON.stringify({ fwButton, n: fw.titles.length, refs: fw.refs.length, dois: fw.dois, italics: fw.italics }));
 // Every citation in the text has its reference, and every reference is cited.
 const fwText = await page.evaluate(() => [...document.querySelectorAll('dialog.framework section:not(.framework-refs) p, dialog.framework > .body > p')].map(p => p.textContent).join(' '));
 const cited = new Set([...fwText.matchAll(/([A-Z][\p{L}-]+)(?: i [A-Z][\p{L}-]+| et al\.)?,? \(?(\d{4})/gu)].map(m => m[1] + ' ' + m[2]));
@@ -390,6 +390,23 @@ await page.click('.spell-btn');
 await wait(1500);
 ok(JSON.stringify(await spoken()) === '["ce majúscula","a","essa","a"]' && menuBox.y > wordBox.bottom, 'Lletreja diu el nom de cada lletra, també la majúscula: ' + JSON.stringify(await spoken()));
 ok(await page.evaluate(() => window.lecaa.editor.isFocused && window.lecaa.editor.state.selection.from === 1 && window.lecaa.editor.state.selection.to === 5), 'i la selecció es manté a l’editor');
+// In Catalan and Spanish, «Lletreja» can say the recorded sound of each letter instead (the h is silent).
+await set(`s => { s.spell = 'sound'; }`);
+await page.evaluate(() => window.lecaa.editor.chain().command(({ tr }) => { tr.setMeta('lecaa-system', true); return true; }).setContent('<p>Casa hora</p>').run());
+await spellShown(1, 5);
+await reset();
+await page.click('.spell-btn');
+await wait(2500);
+const spellClips = await page.evaluate(() => window.__clips.slice());
+ok(spellClips.length === 4 && (await spoken()).length === 0, 'Lletreja pot dir el so de cada lletra, amb les locucions: ' + JSON.stringify({ spellClips, spoken: await spoken() }));
+await spellShown(6, 10);
+await reset();
+await page.click('.spell-btn');
+await wait(2500);
+const silentH = await page.evaluate(() => window.__clips.slice());
+ok(silentH.length === 3 && (await spoken()).length === 0, 'la hac no sona: ' + JSON.stringify(silentH));
+await set(`s => { s.spell = 'name'; }`);
+await spellShown(1, 5);
 await page.keyboard.type('Gossa', { delay: 120 });
 await wait(500);
 ok(!(await page.locator('.spell-menu').isVisible()), 'en escriure, el menú desapareix');
@@ -398,6 +415,7 @@ ok(!(await page.locator('.spell-menu').isVisible()), 'en escriure, el menú desa
 await page.click('[aria-label="Configuració"]');
 await wait(500);
 ok((await page.locator('#voice-select option').count()) >= 1, 'la configuració llista la veu catalana');
+ok(JSON.stringify(await page.evaluate(() => [...document.querySelectorAll('.drawer input[name=spell]')].map(e => e.value + ':' + e.checked))) === '["name:true","sound:false"]', 'la configuració permet triar si «Lletreja» diu el nom o el so de cada lletra');
 await page.screenshot({ path: 'test-results/settings.png' });
 // Every control has a name for screen readers, and the keyboard stays inside the drawer.
 const unnamed = await page.evaluate(() => [...document.querySelectorAll('.drawer input, .drawer select')]

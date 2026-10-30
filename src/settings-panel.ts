@@ -2,9 +2,10 @@ import { X } from 'lucide';
 import { FONTS } from './fonts';
 import { guard } from './guard';
 import { BCP47, isLangVoice, LANG, T } from './i18n';
+import { HAS_LETTER_SOUNDS } from './letters';
 import { askNewPassword } from './lock';
 import { inTauri } from './speech/native';
-import { settings, type LetterMode, type PictoShow, type Settings } from './settings';
+import { settings, type LetterMode, type PictoShow, type Settings, type SpellMode } from './settings';
 import { recordedVoices, speech, type VoiceInfo } from './speech';
 import { neural } from './speech/neural';
 import { allPictoIds, deleteOffline, downloadAll, loadPictos, offlineCount, offlineSupported, pictoCredit, pictosAvailable } from './pictos';
@@ -255,7 +256,7 @@ export function openSettings(onClose: () => void) {
       ...(mode === 'sound' ? [
         h('div', { class: 'hint' }, T('Els sons són locucions enregistrades (les mateixes de LECAA).', 'Los sonidos son locuciones grabadas.')),
         // With a single voice there is nothing to choose.
-        ...(recordedVoices.length < 2 ? [] : recordedVoices).map(id => radio('recvoice', id, voiceName(id), null, current, () => upd(x => { x.recordedVoice = id; }))),
+        ...(recordedVoices.length < 2 ? [] : recordedVoices).map(id => radio('recvoice', id, voiceName(id), null, current, () => { upd(x => { x.recordedVoice = id; }); renderSpell(); })),
       ] : []),
     );
   };
@@ -285,6 +286,22 @@ export function openSettings(onClose: () => void) {
     );
   };
   renderFeedback();
+
+  // «Lletreja»: the name or, in Catalan and Spanish, the recorded sound of each letter.
+  const spellBox = h('div', {});
+  const renderSpell = () => {
+    const mode = settings.value.spell;
+    const current = recordedVoices.includes(settings.value.recordedVoice) ? settings.value.recordedVoice : recordedVoices[0];
+    const pick = (m: SpellMode) => () => { upd(x => { x.spell = m; }); renderSpell(); };
+    spellBox.replaceChildren(
+      h('div', { class: 'hint' }, T('«Lletreja» (en seleccionar una paraula) diu:', '«Deletrear» (al seleccionar una palabra) dice:')),
+      radio('spell', 'name', T('El nom de cada lletra', 'El nombre de cada letra'), T('“ce”, “a”, “essa”, “a”, amb la veu sintètica', '“ce”, “a”, “ese”, “a”, con la voz sintética'), mode, pick('name')),
+      radio('spell', 'sound', T('El so de cada lletra', 'El sonido de cada letra'), T('El so més habitual de cada lletra, amb veu enregistrada', 'El sonido más habitual de cada letra, con voz grabada'), mode, pick('sound')),
+      ...(mode === 'sound' && recordedVoices.length > 1 ? [h('div', { class: 'subgroup' },
+        ...recordedVoices.map(id => radio('spell-recvoice', id, voiceName(id), null, current, () => { upd(x => { x.recordedVoice = id; }); renderLetter(); })))] : []),
+    );
+  };
+  if (HAS_LETTER_SOUNDS && soundsReady) renderSpell();
 
   const msgInput = h('input', { type: 'text', id: 'guard-message', value: s.guard.message }) as HTMLInputElement;
   msgInput.addEventListener('change', () => upd(x => { x.guard.message = msgInput.value.trim() || T('Pensa bé cada lletra que escrius', 'Piensa bien cada letra que escribes'); }));
@@ -340,6 +357,7 @@ export function openSettings(onClose: () => void) {
         offlineSupported ? pictosOfflineBox() : null) : null,
       h('fieldset', {}, h('legend', {}, T('Lectura i document', 'Lectura y documento')),
         check(T('Ressalta el que s’està llegint', 'Resaltar lo que se está leyendo'), null, x => x.highlight, (x, v) => { x.highlight = v; }),
+        HAS_LETTER_SOUNDS && soundsReady ? spellBox : null,
         range(T('Mida del text a la pantalla', 'Tamaño del texto en la pantalla'), 16, 40, 1, x => x.docFontSize, (x, v) => { x.docFontSize = v; }, v => `${v} px`),
         fontField()),
       h('fieldset', {}, h('legend', {}, T('Pantalla completa', 'Pantalla completa')),

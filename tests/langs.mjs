@@ -97,13 +97,14 @@ for (const [lang, c] of Object.entries(CASES)) {
     downloads: [...document.querySelectorAll('.drawer .neural-title')].map(e => e.textContent),
     notice: document.querySelector('.drawer .voice-notice')?.textContent ?? '',
     sound: [...document.querySelectorAll('.drawer input[name=letter]')].map(e => e.value),
+    spell: document.querySelectorAll('.drawer input[name=spell]').length,
   }));
   ok(drawer.title === c.ui.settings, `${lang}: configuració traduïda: «${drawer.title}»`);
   const voicesOk = { eu: ['Maider', 'Antton'], gl: ['Davefx', 'Tugão'], en: [], fr: [] }[lang];
   ok(voicesOk.every(v => drawer.downloads.includes(v)) && drawer.downloads.filter(t => !/pictog|piktog/i.test(t)).length === voicesOk.length,
     `${lang}: veus per descarregar: ` + JSON.stringify(drawer.downloads));
   ok(lang === 'gl' ? /Sabela e Roi/.test(drawer.notice) && /Tugão/.test(drawer.notice) : drawer.notice === '', `${lang}: avís sobre les veus gallegues només en gallec`);
-  ok(!drawer.sound.includes('sound'), `${lang}: sense l’opció de so de la lletra (no hi ha locucions)`);
+  ok(!drawer.sound.includes('sound') && !drawer.spell, `${lang}: sense l’opció de so de la lletra ni de lletrejar amb sons (no hi ha locucions)`);
   await page.keyboard.press('Escape');
   await page.evaluate(() => document.querySelector('.drawer-backdrop')?.click());
 
@@ -115,7 +116,7 @@ for (const [lang, c] of Object.entries(CASES)) {
     const d = document.querySelector('dialog.framework');
     return { lang: d.lang, title: d.querySelector('h2').textContent, button: document.querySelector('.framework-btn').textContent, sections: d.querySelectorAll('section h3').length, refs: d.querySelectorAll('.framework-refs li').length, text: d.querySelector('.body').textContent };
   });
-  ok(fw.lang === lang && fw.title === c.ui.framework && fw.button === c.ui.framework && fw.sections === 16 && fw.refs === 50 && /Schlosser/.test(fw.text) && /\(Light \S+ McNaughton, 2012/.test(fw.text),
+  ok(fw.lang === lang && fw.title === c.ui.framework && fw.button === c.ui.framework && fw.sections === 15 && fw.refs === 50 && /Schlosser/.test(fw.text) && /\(Light \S+ McNaughton, 2012/.test(fw.text),
     `${lang}: marc teòric traduït, amb els apartats i les referències: ` + JSON.stringify({ ...fw, text: fw.text.slice(0, 80) }));
   await page.keyboard.press('Escape');
   await page.keyboard.press('Escape');
