@@ -74,7 +74,7 @@ function collect(doc: PMNode, from: number, to: number): Sentence[] {
 }
 
 // «Lletreja» says the sound of each letter only where there are recorded letter sounds.
-export const spellsSounds = () => settings.value.spell === 'sound' && HAS_LETTER_SOUNDS && recordedVoices.length > 0;
+export const spellsSounds = () => settings.value.spelling === 'sound' && HAS_LETTER_SOUNDS && recordedVoices.length > 0;
 
 class Reader {
   private editor: Editor | null = null;
