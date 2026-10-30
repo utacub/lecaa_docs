@@ -18,7 +18,9 @@ export interface Settings {
     letter: LetterMode;     // name and sound are mutually exclusive
     upperCaseWord: boolean; // say "majúscula" before a capital letter name
   };
-  spell: SpellMode;        // «Lletreja»: the name of each letter, or its recorded sound (Catalan and Spanish)
+  // «Lletreja»: the recorded sound of each letter where there is one (Catalan and Spanish), or its name.
+  // Named «spelling» because «spell» briefly defaulted to the names (Marc, 30/10/2026).
+  spelling: SpellMode;
   lockWhileSpeaking: boolean;
   guard: {
     enabled: boolean;
@@ -52,7 +54,7 @@ export interface Settings {
 
 export const DEFAULTS: Settings = {
   feedback: { sentence: true, word: true, wordOnPunct: true, letter: 'off', upperCaseWord: false },
-  spell: 'name',
+  spelling: 'sound',
   lockWhileSpeaking: false,
   guard: {
     enabled: true,
