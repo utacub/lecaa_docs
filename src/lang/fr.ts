@@ -256,6 +256,11 @@ const texts: Record<string, string> = {
   'En tots els casos, els documents desats i impresos porten tots els pictogrames.': 'Dans tous les cas, les documents enregistrés et imprimés contiennent tous les pictogrammes.',
   'Lletreja': 'Épeler',
   'Lletreja la selecció': 'Épeler la sélection',
+  '«Lletreja» (en seleccionar una paraula) diu:': '« Épeler » (quand un mot est sélectionné) dit :',
+  'El nom de cada lletra': 'Le nom de chaque lettre',
+  '“ce”, “a”, “essa”, “a”, amb la veu sintètica': '« C », « A », « S », « A », avec la voix de synthèse',
+  'El so de cada lletra': 'Le son de chaque lettre',
+  'El so més habitual de cada lletra, amb veu enregistrada': 'Le son le plus courant de chaque lettre, avec une voix enregistrée',
   'Selecció': 'Sélection',
   'Marc teòric': 'Cadre théorique',
 };

@@ -1,12 +1,13 @@
 // When the selection is one word or less (no space inside it; at most one at each end), a small
 // menu appears under it with "Spell": the voice says the name of each letter, one by one, and each
-// letter is highlighted as it is said (reader.spell). Spelling a word back helps to check what has
-// been written (see "Marc teòric").
+// letter is highlighted as it is said (reader.spell). In Catalan and Spanish the settings can make it
+// say the recorded sound of each letter instead. Spelling a word back helps to check what has been
+// written (see "Marc teòric").
 
 import type { Editor } from '@tiptap/core';
 import type { EditorState } from '@tiptap/pm/state';
 import { T } from './i18n';
-import { reader } from './reader';
+import { reader, spellsSounds } from './reader';
 import { speech } from './speech';
 import { h, toast } from './ui';
 
@@ -33,7 +34,7 @@ export function installSpellMenu(editor: Editor, scroller: HTMLElement) {
   btn.addEventListener('mousedown', e => e.preventDefault());
   btn.addEventListener('click', () => {
     const { from, to } = editor.state.selection;
-    if (!speech.currentVoice()) { toast(T('No hi ha cap veu catalana disponible. Obre la configuració.', 'No hay ninguna voz en castellano disponible. Abre la configuración.')); return; }
+    if (!spellsSounds() && !speech.currentVoice()) { toast(T('No hi ha cap veu catalana disponible. Obre la configuració.', 'No hay ninguna voz en castellano disponible. Abre la configuración.')); return; }
     reader.spell(from, to);
   });
 

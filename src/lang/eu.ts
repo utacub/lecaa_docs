@@ -256,6 +256,11 @@ const texts: Record<string, string> = {
   'En tots els casos, els documents desats i impresos porten tots els pictogrames.': 'Kasu guztietan, gordetako eta inprimatutako dokumentuek piktograma guztiak dituzte.',
   'Lletreja': 'Letraz letra',
   'Lletreja la selecció': 'Esan hautapena letraz letra',
+  '«Lletreja» (en seleccionar una paraula) diu:': '«Letraz letra» aukerak (hitz bat hautatzean) esaten du:',
+  'El nom de cada lletra': 'Letra bakoitzaren izena',
+  '“ce”, “a”, “essa”, “a”, amb la veu sintètica': '“ze”, “a”, “ese”, “a”, ahots sintetikoarekin',
+  'El so de cada lletra': 'Letra bakoitzaren soinua',
+  'El so més habitual de cada lletra, amb veu enregistrada': 'Letra bakoitzaren soinu ohikoena, grabatutako ahotsarekin',
   'Selecció': 'Hautapena',
   'Marc teòric': 'Esparru teorikoa',
 };

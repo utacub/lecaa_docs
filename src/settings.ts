@@ -7,6 +7,7 @@ import { STORAGE } from './storage-name';
 
 export type LetterMode = 'off' | 'name' | 'sound';
 export type PictoShow = 'always' | 'fade' | 'caret';
+export type SpellMode = 'name' | 'sound';
 export type RecordedVoice = string; // folder of recorded letter sounds (src/assets/sons)
 
 export interface Settings {
@@ -17,6 +18,7 @@ export interface Settings {
     letter: LetterMode;     // name and sound are mutually exclusive
     upperCaseWord: boolean; // say "majúscula" before a capital letter name
   };
+  spell: SpellMode;        // «Lletreja»: the name of each letter, or its recorded sound (Catalan and Spanish)
   lockWhileSpeaking: boolean;
   guard: {
     enabled: boolean;
@@ -50,6 +52,7 @@ export interface Settings {
 
 export const DEFAULTS: Settings = {
   feedback: { sentence: true, word: true, wordOnPunct: true, letter: 'off', upperCaseWord: false },
+  spell: 'name',
   lockWhileSpeaking: false,
   guard: {
     enabled: true,
