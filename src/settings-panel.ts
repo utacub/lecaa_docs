@@ -290,13 +290,13 @@ export function openSettings(onClose: () => void) {
   // «Lletreja»: the name or, in Catalan and Spanish, the recorded sound of each letter.
   const spellBox = h('div', {});
   const renderSpell = () => {
-    const mode = settings.value.spell;
+    const mode = settings.value.spelling;
     const current = recordedVoices.includes(settings.value.recordedVoice) ? settings.value.recordedVoice : recordedVoices[0];
-    const pick = (m: SpellMode) => () => { upd(x => { x.spell = m; }); renderSpell(); };
+    const pick = (m: SpellMode) => () => { upd(x => { x.spelling = m; }); renderSpell(); };
     spellBox.replaceChildren(
       h('div', { class: 'hint' }, T('«Lletreja» (en seleccionar una paraula) diu:', '«Deletrear» (al seleccionar una palabra) dice:')),
-      radio('spell', 'name', T('El nom de cada lletra', 'El nombre de cada letra'), T('“ce”, “a”, “essa”, “a”, amb la veu sintètica', '“ce”, “a”, “ese”, “a”, con la voz sintética'), mode, pick('name')),
       radio('spell', 'sound', T('El so de cada lletra', 'El sonido de cada letra'), T('El so més habitual de cada lletra, amb veu enregistrada', 'El sonido más habitual de cada letra, con voz grabada'), mode, pick('sound')),
+      radio('spell', 'name', T('El nom de cada lletra', 'El nombre de cada letra'), T('“ce”, “a”, “essa”, “a”, amb la veu sintètica', '“ce”, “a”, “ese”, “a”, con la voz sintética'), mode, pick('name')),
       ...(mode === 'sound' && recordedVoices.length > 1 ? [h('div', { class: 'subgroup' },
         ...recordedVoices.map(id => radio('spell-recvoice', id, voiceName(id), null, current, () => { upd(x => { x.recordedVoice = id; }); renderLetter(); })))] : []),
     );

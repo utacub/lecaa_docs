@@ -387,25 +387,26 @@ await spellShown(1, 5);
 const menuBox = await page.locator('.spell-menu').boundingBox();
 const wordBox = await page.evaluate(() => { const r = window.lecaa.editor.view.coordsAtPos(1); return { bottom: r.bottom }; });
 await page.click('.spell-btn');
-await wait(1500);
-ok(JSON.stringify(await spoken()) === '["ce majúscula","a","essa","a"]' && menuBox.y > wordBox.bottom, 'Lletreja diu el nom de cada lletra, també la majúscula: ' + JSON.stringify(await spoken()));
-ok(await page.evaluate(() => window.lecaa.editor.isFocused && window.lecaa.editor.state.selection.from === 1 && window.lecaa.editor.state.selection.to === 5), 'i la selecció es manté a l’editor');
-// In Catalan and Spanish, «Lletreja» can say the recorded sound of each letter instead (the h is silent).
-await set(`s => { s.spell = 'sound'; }`);
-await page.evaluate(() => window.lecaa.editor.chain().command(({ tr }) => { tr.setMeta('lecaa-system', true); return true; }).setContent('<p>Casa hora</p>').run());
-await spellShown(1, 5);
-await reset();
-await page.click('.spell-btn');
 await wait(2500);
 const spellClips = await page.evaluate(() => window.__clips.slice());
-ok(spellClips.length === 4 && (await spoken()).length === 0, 'Lletreja pot dir el so de cada lletra, amb les locucions: ' + JSON.stringify({ spellClips, spoken: await spoken() }));
+ok(spellClips.length === 4 && (await spoken()).length === 0 && menuBox.y > wordBox.bottom, 'per defecte, Lletreja diu el so de cada lletra, amb les locucions: ' + JSON.stringify({ spellClips, spoken: await spoken() }));
+ok(await page.evaluate(() => window.lecaa.editor.isFocused && window.lecaa.editor.state.selection.from === 1 && window.lecaa.editor.state.selection.to === 5), 'i la selecció es manté a l’editor');
+// The h is silent.
+await page.evaluate(() => window.lecaa.editor.chain().command(({ tr }) => { tr.setMeta('lecaa-system', true); return true; }).setContent('<p>Casa hora</p>').run());
 await spellShown(6, 10);
 await reset();
 await page.click('.spell-btn');
 await wait(2500);
 const silentH = await page.evaluate(() => window.__clips.slice());
 ok(silentH.length === 3 && (await spoken()).length === 0, 'la hac no sona: ' + JSON.stringify(silentH));
-await set(`s => { s.spell = 'name'; }`);
+// The settings can make it say the name of each letter instead.
+await set(`s => { s.spelling = 'name'; }`);
+await spellShown(1, 5);
+await reset();
+await page.click('.spell-btn');
+await wait(1500);
+ok(JSON.stringify(await spoken()) === '["ce majúscula","a","essa","a"]', 'Lletreja pot dir el nom de cada lletra, també la majúscula: ' + JSON.stringify(await spoken()));
+await set(`s => { s.spelling = 'sound'; }`);
 await spellShown(1, 5);
 await page.keyboard.type('Gossa', { delay: 120 });
 await wait(500);
@@ -415,7 +416,7 @@ ok(!(await page.locator('.spell-menu').isVisible()), 'en escriure, el menú desa
 await page.click('[aria-label="Configuració"]');
 await wait(500);
 ok((await page.locator('#voice-select option').count()) >= 1, 'la configuració llista la veu catalana');
-ok(JSON.stringify(await page.evaluate(() => [...document.querySelectorAll('.drawer input[name=spell]')].map(e => e.value + ':' + e.checked))) === '["name:true","sound:false"]', 'la configuració permet triar si «Lletreja» diu el nom o el so de cada lletra');
+ok(JSON.stringify(await page.evaluate(() => [...document.querySelectorAll('.drawer input[name=spell]')].map(e => e.value + ':' + e.checked))) === '["sound:true","name:false"]', 'la configuració permet triar si «Lletreja» diu el so (per defecte) o el nom de cada lletra');
 await page.screenshot({ path: 'test-results/settings.png' });
 // Every control has a name for screen readers, and the keyboard stays inside the drawer.
 const unnamed = await page.evaluate(() => [...document.querySelectorAll('.drawer input, .drawer select')]

@@ -1,15 +1,16 @@
 // When the selection is one word or less (no space inside it; at most one at each end), a small
 // menu appears under it with "Spell": the voice says the name of each letter, one by one, and each
-// letter is highlighted as it is said (reader.spell). In Catalan and Spanish the settings can make it
-// say the recorded sound of each letter instead. Spelling a word back helps to check what has been
+// letter is highlighted as it is said (reader.spell). In Catalan and Spanish it says the recorded sound
+// of each letter instead, unless the settings ask for the names. Spelling a word back helps to check what has been
 // written (see "Marc teòric").
 
 import type { Editor } from '@tiptap/core';
+import { Volume2 } from 'lucide';
 import type { EditorState } from '@tiptap/pm/state';
 import { T } from './i18n';
 import { reader, spellsSounds } from './reader';
 import { speech } from './speech';
-import { h, toast } from './ui';
+import { h, icon, toast } from './ui';
 
 // The selected text, when it can be spelt: something to say, and no space except one at each end.
 export function spellable(state: EditorState): string | null {
@@ -19,14 +20,12 @@ export function spellable(state: EditorState): string | null {
   return /^[^\S\n]?[^\s]+[^\S\n]?$/u.test(text) && /[\p{L}\p{N}]/u.test(text) ? text.trim() : null;
 }
 
-// Spells-a-word icon: "a b c" over a speaker line, in Lucide's style.
-const ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 15l3-9 3 9"/><path d="M4 12h4"/><path d="M12 6v9h3a2.5 2.5 0 0 0 0-5h-3"/><path d="M21 7.5a3 3 0 0 0-3-1.5 3 3 0 0 0 0 9 3 3 0 0 0 3-1.5"/><path d="M3 20h18"/></svg>';
 
 export function installSpellMenu(editor: Editor, scroller: HTMLElement) {
   const label = T('Lletreja', 'Deletrear');
   const btn = h('button', { class: 'spell-btn', type: 'button', title: T('Lletreja la selecció', 'Deletrear la selección') });
-  btn.innerHTML = ICON;
-  btn.append(label);
+  // A speaker: the button makes the word heard, letter by letter.
+  btn.append(icon(Volume2), label);
   const menu = h('div', { class: 'spell-menu', role: 'toolbar', 'aria-label': T('Selecció', 'Selección'), hidden: true }, btn);
   document.body.append(menu);
 
