@@ -217,6 +217,8 @@ const texts: Record<string, string> = {
   'Sense pictograma per als articles, preposicions, conjuncions i pronoms febles (el, de, i, que, es…).': 'Piktogramarik gabe juntagailuetan eta artikulu zehaztugabean (eta, edo, baina, bat…).',
   'Toca un pictograma per triar-ne un altre per a aquella paraula, o cap. L’app recorda la tria en aquest dispositiu. Quan es veuen, els pictogrames també es desen al .docx i al PDF.': 'Ukitu piktograma bat hitz horretarako beste bat aukeratzeko, edo bat ere ez. Aplikazioak aukera gogoratzen du gailu honetan. Ikusten direnean, piktogramak .docx eta PDF fitxategietan ere gordetzen dira.',
   'Lectura i document': 'Irakurketa eta dokumentua',
+  'Escriu sempre amb majúscules': 'Idatzi beti letra larriz',
+  'Independentment de la tecla de majúscules o del bloqueig de majúscules. El text que ja hi ha no canvia.': 'Maiuskulen teklari edo maiuskulen blokeoari begiratu gabe. Lehendik dagoen testua ez da aldatzen.',
   'Ressalta el que s’està llegint': 'Nabarmendu irakurtzen ari dena',
   'Mida del text a la pantalla': 'Testuaren tamaina pantailan',
   'El botó de pantalla completa amaga les barres d’eines i la configuració. Només se’n pot sortir amb aquesta contrasenya (botó 🔒 a la cantonada).': 'Pantaila osoko botoiak tresna-barrak eta ezarpenak ezkutatzen ditu. Pasahitz honekin bakarrik irten daiteke (🔒 botoia izkinan). Pasahitza bera da hizkuntza guztietan.',

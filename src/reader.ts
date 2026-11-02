@@ -12,7 +12,7 @@ import { recordedVoices, speech, type SoundItem } from './speech';
 
 // pos[i] = document position of text[i]. When spelling by sounds, clip is the recorded sound of the
 // letter (null for a silent letter, such as h).
-interface Sentence { text: string; pos: number[]; clip?: string | null }
+interface Sentence { text: string; pos: number[]; clip?: string | null; literal?: boolean }
 
 const key = new PluginKey<DecorationSet>('lecaa-reader');
 type Mark = { sentence?: [number, number] | null; word?: [number, number] | null };
@@ -123,8 +123,9 @@ class Reader {
         const p = pos + i;
         if (p < from || p >= to || /\s/.test(t[i])) continue;
         if (sounds && isLetter(t[i])) { queue.push({ text: t[i], pos: [p], clip: phonemeFile(t[i]) }); continue; }
-        const name = spokenName(t[i], true);
-        if (name) queue.push({ text: name, pos: [p] });
+        // With «Escriu sempre amb majúscules» every letter is a capital: «majúscula» would add nothing.
+        const name = spokenName(t[i], !settings.value.upperCase);
+        if (name) queue.push({ text: name, pos: [p], literal: true });
       }
       return false;
     });
@@ -146,7 +147,7 @@ class Reader {
       const s = this.queue[this.index];
       this.mark({ sentence: [s.pos[0], s.pos[s.pos.length - 1] + 1], word: null });
       const items: SoundItem[] = s.clip === undefined ? [{
-        kind: 'tts', text: s.text,
+        kind: 'tts', text: s.text, literal: s.literal,
         onWord: (i, len) => {
           if (my !== this.run) return;
           const l = len || (s.text.slice(i).match(/^[\p{L}\p{N}·'’-]+/u)?.[0].length ?? 1);

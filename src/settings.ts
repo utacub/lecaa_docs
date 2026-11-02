@@ -39,6 +39,7 @@ export interface Settings {
   voice: { id: string | null; rate: number; pitch: number; volume: number; showAll: boolean };
   recordedVoice: RecordedVoice;
   highlight: boolean;
+  upperCase: boolean;      // every letter typed is a capital, whatever Shift or Caps Lock (Marc, 2/11/2026)
   pictos: {
     enabled: boolean;       // ARASAAC pictograms above the finished words
     contentOnly: boolean;   // none for articles, prepositions, conjunctions and weak pronouns
@@ -71,6 +72,7 @@ export const DEFAULTS: Settings = {
   voice: { id: null, rate: 1, pitch: 1, volume: 1, showAll: false },
   recordedVoice: 'anna',
   highlight: true,
+  upperCase: false,
   pictos: { enabled: true, contentOnly: true, size: 2, show: 'always', fadeSeconds: 3 },
   docFontSize: 22,
   docFont: 'andika',

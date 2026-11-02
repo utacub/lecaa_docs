@@ -5,6 +5,7 @@ import TextAlign from '@tiptap/extension-text-align';
 import { FontFamily, FontSize, TextStyle } from '@tiptap/extension-text-style';
 import type { EditorState, Transaction } from '@tiptap/pm/state';
 import { Plugin } from '@tiptap/pm/state';
+import type { EditorView } from '@tiptap/pm/view';
 import { ReplaceStep } from '@tiptap/pm/transform';
 import StarterKit from '@tiptap/starter-kit';
 import { itemsForChar, itemsForEnter, playFeedback } from './feedback';
@@ -12,6 +13,7 @@ import { guard } from './guard';
 import { LANG, T } from './i18n';
 import { PictoLayer } from './pictos';
 import { reader, ReaderHighlight } from './reader';
+import { settings } from './settings';
 
 // Text of the current block up to the caret (images and breaks count as a space).
 export function textBefore(state: EditorState): string {
@@ -75,13 +77,72 @@ function checkInput(state: EditorState, ev: InputEvent): boolean {
   return guard.content(textBefore(state), ch);
 }
 
+// «Escriu sempre amb majúscules»: each letter typed becomes a capital, from the physical keyboard
+// or from the on-screen keyboard of the system, whatever Shift or Caps Lock. Pasted text, undo and
+// the text already written do not change. Letter by letter, so that no letter changes length
+// (ß would become SS).
+export const toCapitals = (t: string) => [...t].map(c => { const u = c.toUpperCase(); return u.length === c.length ? u : c; }).join('');
+const typed = (tr: Transaction) => {
+  const ui = tr.getMeta('uiEvent');
+  return tr.docChanged && !tr.getMeta('lecaa-system') && ui !== 'paste' && ui !== 'drop' && !tr.getMeta('paste') && !tr.getMeta('history$');
+};
+
+// Turns the letters of the ranges into capitals, keeping their marks (size, font…).
+function capitalize(state: EditorState, ranges: [number, number][]): Transaction | null {
+  const tr = state.tr;
+  for (const [from, to] of ranges) {
+    state.doc.nodesBetween(from, to, (node, pos) => {
+      if (!node.isText) return true;
+      const a = Math.max(from, pos), b = Math.min(to, pos + node.nodeSize);
+      const t = node.text!.slice(a - pos, b - pos);
+      const up = toCapitals(t);
+      if (up !== t) tr.replaceWith(a, b, state.schema.text(up, node.marks));
+      return false;
+    });
+  }
+  return tr.docChanged ? tr.setMeta('lecaa-system', true) : null;
+}
+
+let editorView: EditorView | null = null;
+const CapitalsOnly = new Plugin({
+  view(v) { editorView = v; return { destroy() { if (editorView === v) editorView = null; } }; },
+  appendTransaction(trs, _old, state) {
+    // While a word is being composed (Android keyboards) it is left alone: changing it would break
+    // the composition. It becomes capitals when the composition ends (see compositionend).
+    if (!settings.value.upperCase || editorView?.composing) return null;
+    const ranges: [number, number][] = [];
+    trs.forEach((tr, i) => {
+      if (!typed(tr)) return;
+      tr.mapping.maps.forEach((map, j) => map.forEach((_s, _e, from, to) => {
+        if (to <= from) return;
+        // Where the inserted text ends up in the final document.
+        let a = tr.mapping.slice(j + 1).map(from, -1), b = tr.mapping.slice(j + 1).map(to, 1);
+        for (const later of trs.slice(i + 1)) { a = later.mapping.map(a, -1); b = later.mapping.map(b, 1); }
+        if (b > a) ranges.push([a, b]);
+      }));
+    });
+    return ranges.length ? capitalize(state, ranges) : null;
+  },
+});
+
+// After a composition: the word before the caret, in capitals.
+function capitalizeComposedWord(view: EditorView) {
+  if (!settings.value.upperCase || view.composing) return;
+  const { $from } = view.state.selection;
+  const before = $from.parent.textBetween(0, $from.parentOffset, undefined, ' ');
+  const word = before.match(/\S+$/)?.[0] ?? '';
+  if (!word) return;
+  const tr = capitalize(view.state, [[$from.pos - word.length, $from.pos]]);
+  if (tr) view.dispatch(tr);
+}
+
 // Connects the editor to the input guard (typing protection, misuse detection) and to the
 // audio feedback. Every way of entering text goes through here: physical keyboards (also
 // those connected to a tablet) and the on-screen keyboard of each operating system.
 const LecaaInput = Extension.create({
   name: 'lecaaInput',
   addProseMirrorPlugins() {
-    return [new Plugin({
+    return [CapitalsOnly, new Plugin({
       // Backstop for input paths that cannot be cancelled (composition, drag & drop).
       filterTransaction(tr) {
         if (!tr.docChanged || tr.getMeta('lecaa-system')) return true;
@@ -94,7 +155,7 @@ const LecaaInput = Extension.create({
         },
         handleDOMEvents: {
           compositionstart() { composing = ''; return false; },
-          compositionend() { composing = ''; return false; },
+          compositionend(view) { composing = ''; setTimeout(() => capitalizeComposedWord(view), 0); return false; },
           beforeinput(view, e) {
             const ev = e as InputEvent;
             const fromKey = takeCheckedKey();
@@ -120,7 +181,7 @@ const LecaaInput = Extension.create({
     const text = insertedText(tr);
     if (!text) return;
     const before = textBefore(this.editor.state);
-    const ch = text.slice(-1);
+    const ch = settings.value.upperCase ? toCapitals(text.slice(-1)) : text.slice(-1);
     // `before` already contains the new character.
     playFeedback(itemsForChar(ch, before.slice(0, -1)));
   },

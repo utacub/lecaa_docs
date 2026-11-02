@@ -7,6 +7,7 @@ import { decodeClip, ready } from './audio';
 import { settings } from '../settings';
 import { NativeEngine } from './native';
 import { neural } from './neural';
+import { forSpeech } from './text';
 import type { SpeechEngine, VoiceInfo } from './types';
 import { WebSpeechEngine } from './web';
 
@@ -15,7 +16,8 @@ export type { VoiceInfo } from './types';
 const clipUrls = import.meta.glob('../assets/sons/**/*.mp3', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 
 export type SoundItem =
-  | { kind: 'tts'; text: string; onWord?: (i: number, len: number) => void }
+  // literal: the text is a letter name ("A", "capital B"), sent to the voice as it is.
+  | { kind: 'tts'; text: string; onWord?: (i: number, len: number) => void; literal?: boolean }
   | { kind: 'clip'; file: string };
 
 // Only Catalan and Spanish have recorded letter sounds; in the other languages the voice says the
@@ -113,7 +115,7 @@ class SpeechHub {
     try {
       for (const item of items) {
         if (my !== this.token) return false;
-        if (item.kind === 'tts') await this.say(item.text, item.onWord);
+        if (item.kind === 'tts') await this.say(item.literal ? item.text : forSpeech(item.text), item.onWord);
         else await this.clip(item.file);
       }
       return my === this.token;
@@ -122,6 +124,8 @@ class SpeechHub {
     }
   }
 
+  // Words in capitals reach this point in lowercase, so that they are read and not spelled as
+  // acronyms (forSpeech, in text.ts).
   private async say(text: string, onWord?: (i: number, len: number) => void) {
     const v = this.currentVoice();
     if (!v || !text.trim()) return;
