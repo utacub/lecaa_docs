@@ -50,7 +50,7 @@ Versió 0.6.0. L'app és gratuïta per a tothom. La planificació completa és a
 | Versió | Com s'obté | Veus que veu |
 |---|---|---|
 | Fitxer únic (`LECAA-Docs.html`) | Es descarrega i s'obre amb el navegador | Les que exposa el navegador + Ona (Piper) descarregada |
-| Web (`dist/`) | Es publica en un servidor; es pot instal·lar com a app | Les que exposa el navegador + Ona (Piper) descarregada |
+| Web (`dist/`) | Es publica en un servidor; es pot instal·lar com a app amb el botó **Instal·la l'app** de la barra de dalt (a Chrome i Edge obre la finestra del navegador; a l'iPad, l'iPhone i Safari del Mac explica els passos; no surt a l'app ja instal·lada ni al fitxer únic) | Les que exposa el navegador + Ona (Piper) descarregada |
 | App d'escriptori (Tauri) | Instal·lador per a Windows (64 i 32 bits), macOS i Linux | **Totes les del sistema** + Ona (Piper) descarregada |
 
 L'app d'escriptori llegeix directament les veus del sistema:

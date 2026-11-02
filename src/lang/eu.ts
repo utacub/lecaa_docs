@@ -265,6 +265,17 @@ const texts: Record<string, string> = {
   'El so més habitual de cada lletra, amb veu enregistrada': 'Letra bakoitzaren soinu ohikoena, grabatutako ahotsarekin',
   'Selecció': 'Hautapena',
   'Marc teòric': 'Esparru teorikoa',
+  'Instal·la l’app': 'Instalatu aplikazioa',
+  'LECAA Docs s’està instal·lant': 'LECAA Docs instalatzen ari da',
+  'Instal·la LECAA Docs': 'Instalatu LECAA Docs',
+  'Instal·lada, l’app s’obre des de la seva icona, ocupa tota la pantalla i funciona sense connexió.': 'Instalatu ondoren, aplikazioa bere ikonotik irekitzen da, pantaila osoa betetzen du eta konexiorik gabe dabil.',
+  'Toca el botó «Compartir»': 'Sakatu «Partekatu» botoia',
+  '(a dalt o a baix de la pantalla).': '(pantailaren goian edo behean).',
+  'Tria «Afegir a la pantalla d’inici»': 'Aukeratu «Gehitu hasierako pantailan»',
+  '. Si no hi és, llisca la llista cap avall.': '. Ez badago, korritu zerrenda behera.',
+  'Toca «Afegir». LECAA Docs apareixerà a la pantalla d’inici com una app més.': 'Sakatu «Gehitu». LECAA Docs hasierako pantailan agertuko da, beste edozein aplikazio bezala.',
+  'Al menú «Arxiu» de Safari, tria «Afegir al Dock».': 'Safariren «Fitxategia» menuan, aukeratu «Gehitu Dock-ean».',
+  'Fes clic a «Afegir». LECAA Docs s’obrirà en una finestra pròpia, des del Dock.': 'Egin klik «Gehitu» botoian. LECAA Docs bere leihoan irekiko da, Dock-etik.',
 };
 
 export default texts;
