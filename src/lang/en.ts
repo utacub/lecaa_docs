@@ -217,6 +217,8 @@ const texts: Record<string, string> = {
   'Sense pictograma per als articles, preposicions, conjuncions i pronoms febles (el, de, i, que, es…).': 'No pictogram for articles, prepositions and conjunctions (the, of, and, that…).',
   'Toca un pictograma per triar-ne un altre per a aquella paraula, o cap. L’app recorda la tria en aquest dispositiu. Quan es veuen, els pictogrames també es desen al .docx i al PDF.': 'Tap a pictogram to choose another one for that word, or none. The app remembers the choice on this device. When they are shown, pictograms are also saved in the .docx and the PDF.',
   'Lectura i document': 'Reading and document',
+  'Escriu sempre amb majúscules': 'Always write in capitals',
+  'Independentment de la tecla de majúscules o del bloqueig de majúscules. El text que ja hi ha no canvia.': 'Whatever the Shift key or Caps Lock. The text already written does not change.',
   'Ressalta el que s’està llegint': 'Highlight what is being read',
   'Mida del text a la pantalla': 'Text size on screen',
   'El botó de pantalla completa amaga les barres d’eines i la configuració. Només se’n pot sortir amb aquesta contrasenya (botó 🔒 a la cantonada).': 'The full-screen button hides the toolbars and the settings. It can only be left with this password (🔒 button in the corner). The password is the same in every language.',

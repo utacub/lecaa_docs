@@ -113,6 +113,14 @@ await wait(600);
 sp = await spoken();
 ok(JSON.stringify(sp) === '["El gat"]', 'en prémer Intro només es llegeix la frase, no la darrera paraula: ' + JSON.stringify(sp));
 
+// 2b. Words in capitals reach the voice in lowercase (so they are read, not spelled as acronyms),
+// while the text on screen keeps its capitals.
+await clear();
+for (const w of ["L'ESCOLA ", 'ÉS ', 'A ', 'PROP.']) { await page.keyboard.type(w, { delay: 120 }); await wait(500); }
+sp = await spoken();
+ok((await text()) === "L'ESCOLA ÉS A PROP." && JSON.stringify(sp) === JSON.stringify(["l'escola", 'és', 'a', "l'escola és a prop."]),
+  'les paraules en majúscules es llegeixen com a paraules (el text no canvia): ' + JSON.stringify([await text(), sp]));
+
 // 3. letter names
 await set(`s => { s.feedback = { sentence: false, word: false, wordOnPunct: false, letter: 'name', upperCaseWord: false }; }`);
 await clear();
@@ -256,6 +264,30 @@ await cdp.send('Input.dispatchKeyEvent', { type: 'char', text: '\r', key: 'Enter
 await cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Enter', windowsVirtualKeyCode: 13 });
 await wait(400);
 ok(JSON.stringify(await spoken()) === JSON.stringify(['El gat']), 'intro del teclat del sistema llegeix la frase un cop: ' + JSON.stringify(await spoken()));
+
+// 10b. «Escriu sempre amb majúscules»: physical keyboard, system keyboard and composing keyboard;
+// the voice reads the words (not the letters), and a letter name does not say «majúscula».
+await set(`s => { s.upperCase = true; s.feedback.upperCaseWord = true; }`);
+await clear();
+await page.keyboard.type('Casa ', { delay: 150 });
+await wait(400);
+ok((await text()) === 'CASA ' && JSON.stringify(await spoken()) === JSON.stringify(['ce', 'a', 'essa', 'a', 'casa']), 'sempre majúscules, teclat físic (també amb Shift): ' + JSON.stringify([await text(), await spoken()]));
+await reset();
+await vtype('gat ', 200);
+await wait(300);
+ok((await text()) === 'CASA GAT ' && JSON.stringify(await spoken()) === JSON.stringify(['ge', 'a', 'te', 'gat']), 'sempre majúscules, teclat del sistema: ' + JSON.stringify([await text(), await spoken()]));
+await reset();
+await compose('pa');
+await wait(200);
+await vkey(' ', 400);
+ok((await text()) === 'CASA GAT PA ' && (await spoken()).at(-1) === 'pa', 'sempre majúscules, teclat que compon paraules: ' + JSON.stringify([await text(), await spoken()]));
+await page.evaluate(() => window.lecaa.editor.commands.undo());
+await wait(200);
+ok(!/[a-z]/.test(await text()), 'desfer no torna la paraula a minúscules: ' + JSON.stringify(await text()));
+await set(`s => { s.upperCase = false; s.feedback.upperCaseWord = false; }`);
+await clear();
+await page.keyboard.type('Casa', { delay: 120 });
+ok((await text()) === 'Casa', 'sense l’opció, el text queda com s’escriu: ' + JSON.stringify(await text()));
 await clear();
 const burst = await page.evaluate(() => {
   const el = document.querySelector('.ProseMirror');

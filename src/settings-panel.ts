@@ -356,6 +356,7 @@ export function openSettings(onClose: () => void) {
         h('p', { class: 'hint picto-credit' }, pictoCredit()),
         offlineSupported ? pictosOfflineBox() : null) : null,
       h('fieldset', {}, h('legend', {}, T('Lectura i document', 'Lectura y documento')),
+        check(T('Escriu sempre amb majúscules', 'Escribir siempre en mayúsculas'), T('Independentment de la tecla de majúscules o del bloqueig de majúscules. El text que ja hi ha no canvia.', 'Independientemente de la tecla de mayúsculas o del bloqueo de mayúsculas. El texto que ya hay no cambia.'), x => x.upperCase, (x, v) => { x.upperCase = v; }),
         check(T('Ressalta el que s’està llegint', 'Resaltar lo que se está leyendo'), null, x => x.highlight, (x, v) => { x.highlight = v; }),
         HAS_LETTER_SOUNDS && soundsReady ? spellBox : null,
         range(T('Mida del text a la pantalla', 'Tamaño del texto en la pantalla'), 16, 40, 1, x => x.docFontSize, (x, v) => { x.docFontSize = v; }, v => `${v} px`),

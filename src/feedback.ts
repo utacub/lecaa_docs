@@ -38,8 +38,8 @@ export function itemsForChar(ch: string, before: string): SoundItem[] {
       const file = phonemeFile(ch);
       if (file) items.push({ kind: 'clip', file });
     } else if (letter === 'name' || !isLetter(ch)) {
-      const name = letter === 'name' ? spokenName(ch, f.upperCaseWord) : null;
-      if (name) items.push({ kind: 'tts', text: name });
+      const name = letter === 'name' ? spokenName(ch, f.upperCaseWord && !settings.value.upperCase) : null;
+      if (name) items.push({ kind: 'tts', text: name, literal: true });
     }
   }
   return items;
