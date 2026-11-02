@@ -20,6 +20,7 @@ import { speech } from './speech';
 import { installAudioUnlock } from './speech/audio';
 import { neural } from './speech/neural';
 import { lock } from './lock';
+import { installButton } from './install';
 import { openDocuments } from './documents';
 import { deleteDoc, keepsSeveral, listDocs, loadDoc, newDocId, openDocId, setOpenDocId, storeDoc, type SavedDoc } from './storage';
 import { fitToVisibleArea } from './viewport';
@@ -301,7 +302,7 @@ async function boot() {
   });
 
   const actions = h('div', { class: 'topbar-actions', role: 'toolbar', 'aria-label': T('Veu i pantalla', 'Voz y pantalla') },
-    playBtn, stopBtn, fullBtn, aboutBtn, setBtn);
+    playBtn, stopBtn, installButton(), fullBtn, aboutBtn, setBtn);
 
   // Language menu: the interface, the configuration and the voices all change with it.
   // Closed it shows the current language's code; open, every language in its own name.

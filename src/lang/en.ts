@@ -265,6 +265,17 @@ const texts: Record<string, string> = {
   'El so més habitual de cada lletra, amb veu enregistrada': 'The most common sound of each letter, with a recorded voice',
   'Selecció': 'Selection',
   'Marc teòric': 'Theoretical framework',
+  'Instal·la l’app': 'Install the app',
+  'LECAA Docs s’està instal·lant': 'LECAA Docs is being installed',
+  'Instal·la LECAA Docs': 'Install LECAA Docs',
+  'Instal·lada, l’app s’obre des de la seva icona, ocupa tota la pantalla i funciona sense connexió.': 'Once installed, the app opens from its own icon, fills the whole screen and works offline.',
+  'Toca el botó «Compartir»': 'Tap the “Share” button',
+  '(a dalt o a baix de la pantalla).': '(at the top or bottom of the screen).',
+  'Tria «Afegir a la pantalla d’inici»': 'Choose “Add to Home Screen”',
+  '. Si no hi és, llisca la llista cap avall.': '. If it is not there, scroll the list down.',
+  'Toca «Afegir». LECAA Docs apareixerà a la pantalla d’inici com una app més.': 'Tap “Add”. LECAA Docs will appear on the Home Screen like any other app.',
+  'Al menú «Arxiu» de Safari, tria «Afegir al Dock».': 'In Safari’s “File” menu, choose “Add to Dock”.',
+  'Fes clic a «Afegir». LECAA Docs s’obrirà en una finestra pròpia, des del Dock.': 'Click “Add”. LECAA Docs will open in its own window, from the Dock.',
 };
 
 export default texts;

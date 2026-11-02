@@ -118,6 +118,44 @@ ok(await imageOf('poma') === 192 && await imageOf('pilota') === 192, 'sense conn
 await page.screenshot({ path: 'test-results/pwa-offline.png' });
 await ctx.setOffline(false);
 
+// The install button: with the browser's own prompt (Chromium), with the steps to follow (Safari on
+// iPad and on a Mac), and hidden where there is nothing to install (Firefox, the installed app).
+const installShown = p => p.evaluate(() => { const b = document.querySelector('.install-btn'); return !!b && !b.hidden && b.offsetWidth > 0; });
+await page.evaluate(() => {
+  const e = new Event('beforeinstallprompt', { cancelable: true });
+  e.prompt = async () => { window.prompted = true; };
+  e.userChoice = Promise.resolve({ outcome: 'accepted' });
+  window.dispatchEvent(e);
+});
+ok(await installShown(page), 'Chromium: el botó «Instal·la l’app» és a la barra de dalt');
+await page.click('.install-btn');
+await wait(200);
+ok(await page.evaluate(() => window.prompted === true) && !(await installShown(page)), 'el botó obre la finestra d’instal·lació del navegador i després s’amaga');
+const SAFARI = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15';
+const other = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium', args: [`--host-resolver-rules=MAP lecaa.test 127.0.0.1:${port}`, `--unsafely-treat-insecure-origin-as-secure=${origin}`] });
+for (const [name, ua, init, shown, text] of [
+  ['iPad', SAFARI, () => { Object.defineProperty(navigator, 'platform', { get: () => 'MacIntel' }); Object.defineProperty(navigator, 'maxTouchPoints', { get: () => 5 }); }, true, 'Afegir a la pantalla d’inici'],
+  ['Safari al Mac', SAFARI, () => {}, true, 'Afegir al Dock'],
+  ['Firefox', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0', () => {}, false],
+  ['iPhone amb l’app instal·lada', 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1', () => { Object.defineProperty(navigator, 'standalone', { get: () => true }); }, false],
+]) {
+  const c = await other.newContext({ userAgent: ua, viewport: { width: 1180, height: 820 } });
+  await c.addInitScript({ path: 'tests/mock-speech.js' });
+  await c.addInitScript(init);
+  const p = await c.newPage();
+  await p.goto(origin + '/');
+  await p.waitForFunction(() => window.lecaa);
+  const vis = await installShown(p);
+  if (!shown) { ok(!vis, `${name}: no hi ha botó d’instal·lar`); await c.close(); continue; }
+  await p.click('.install-btn');
+  const steps = await p.locator('dialog.install').textContent();
+  await p.keyboard.press('Escape');
+  await wait(200);
+  ok(vis && steps.includes(text) && await p.evaluate(() => !document.querySelector('dialog.install') && document.activeElement.classList.contains('install-btn')), `${name}: el botó explica com instal·lar-la («${text}») i es tanca amb Esc`);
+  await c.close();
+}
+await other.close();
+
 ok(errors.length === 0, 'cap error a la pàgina: ' + JSON.stringify(errors));
 await ctx.close();
 rmSync(profile, { recursive: true, force: true });
