@@ -61,6 +61,36 @@ await page.keyboard.type('gos ', { delay: 50 });
 const after = await page.evaluate(() => document.querySelector('.ProseMirror p').getBoundingClientRect().height);
 ok(Math.abs(before - after) < 1, `la línia no canvia d’alçada en aparèixer el pictograma (${before} → ${after})`);
 
+// 3b. big letters (the size menu, 48 and 72 points): each pictogram fits above its own word, without
+// covering the line above or going past the sheet, and the line does not jump when it appears
+await page.evaluate(() => window.lecaa.editor.chain().command(({ tr }) => { tr.setMeta('lecaa-system', true); return true; })
+  .setContent('<p><span style="font-size: 5.1429em">El cotxe vermell</span></p><p>La nena menja una poma i el gos juga amb la pilota al jardí.</p><p>Text petit <span style="font-size: 3.4286em">gran</span> petit.</p>').run());
+await wait(200);
+const big = await page.evaluate(() => {
+  const sheet = document.querySelector('.page').getBoundingClientRect();
+  const boxes = [...document.querySelectorAll('.ProseMirror .pw')].map(el => {
+    const r = el.getBoundingClientRect(), cs = getComputedStyle(el, '::before');
+    const w = parseFloat(cs.width), bottom = r.bottom - parseFloat(cs.bottom);
+    return { word: el.dataset.word, text: r, pic: { left: r.left + r.width / 2 - w / 2, right: r.left + r.width / 2 + w / 2, top: bottom - parseFloat(cs.height), bottom } };
+  });
+  const out = boxes.filter(b => b.pic.top < sheet.top || b.pic.left < sheet.left || b.pic.right > sheet.right).map(b => b.word);
+  const over = [];
+  for (const a of boxes) for (const b of boxes) {
+    if (a !== b && a.pic.left < b.text.right && a.pic.right > b.text.left && a.pic.top < b.text.bottom && a.pic.bottom > b.text.top) over.push(`${a.word}>${b.word}`);
+  }
+  return { n: boxes.length, out, over };
+});
+ok(big.n >= 9 && !big.out.length && !big.over.length, 'amb lletra gran, cada pictograma cap damunt de la seva paraula sense tapar la línia de dalt ni sortir del full: ' + JSON.stringify(big));
+await clear();
+await page.evaluate(() => window.lecaa.editor.chain().focus().setFontSize('5.1429em').run());
+await page.keyboard.type('gat', { delay: 50 });
+const bigBefore = await page.evaluate(() => document.querySelector('.ProseMirror p').getBoundingClientRect().height);
+await page.keyboard.type(' ', { delay: 50 });
+await wait(100);
+const bigAfter = await page.evaluate(() => document.querySelector('.ProseMirror p').getBoundingClientRect().height);
+ok((await pictos()).some(x => x.startsWith('gat:')) && Math.abs(bigBefore - bigAfter) < 1, `amb lletra de 72 punts, la línia tampoc canvia d’alçada (${bigBefore} → ${bigAfter})`);
+await page.evaluate(() => window.lecaa.editor.chain().focus().unsetFontSize().run());
+
 // 4. the Android-style on-screen keyboard (no key, only text) also gets pictograms
 await clear();
 for (const c of 'sol ') await vkey(c);
