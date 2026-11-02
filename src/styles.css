@@ -324,15 +324,23 @@ body.is-locked .page { border-color: var(--focus); box-shadow: 0 0 0 6px var(--f
    pictogram above its text, so the text does not jump when one appears. It appears
    with the space, in a tenth of a second: a softer entrance than a jump, and still at once. */
 .ProseMirror.pictos-on { --picto-gap: .08em; }
-.ProseMirror.pictos-on :is(p, h1, h2) { line-height: calc(1.35em + 2 * (var(--picto-size, 2em) + var(--picto-gap))); }
+/* Text in another size (the size menu) keeps that room in its own size: em, --picto-size and
+   --picto-gap are worked out again for it, so a big word's pictogram fits above its own line instead
+   of covering the line above or going past the top of the page (Marc, 2/11/2026). */
+.ProseMirror.pictos-on :is(p, h1, h2), .ProseMirror.pictos-on :is(p, h1, h2) [style*="font-size"] { line-height: calc(1.35em + 2 * (var(--picto-size, 2em) + var(--picto-gap))); }
 .ProseMirror.pictos-on .pw {
-  display: inline-block; position: relative; min-width: var(--picto-size, 2em); text-align: center;
+  display: inline-block; position: relative; min-width: var(--picto-w, var(--picto-size, 2em)); text-align: center;
   line-height: 1.35; text-indent: 0;
 }
 .ProseMirror.pictos-on .pw::before {
   content: ''; position: absolute; left: 50%; bottom: calc(100% + var(--picto-gap)); transform: translateX(-50%);
-  width: var(--picto-size, 2em); height: var(--picto-size, 2em); background: var(--picto) center / contain no-repeat;
+  width: var(--picto-w, var(--picto-size, 2em)); height: var(--picto-w, var(--picto-size, 2em)); background: var(--picto) center / contain no-repeat;
   cursor: pointer; animation: picto-in .1s ease-out;
+}
+/* Nor wider than the sheet: big letters with big pictograms on a phone. */
+@supports (width: 1cqi) {
+  .page { container-type: inline-size; }
+  .ProseMirror.pictos-on .pw { --picto-w: min(var(--picto-size, 2em), 100cqi); }
 }
 @keyframes picto-in { from { opacity: 0; transform: translateX(-50%) scale(.85); } }
 @keyframes picto-out { to { opacity: 0; } }
