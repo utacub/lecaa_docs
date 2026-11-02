@@ -39,11 +39,13 @@ self.addEventListener('fetch', e => {
       e.respondWith(fetch(e.request).then(r => {
         if (r.ok) { const copy = r.clone(); caches.open(PICTOS).then(c => c.put(e.request, copy)); }
         return r;
-      }).catch(() => caches.match(e.request, { cacheName: PICTOS, ignoreSearch: true })));
+      }).catch(() => caches.match(e.request, { cacheName: PICTOS })));
       return;
     }
-    // Images never change: cache first, and each one is kept the first time it is shown.
-    e.respondWith(caches.open(PICTOS).then(c => c.match(e.request, { ignoreSearch: true }).then(hit => hit || fetch(e.request).then(r => {
+    // Images never change: cache first, and each one is kept the first time it is shown. The lookup
+    // is by the exact address: with ignoreSearch, Chromium reads every entry of the cache (about
+    // 13,700 with all the pictograms saved), and each pictogram took over a second to appear.
+    e.respondWith(caches.open(PICTOS).then(c => c.match(e.request).then(hit => hit || fetch(e.request).then(r => {
       if (r.ok) c.put(e.request, r.clone());
       return r;
     }))));

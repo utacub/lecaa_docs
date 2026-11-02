@@ -229,6 +229,25 @@ function build(state: EditorState): DecorationSet {
   return DecorationSet.create(state.doc, decos);
 }
 
+// The pictogram of the word being written is fetched before the word is finished, so that it is
+// already in memory when the space comes and appears at once, even when the service worker has to
+// wake up first. The last ones are kept, so a word that is erased and written again needs nothing.
+const warm = new Map<number, HTMLImageElement>();
+
+function warmUp(state: EditorState) {
+  if (!pictosShown() || !state.selection.empty) return;
+  const $head = state.selection.$head;
+  if (!$head.parent.isTextblock) return;
+  const before = textOf($head.parent, $head.start()).text.slice(0, $head.parentOffset);
+  const last = pictosIn(before).at(-1);
+  if (!last || last.to !== before.length || warm.has(last.id)) return;
+  const img = new Image();
+  img.src = absUrl(last.id);
+  img.decode().catch(() => { /* offline and not saved: it shows nothing either way */ });
+  warm.set(last.id, img);
+  if (warm.size > 40) warm.delete(warm.keys().next().value!);
+}
+
 const REFRESH = 'lecaa-pictos-refresh';
 
 export function refreshPictos(view: EditorView) {
@@ -268,6 +287,11 @@ export const PictoLayer = Extension.create({
         init: (_, state) => build(state),
         apply: (tr, set, _old, state) => (tr.docChanged || tr.selectionSet || tr.getMeta(REFRESH) ? build(state) : set),
       },
+      view: () => ({
+        update(view, prev) {
+          if (view.state.doc !== prev.doc || !view.state.selection.eq(prev.selection)) warmUp(view.state);
+        },
+      }),
       props: {
         decorations: state => key.getState(state),
         handleDOMEvents: {
