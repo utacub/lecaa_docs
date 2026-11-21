@@ -1,32 +1,96 @@
-// Offline support for the online edition. The build fills in VERSION and FILES (every file of the
-// build except the voice runtime, which the app keeps in IndexedDB), so each deploy gets a new
-// cache and removes the old one.
+// Offline support for the online edition. The build fills in VERSION, FILES (every file of the
+// build with its size, except the voice runtime, which the app keeps in IndexedDB when a Piper
+// voice is downloaded) and INDEXES (the word indexes of the pictograms), so each deploy gets a new
+// cache and removes the old ones.
 const VERSION = '__VERSION__';
 const FILES = __FILES__;
+const INDEXES = __INDEXES__;
+const SHELL_BYTES = __SHELL_BYTES__;
 // Only this app's caches: other apps on the same site (utacub.github.io) keep their own, such as the
 // 'lecaa-pictos-proto-' ones left by the pictogram test edition (removed on 29/10/2026), and are never deleted here.
 const PREFIX = 'lecaa-docs-';
 const CACHE = PREFIX + VERSION;
 // Pictograms are kept across versions: they are downloaded once (as they are used, or all at once
-// from the settings) and a new version of the app does not download them again.
+// from the install dialog or the settings) and a new version of the app does not download them again.
 const PICTOS = PREFIX + 'pictogrames';
-const SHELL = ['./', './index.html', './manifest.webmanifest'];
+const SHELL = ['./', './index.html'];
+
+// Every file the app needs offline, with the cache it goes in and its size.
+const ALL = [
+  ...SHELL.map(f => ({ url: f, cache: CACHE, bytes: SHELL_BYTES })),
+  ...FILES.map(([f, bytes]) => ({ url: f, cache: CACHE, bytes })),
+  ...INDEXES.map(([f, bytes]) => ({ url: f, cache: PICTOS, bytes })),
+];
+
+// Downloads the files that are not in their cache yet, a few at a time, reporting the bytes that
+// are already on the device. A single failed file doesn't stop the rest: they are counted, so the
+// app can say so and offer to try again.
+async function complete(onProgress) {
+  const total = ALL.reduce((n, f) => n + f.bytes, 0);
+  let loaded = 0, failed = 0;
+  const todo = [];
+  for (const f of ALL) {
+    const c = await caches.open(f.cache);
+    if (await c.match(f.url)) loaded += f.bytes; else todo.push(f);
+  }
+  onProgress?.(loaded, total);
+  const worker = async () => {
+    for (let f = todo.shift(); f; f = todo.shift()) {
+      try {
+        const r = await fetch(f.url, { cache: 'no-cache' });
+        if (!r.ok) throw new Error(String(r.status));
+        await (await caches.open(f.cache)).put(f.url, r);
+      } catch { failed++; }
+      loaded += f.bytes;
+      onProgress?.(loaded, total);
+    }
+  };
+  await Promise.all([worker(), worker(), worker(), worker()]);
+  return { total, failed };
+}
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(async c => {
-    await c.addAll(SHELL);
-    // The rest one by one, so a single failed file doesn't leave the app without offline support.
-    await Promise.allSettled(FILES.map(f => c.add(f)));
-    // The word indexes, so that the pictograms already seen also work offline after the first visit.
-    await caches.open(PICTOS).then(p => Promise.allSettled(['ca', 'es', 'eu', 'gl', 'en', 'fr'].map(l => `./pictos/index-${l}.js`).map(f => p.add(f)))).catch(() => {});
-  }).then(() => self.skipWaiting()));
+  // Without the page the app cannot open offline: the browser then tries this version again later.
+  e.waitUntil(complete()
+    .then(() => caches.open(CACHE)).then(c => c.match('./'))
+    .then(hit => { if (!hit) throw new Error('page not cached'); return self.skipWaiting(); }));
+});
+
+// The app asks how much of it is on the device ('status') and to download what is missing
+// ('complete'), with the progress, for the install dialog. It answers through the port it sends.
+self.addEventListener('message', e => {
+  const port = e.ports[0];
+  if (!port || !e.data) return;
+  if (e.data.type === 'status') {
+    e.waitUntil((async () => {
+      let have = 0, total = 0;
+      for (const f of ALL) {
+        total += f.bytes;
+        if (await (await caches.open(f.cache)).match(f.url)) have += f.bytes;
+      }
+      port.postMessage({ type: 'status', have, total, version: VERSION });
+    })());
+  } else if (e.data.type === 'complete') {
+    e.waitUntil(complete((loaded, total) => port.postMessage({ type: 'progress', loaded, total }))
+      .then(r => port.postMessage({ type: 'done', ...r }))
+      .catch(() => port.postMessage({ type: 'done', total: 0, failed: 1 })));
+  }
 });
 
 self.addEventListener('activate', e => {
+  // The previous version is kept until the next one: a page that was open when this version arrived
+  // still loads its own files (the export to PDF, the «Marc teòric»…) from it, also offline.
   e.waitUntil(caches.keys()
-    .then(keys => Promise.all(keys.filter(k => k.startsWith(PREFIX) && k !== CACHE && k !== PICTOS).map(k => caches.delete(k))))
+    .then(keys => {
+      const old = keys.filter(k => k.startsWith(PREFIX) && k !== CACHE && k !== PICTOS);
+      return Promise.all(old.slice(0, -1).map(k => caches.delete(k)));
+    })
     .then(() => self.clients.claim()));
 });
+
+// A slow connection (a school wifi that is full) must not keep the app from opening: after a few
+// seconds the page comes from the cache, and the network answer still updates it for next time.
+const PAGE_TIMEOUT_MS = 4000;
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
@@ -51,17 +115,29 @@ self.addEventListener('fetch', e => {
     }))));
     return;
   }
-  // Pages: network first, so a new version shows up as soon as it is published; cache when offline.
+  // Pages: network first, so a new version shows up as soon as it is published; cache when offline
+  // or when the network is too slow.
   if (e.request.mode === 'navigate') {
-    e.respondWith(fetch(e.request).then(r => {
-      if (r.ok) caches.open(CACHE).then(c => c.put('./', r.clone()));
+    const network = fetch(e.request).then(r => {
+      if (r.ok) { const copy = r.clone(); caches.open(CACHE).then(c => c.put('./', copy)); }
       return r;
-    }).catch(() => caches.match('./', { cacheName: CACHE })));
+    });
+    e.waitUntil(network.catch(() => undefined));
+    const cached = () => caches.match('./', { cacheName: CACHE });
+    const slow = new Promise(resolve => setTimeout(resolve, PAGE_TIMEOUT_MS)).then(cached);
+    e.respondWith(Promise.race([network.catch(cached), slow.then(hit => hit || network)])
+      .then(r => r || cached()).then(r => r || network));
     return;
   }
-  // Everything else has a content hash in its name: cache first.
-  e.respondWith(caches.match(e.request, { cacheName: CACHE, ignoreSearch: true }).then(hit => hit || fetch(e.request).then(r => {
-    if (r.ok) { const copy = r.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); }
-    return r;
-  })));
+  // Everything else has a content hash in its name: cache first (this version's, then the previous
+  // one's, for a page that is still running it).
+  e.respondWith(caches.match(e.request, { cacheName: CACHE, ignoreSearch: true })
+    .then(hit => hit || caches.keys().then(keys => {
+      const old = keys.filter(k => k.startsWith(PREFIX) && k !== CACHE && k !== PICTOS).pop();
+      return old ? caches.match(e.request, { cacheName: old }) : undefined;
+    }))
+    .then(hit => hit || fetch(e.request).then(r => {
+      if (r.ok) { const copy = r.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); }
+      return r;
+    })));
 });

@@ -8,6 +8,7 @@ import { inTauri } from './speech/native';
 import { settings, type LetterMode, type PictoShow, type Settings, type SpellMode } from './settings';
 import { recordedVoices, speech, type VoiceInfo } from './speech';
 import { neural } from './speech/neural';
+import { saveChoice, sizes as offlineSizes } from './offline';
 import { allPictoIds, deleteOffline, downloadAll, loadPictos, offlineCount, offlineSupported, pictoCredit, pictosAvailable } from './pictos';
 import { MODELS } from './speech/neural/catalog';
 import { h, icon, toast } from './ui';
@@ -89,15 +90,20 @@ function pictosOfflineBox() {
         'Sin conexión: {n} de {total} pictogramas guardados en este dispositivo. Los que se usan se guardan solos.', { n: thousands(have), total: thousands(total) })
       : T('No s’han trobat els pictogrames.', 'No se han encontrado los pictogramas.'));
     const buttons = h('div', { class: 'row' });
-    if (total && have < total) buttons.append(h('button', { class: 'small-btn', type: 'button', onclick: () => void download() }, have ? T('Desa la resta', 'Guardar el resto') : T('Desa’ls tots (70 MB)', 'Guardarlos todos (70 MB)')));
+    const size = Math.max(1, Math.round((await offlineSizes()).pictos * (1 - have / (total || 1)) / 1_000_000)).toLocaleString(BCP47);
+    if (total && have < total) buttons.append(h('button', { class: 'small-btn', type: 'button', onclick: () => void download() }, have ? T('Desa la resta ({size} MB)', 'Guardar el resto ({size} MB)', { size }) : T('Desa’ls tots ({size} MB)', 'Guardarlos todos ({size} MB)', { size })));
     if (have) buttons.append(h('button', { class: 'small-btn', type: 'button', onclick: async () => {
       if (!confirm(T('Vols esborrar els pictogrames desats en aquest dispositiu? Es tornaran a baixar quan es facin servir.', '¿Quieres borrar los pictogramas guardados en este dispositivo? Se volverán a descargar cuando se usen.'))) return;
+      // From now on, each pictogram is kept when it is shown, and none is downloaded on its own.
+      saveChoice('app');
       await deleteOffline(); void render();
     } }, T('Esborra’ls', 'Borrarlos')));
     box.replaceChildren(h('div', { class: 'neural-title' }, T('Pictogrames sense connexió', 'Pictogramas sin conexión')), status, buttons);
   };
   const download = async () => {
     if (!navigator.onLine) { toast(T('Cal connexió a internet per desar els pictogrames', 'Hace falta conexión a internet para guardar los pictogramas')); return; }
+    // The device's choice (as in the install dialog): when the app opens, it finishes what is missing.
+    saveChoice('all');
     abort = new AbortController();
     const bar = h('progress', { max: 1, value: 0, 'aria-label': T('Desant els pictogrames', 'Guardando los pictogramas') }) as HTMLProgressElement;
     const label = h('span', {});

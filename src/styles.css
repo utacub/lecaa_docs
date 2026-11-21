@@ -386,3 +386,20 @@ body.is-locked .page { border-color: var(--focus); box-shadow: 0 0 0 6px var(--f
 .install { width: min(560px, calc(100vw - 32px)); }
 .install-steps { margin: 6px 0 0; padding-left: 1.4em; display: grid; gap: 12px; font-size: 17px; }
 .install-steps svg { width: 22px; height: 22px; vertical-align: -5px; color: var(--accent); }
+.install-options { border: 0; margin: 4px 0 14px; padding: 0; display: grid; gap: 10px; }
+.install-options legend { font-weight: 700; margin-bottom: 8px; padding: 0; }
+.install-option { display: flex; gap: 12px; align-items: flex-start; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; cursor: pointer; }
+.install-option:has(input:checked) { border-color: var(--accent); background: var(--mint); }
+.install-option input { width: 22px; height: 22px; margin: 1px 0 0; flex: none; accent-color: var(--accent); }
+.install-option .hint { display: block; color: var(--muted); font-size: 14px; margin-top: 2px; }
+.install-size { color: var(--muted); font-weight: 700; white-space: nowrap; }
+.install-options[disabled] .install-option { cursor: default; opacity: .75; }
+.install-wifi svg { width: 20px; height: 20px; vertical-align: -4px; color: var(--accent); }
+.install-space:empty { display: none; }
+.install-space.warn, .install-message.warn { color: var(--warn); background: var(--warn-soft); border-radius: 10px; padding: 8px 12px; }
+.install-message.done { color: var(--ok); background: var(--ok-soft); border-radius: 10px; padding: 8px 12px; font-weight: 700; }
+.install .hint { color: var(--muted); font-size: 14px; }
+.install-progress { margin: 12px 0 10px; font-variant-numeric: tabular-nums; }
+.install-progress[hidden], .install-message[hidden] { display: none; }
+.install-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.install-actions .small-btn { min-height: 44px; padding: 8px 18px; font-size: 16px; }

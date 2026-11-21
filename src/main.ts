@@ -20,7 +20,8 @@ import { speech } from './speech';
 import { installAudioUnlock } from './speech/audio';
 import { neural } from './speech/neural';
 import { lock } from './lock';
-import { installButton } from './install';
+import { firstRunInInstalledApp, installButton } from './install';
+import { resume as resumeOffline, savedChoice } from './offline';
 import { openDocuments } from './documents';
 import { deleteDoc, keepsSeveral, listDocs, loadDoc, newDocId, openDocId, setOpenDocId, storeDoc, type SavedDoc } from './storage';
 import { fitToVisibleArea } from './viewport';
@@ -421,6 +422,10 @@ async function boot() {
 
   if (!__SINGLE_FILE__ && 'serviceWorker' in navigator && location.protocol.startsWith('http') && !location.hostname.match(/^(localhost|127\.)/)) {
     navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(() => {});
+    // The installed app asks once what to keep offline; with a choice, what is missing (a download
+    // left halfway, the pictograms of a new pack) is finished quietly, once the app is running.
+    if (savedChoice() === null) firstRunInInstalledApp();
+    else setTimeout(() => void resumeOffline(), 8000);
   }
   (window as unknown as { lecaa: object }).lecaa = { editor, speech, settings, reader };
 }
