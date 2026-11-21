@@ -11,7 +11,7 @@ Versió 0.6.0. L'app és gratuïta per a tothom. La planificació completa és a
   - Només el català i el castellà tenen sons de les lletres enregistrats: en els altres idiomes, l'opció de so no hi és i el feedback de lletra en diu el nom.
   - Quan no es troba cap veu de l'idioma, la configuració explica com instal·lar-ne una a Windows, iOS i macOS i Android.
 - **Pictogrames ARASAAC** damunt de les paraules, en els sis idiomes: en acabar una paraula (espai, puntuació o Intro), n'apareix el pictograma damunt. Reconeix formes flexionades (*menjo*, *comemos*, *etxean*, *cans*, *ate*, *mangent*), l'apòstrof (*l'aigua*, *l'eau*, *I'm*) i algunes expressions (*pa amb tomàquet*, *pan con tomate*). Per defecte, no en posa als articles, preposicions, conjuncions i pronoms febles.
-  - Botó de la barra d'eines per activar-los i desactivar-los; a la configuració, apartat *Pictogrames ARASAAC*: mida, paraules amb contingut i «Desa'ls tots» per fer-los servir sense connexió (70 MB) a la versió web.
+  - Botó de la barra d'eines per activar-los i desactivar-los; a la configuració, apartat *Pictogrames ARASAAC*: mida, paraules amb contingut i «Desa'ls tots» per fer-los servir sense connexió (uns 69 MB) a la versió web; també es pot triar en instal·lar l'app.
   - **Com es veuen** (Configuració > Pictogrames ARASAAC): *Sempre* (per defecte), *Uns segons* (s'esvaeixen al cap d'1 a 10 segons d'acabar la paraula; es pot triar el temps) o *Només en tocar la paraula*. En els dos últims modes, la paraula on és el cursor o que es toca torna a mostrar el seu pictograma; un pictograma amagat no obre el selector. Als documents desats i impresos hi són sempre tots (`src/pictos.ts`, classes `pictos-fade` i `pictos-caret`).
   - Tocant un pictograma se'n tria un altre per a aquella paraula, o cap (la tria es recorda per a cada idioma).
   - **Amb lletra gran** (menú de mida, fins a 72 punts), cada línia reserva el lloc del pictograma en la mida de la seva lletra: el pictograma d'una paraula gran cap damunt seu sense tapar la línia de dalt ni sortir per dalt del full, i cap pictograma és més ample que el full (Marc, 2/11/2026; `src/styles.css`, comprovat a `tests/pictos.mjs`). Al PDF i al .docx, cada línia ja feia lloc al seu pictograma més gran.
@@ -50,7 +50,7 @@ Versió 0.6.0. L'app és gratuïta per a tothom. La planificació completa és a
 | Versió | Com s'obté | Veus que veu |
 |---|---|---|
 | Fitxer únic (`LECAA-Docs.html`) | Es descarrega i s'obre amb el navegador | Les que exposa el navegador + Ona (Piper) descarregada |
-| Web (`dist/`) | Es publica en un servidor; es pot instal·lar com a app amb el botó **Instal·la l'app** de la barra de dalt (a Chrome i Edge obre la finestra del navegador; a l'iPad, l'iPhone i Safari del Mac explica els passos; no surt a l'app ja instal·lada ni al fitxer únic) | Les que exposa el navegador + Ona (Piper) descarregada |
+| Web (`dist/`) | Es publica en un servidor; es pot instal·lar com a app amb el botó **Instal·la l'app** de la barra de dalt (primer un diàleg diu què ocupa (uns 19 MB l'app, 88 MB amb tots els pictogrames), recomana la wifi i mostra l'espai disponible; a Chrome i Edge deixa triar si es baixen també tots els pictogrames, obre la finestra del navegador i mostra el progrés «X de Y MB (Z %)» amb «Reintenta» si falla; a l'iPad, l'iPhone i Safari del Mac explica els passos, i l'app instal·lada fa triar els pictogrames el primer cop que s'obre; no surt a l'app ja instal·lada ni al fitxer únic) | Les que exposa el navegador + Ona (Piper) descarregada |
 | App d'escriptori (Tauri) | Instal·lador per a Windows (64 i 32 bits), macOS i Linux | **Totes les del sistema** + Ona (Piper) descarregada |
 
 L'app d'escriptori llegeix directament les veus del sistema:
@@ -84,7 +84,7 @@ La versió web es publica a GitHub Pages: **https://utacub.github.io/lecaa_docs/
 
 GitHub Actions (`.github/workflows/build.yml`) fa la feina a cada canvi a `main`: genera la versió web i el fitxer únic, passa les proves al navegador (també amb les veus Piper reals) i, si tot és correcte, publica el lloc. Una sola vegada, cal triar **Settings > Pages > Build and deployment > Source: GitHub Actions** al repositori. Els instal·ladors d'escriptori només es generen amb una etiqueta de versió (`v0.4.0`, per exemple) o a mà des de la pestanya Actions.
 
-- La web funciona sense connexió un cop oberta: el service worker desa tots els fitxers de la versió i, quan se'n publica una de nova, la baixa sola i esborra l'anterior.
+- La web funciona sense connexió un cop oberta: el service worker desa tots els fitxers de la versió (i els índexs de pictogrames de les sis llengües) i, quan se'n publica una de nova, la baixa sola; guarda la versió anterior fins a la següent, perquè una pàgina oberta pugui acabar de carregar els seus fitxers. Si una baixada queda a mitges, l'app l'acaba en obrir-se. Les veus Piper es baixen a part (Configuració) i es guarden a IndexedDB.
 - Es pot instal·lar com a app (Chrome, Edge, Chromebook, Android; a l'iPad i l'iPhone, Compartir > Afegeix a la pantalla d'inici).
 - Tot funciona amb rutes relatives, de manera que també es pot publicar en qualsevol altre servidor o subcarpeta copiant-hi `dist/`.
 
