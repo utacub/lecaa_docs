@@ -262,6 +262,7 @@ export function safeName(title: string) {
 const KINDS = {
   docx: { mime: DOCX_MIME, ext: 'docx', label: () => T('Document de Word (compatible amb Google Docs)', 'Documento de Word (compatible con Google Docs)') },
   pdf: { mime: 'application/pdf', ext: 'pdf', label: () => T('Document PDF', 'Documento PDF') },
+  mp3: { mime: 'audio/mpeg', ext: 'mp3', label: () => T('Àudio MP3', 'Audio MP3') },
 };
 
 export async function saveFile(blob: Blob, name: string, kind: keyof typeof KINDS = 'docx'): Promise<boolean> {

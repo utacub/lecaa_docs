@@ -403,3 +403,8 @@ body.is-locked .page { border-color: var(--focus); box-shadow: 0 0 0 6px var(--f
 .install-progress[hidden], .install-message[hidden] { display: none; }
 .install-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
 .install-actions .small-btn { min-height: 44px; padding: 8px 18px; font-size: 16px; }
+
+/* ---------- save as MP3 (mp3-export.ts) ---------- */
+.mp3-edge { border-top: 1px solid var(--line); margin-top: 18px; padding-top: 14px; }
+.mp3-edge .install-actions { margin-top: 8px; }
+.mp3-edge .install-message { margin-top: 10px; }
