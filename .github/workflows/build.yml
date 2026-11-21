@@ -29,7 +29,7 @@ jobs:
           # Failed checks are also shown as annotations on the run, so they can be read without the log.
           check() { local s=0; "$@" 2>&1 | tee test-output.txt || s=$?; if [ "$s" -ne 0 ]; then grep -E "FAIL|Error" test-output.txt | head -20 | sed 's/^/::error::/'; tail -15 test-output.txt | sed 's/^/::error::/'; fi; return "$s"; }
           npx playwright install --with-deps chromium
-          sudo apt-get install -y poppler-utils   # pdftotext, pdffonts and pdfimages for the PDF checks
+          sudo apt-get install -y poppler-utils ffmpeg   # pdftotext, pdffonts and pdfimages for the PDF checks; ffprobe for the MP3 checks
           npx vite preview --port 4173 --strictPort &
           python3 -m http.server 4174 --bind 127.0.0.1 -d dist &
           sleep 3
@@ -47,6 +47,9 @@ jobs:
           cd ..
           PIPER_DIR="$PWD/piper" check node tests/neural.mjs http://localhost:4173/
           PIPER_DIR="$PWD/piper" check node tests/neural.mjs "file://$PWD/dist-single/index.html"
+          # «Desa com a MP3»: Piper voice, recording of a browser voice, «Obre a Edge».
+          PIPER_DIR="$PWD/piper" check node tests/mp3.mjs http://localhost:4173/
+          PIPER_DIR="$PWD/piper" check node tests/mp3.mjs "file://$PWD/dist-single/index.html"
       - uses: actions/upload-artifact@v4
         with: { name: LECAA-Docs-web, path: dist }
       - name: Single-file edition

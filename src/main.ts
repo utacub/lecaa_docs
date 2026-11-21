@@ -1,7 +1,7 @@
 import './styles.css';
 import type { Editor } from '@tiptap/core';
 import {
-  AArrowDown, AArrowUp, Bold, Check, ChevronDown, Columns3, Maximize, FileDown, FilePlus, FileType, FolderOpen, Globe, Image as ImageIcon, Info, Italic, List, ListOrdered, Pause, Play,
+  AArrowDown, AArrowUp, Bold, Check, ChevronDown, Columns3, Maximize, FileDown, FilePlus, FileType, FileVolume, FolderOpen, Globe, Image as ImageIcon, Info, Italic, List, ListOrdered, Pause, Play,
   Printer, Redo2, Rows3, Settings as SettingsIcon, Square, SquareMinus, Table as TableIcon, TextAlignCenter, TextAlignEnd,
   TextAlignStart, TextCursorInput, Trash2, Underline, Undo2,
 } from 'lucide';
@@ -23,6 +23,7 @@ import { lock } from './lock';
 import { firstRunInInstalledApp, installButton } from './install';
 import { resume as resumeOffline, savedChoice } from './offline';
 import { openDocuments } from './documents';
+import { readHandoff } from './edge-handoff';
 import { deleteDoc, keepsSeveral, listDocs, loadDoc, newDocId, openDocId, setOpenDocId, storeDoc, type SavedDoc } from './storage';
 import { fitToVisibleArea } from './viewport';
 import { h, icon, toast } from './ui';
@@ -161,14 +162,29 @@ async function boot() {
       toast(T('No s’ha pogut desar el PDF', 'No se ha podido guardar el PDF'));
     }
   };
-  const save = async () => {
+  // The reading of the document, with the chosen voice, as an MP3 file (mp3-export.ts).
+  const saveMp3 = async () => {
+    reader.stop();
+    const { exportMp3 } = await import('./mp3-export');
+    exportMp3(editor, {
+      title: title.value,
+      saveDocx: save,
+      save: blob => saveFile(blob, safeName(title.value) + '.mp3', 'mp3'),
+      openSettings: () => showSettings(),
+      onClose: () => editor.commands.focus(),
+    });
+  };
+  const save = async (): Promise<boolean> => {
     try {
       const pictos = await pictosForExport(editor.getJSON());
       const blob = await docxFromEditor(editor, title.value, pictos);
-      if (await saveFile(blob, safeName(title.value) + '.docx')) toast(T('Desat com a .docx (es pot obrir amb Google Docs).', 'Guardado como .docx (se puede abrir con Google Docs).') + (pictos === 'unreadable' ? unreadablePictos() : ''), pictos === 'unreadable' ? 8000 : undefined);
+      const saved = await saveFile(blob, safeName(title.value) + '.docx');
+      if (saved) toast(T('Desat com a .docx (es pot obrir amb Google Docs).', 'Guardado como .docx (se puede abrir con Google Docs).') + (pictos === 'unreadable' ? unreadablePictos() : ''), pictos === 'unreadable' ? 8000 : undefined);
+      return saved;
     } catch (e) {
       console.error(e);
       toast(T('No s’ha pogut desar el document', 'No se ha podido guardar el documento'));
+      return false;
     }
   };
   const insertImage = () => {
@@ -244,7 +260,7 @@ async function boot() {
   pictoBtn.hidden = !pictosAvailable;
 
   const toolbar = h('div', { class: 'toolbar', role: 'toolbar', 'aria-label': T('Format', 'Formato') },
-    tb(T('Document nou', 'Documento nuevo'), FilePlus, () => void newDoc()), tb(T('Els meus documents', 'Mis documentos'), FolderOpen, showDocuments), tb(T('Desa com a .docx', 'Guardar como .docx'), FileDown, save), tb(T('Desa com a PDF', 'Guardar como PDF'), FileType, savePdf), tb(T('Imprimeix', 'Imprimir'), Printer, () => window.print()),
+    tb(T('Document nou', 'Documento nuevo'), FilePlus, () => void newDoc()), tb(T('Els meus documents', 'Mis documentos'), FolderOpen, showDocuments), tb(T('Desa com a .docx', 'Guardar como .docx'), FileDown, save), tb(T('Desa com a PDF', 'Guardar como PDF'), FileType, savePdf), tb(T('Desa com a MP3', 'Guardar como MP3'), FileVolume, saveMp3), tb(T('Imprimeix', 'Imprimir'), Printer, () => window.print()),
     h('span', { class: 'sep' }), undo, redo,
     h('span', { class: 'sep' }), fontSel, sizeSel, sizeDown, sizeUp,
     h('span', { class: 'sep' }), fmt.bold, fmt.italic, fmt.underline,
@@ -419,6 +435,22 @@ async function boot() {
   await speech.refresh();
 
   editor.commands.focus('end');
+
+  // Opened in Edge from the MP3 dialog of another browser (edge-handoff.ts): the document it brings
+  // becomes a new document of the list, and the MP3 dialog opens.
+  const handoff = await readHandoff();
+  if (handoff) {
+    if (handoff.doc) {
+      await leave();
+      show(newDocId(), null);
+      editor.chain().command(({ tr }) => { tr.setMeta('lecaa-system', true).setMeta('addToHistory', false); return true; }).setContent(handoff.doc.content, { emitUpdate: false }).run();
+      title.value = handoff.doc.title;
+      await saveNow();
+      void saveMp3();
+    } else {
+      toast(T('Obre el document desat (.docx) des de «Els meus documents» i després desa’l en MP3.', 'Abre el documento guardado (.docx) desde «Mis documentos» y después guárdalo en MP3.'), 10000);
+    }
+  }
 
   if (!__SINGLE_FILE__ && 'serviceWorker' in navigator && location.protocol.startsWith('http') && !location.hostname.match(/^(localhost|127\.)/)) {
     navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(() => {});

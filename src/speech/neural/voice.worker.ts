@@ -92,7 +92,7 @@ async function handle(m: WorkerRequest): Promise<WorkerResponse> {
     input_lengths: new ort.Tensor('int64', BigInt64Array.from([BigInt(ids.length)]), [1]),
     scales: new ort.Tensor('float32', Float32Array.from([inf.noise_scale, inf.length_scale / m.rate, inf.noise_w]), [3]),
   };
-  if (config.speaker_id_map && Object.keys(config.speaker_id_map).length) feeds.sid = new ort.Tensor('int64', BigInt64Array.from([0n]), [1]);
+  if (config.speaker_id_map && Object.keys(config.speaker_id_map).length) feeds.sid = new ort.Tensor('int64', BigInt64Array.from([BigInt(m.speaker ?? 0)]), [1]);
   const out = await session.run(feeds);
   const audio = new Float32Array(out.output.data as Float32Array);
   return { id: m.id, ok: true, audio, sampleRate: config.audio.sample_rate };

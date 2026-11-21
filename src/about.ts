@@ -42,6 +42,7 @@ const TOOLS: [string, string, string, string][] = [
   [T('Veus per descarregar', 'Voces para descargar'), 'Piper (Ona, Davefx, Sharvard, Maider, Antton, Tugão)', 'Rhasspy · Open Home Foundation', 'https://github.com/rhasspy/piper'],
   [T('Tipografies', 'Tipografías'), 'Andika, Atkinson Hyperlegible, Lexend, OpenDyslexic, Playwrite', 'SIL OFL 1.1', 'https://openfontlicense.org/'],
   [T('Icones', 'Iconos'), 'Lucide', 'Lucide Contributors', 'https://lucide.dev/'],
+  [T('Àudio MP3', 'Audio MP3'), 'LAME (lamejs)', 'LGPL 3.0', 'https://github.com/zhuker/lamejs'],
   ...(pictosAvailable ? [
     [T('Pictogrames', 'Pictogramas'), 'ARASAAC (autor: Sergio Palao)', T('Govern d’Aragó · CC BY-NC-SA 4.0', 'Gobierno de Aragón · CC BY-NC-SA 4.0'), 'https://arasaac.org/'],
     ...(forms ? [[T('Formes de les paraules', 'Formas de las palabras'), ...forms]] : []),

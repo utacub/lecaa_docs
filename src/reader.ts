@@ -44,7 +44,8 @@ export const ReaderHighlight = Extension.create({
   },
 });
 
-function collect(doc: PMNode, from: number, to: number): Sentence[] {
+// Also used to save the reading as MP3 (mp3-export.ts).
+export function collect(doc: PMNode, from: number, to: number): Sentence[] {
   const out: Sentence[] = [];
   doc.nodesBetween(from, to, (node, pos) => {
     if (!node.isTextblock) return true;

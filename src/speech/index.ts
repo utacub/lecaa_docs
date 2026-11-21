@@ -128,7 +128,12 @@ class SpeechHub {
   // acronyms (forSpeech, in text.ts).
   private async say(text: string, onWord?: (i: number, len: number) => void) {
     const v = this.currentVoice();
-    if (!v || !text.trim()) return;
+    if (v) await this.sayWith(v, text, onWord);
+  }
+
+  // Says a text with a given voice (also used to record the reading, mp3-export.ts).
+  async sayWith(v: VoiceInfo, text: string, onWord?: (i: number, len: number) => void) {
+    if (!text.trim()) return;
     const { rate, pitch, volume } = settings.value.voice;
     const engine = this.engineFor(v);
     if (engine.reliableEnd) return engine.speak(v.id, text, { rate, pitch, volume, onWord });

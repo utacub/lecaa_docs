@@ -281,6 +281,19 @@ export class NeuralEngine implements SpeechEngine {
     return buf;
   }
 
+  // Raw samples of a text, for saving the reading as a sound file (mp3-export.ts). Unlike the
+  // other voices, the voices inside the app hand over their audio, so it can be recorded.
+  async synthesize(voiceId: string, text: string, rate: number): Promise<{ audio: Float32Array; sampleRate: number }> {
+    const id = voiceId.startsWith(PREFIX) ? voiceId.slice(PREFIX.length) : voiceId;
+    const m = modelOf(id);
+    if (!m) throw new Error('not an in-app voice');
+    await this.ensureLoaded(m);
+    const speaker = m.voices.find(v => v.id === id)?.speaker;
+    const r = await this.call({ type: 'synth', text, rate, speaker });
+    if (!r.ok) throw new Error(r.error);
+    return { audio: r.audio ?? new Float32Array(0), sampleRate: r.sampleRate ?? 22050 };
+  }
+
   async speak(voiceId: string, text: string, opts: SpeakOptions): Promise<void> {
     this.stop();
     const my = ++this.token;
